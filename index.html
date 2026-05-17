@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PICALE — Replay Instantáneo para Pádel</title>
+<meta name="description" content="Replay instantáneo para canchas de pádel. Tu jugada, en segundos. Tecnología deportiva para clubes modernos.">
+<meta name="theme-color" content="#0A0A0A">
+<meta property="og:title" content="PICALE — Replay Instantáneo para Pádel">
+<meta property="og:description" content="Tu jugada, en segundos. Replay instantáneo para canchas de pádel.">
+<meta property="og:url" content="https://picalereplay.com">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+<link rel="canonical" href="https://picalereplay.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0A0A0A;
+    --bg2:      #111111;
+    --bg3:      #161616;
+    --border:   rgba(255,255,255,.07);
+    --text:     #F4F1EB;
+    --muted:    rgba(244,241,235,.45);
+    --accent:   #6BC47A;
+    --accent2:  #4FA85C;
+    --glow:     rgba(107,196,122,.15);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top:0; left:0; right:0; z-index:100;
+    padding: 20px 48px;
+    display: flex; align-items:center; justify-content:space-between;
+    border-bottom: 1px solid transparent;
+    transition: all .3s;
+    backdrop-filter: blur(0px);
+  }
+  nav.scrolled {
+    background: rgba(10,10,10,.9);
+    border-color: var(--border);
+    backdrop-filter: blur(20px);
+    padding: 14px 48px;
+  }
+  .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+  .nav-logo-icon { width:32px; height:32px; }
+  .nav-logo-name { font-family:'Montserrat',sans-serif; font-size:15px; font-weight:700; letter-spacing:3px; color:var(--text); }
+  .nav-links { display:flex; align-items:center; gap:32px; }
+  .nav-links a { font-size:13px; color:var(--muted); text-decoration:none; transition:color .2s; }
+  .nav-links a:hover { color:var(--text); }
+  .nav-cta { padding:8px 20px; background:var(--accent); border-radius:8px; font-size:13px; font-weight:600; color:#0A0A0A; text-decoration:none; transition:all .2s; }
+  .nav-cta:hover { background:var(--accent2); transform:translateY(-1px); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align: center;
+    padding: 120px 24px 80px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content:'';
+    position:absolute; top:-200px; left:50%; transform:translateX(-50%);
+    width:600px; height:600px;
+    background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .hero-badge {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:6px 16px; border-radius:20px;
+    border:1px solid rgba(107,196,122,.3);
+    background:rgba(107,196,122,.06);
+    font-size:12px; color:var(--accent); letter-spacing:1px;
+    text-transform:uppercase; font-weight:500;
+    margin-bottom:32px;
+  }
+  .hero-badge-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:blink 2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .hero-title {
+    font-family:'Montserrat',sans-serif;
+    font-size: clamp(40px, 7vw, 80px);
+    font-weight:800; line-height:1.05;
+    letter-spacing:-1px;
+    margin-bottom:24px;
+  }
+  .hero-title em { color:var(--accent); font-style:normal; }
+  .hero-sub {
+    font-size:clamp(15px,2vw,18px); color:var(--muted); line-height:1.7;
+    max-width:520px; margin-bottom:48px;
+  }
+  .hero-actions { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+  .btn-primary {
+    padding:14px 32px; background:var(--accent); color:#0A0A0A;
+    border-radius:10px; font-size:14px; font-weight:700;
+    text-decoration:none; transition:all .2s; display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn-primary:hover { background:var(--accent2); transform:translateY(-2px); box-shadow:0 12px 32px rgba(107,196,122,.25); }
+  .btn-ghost {
+    padding:14px 32px; background:transparent; color:var(--text);
+    border:1px solid var(--border); border-radius:10px;
+    font-size:14px; font-weight:500; text-decoration:none;
+    transition:all .2s; display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn-ghost:hover { border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.04); }
+
+  /* ── SCREEN MOCKUP ── */
+  .hero-screen {
+    margin-top:72px; position:relative;
+    width:100%; max-width:900px;
+  }
+  .screen-wrap {
+    background:var(--bg3); border:1px solid var(--border);
+    border-radius:16px; overflow:hidden;
+    box-shadow: 0 40px 120px rgba(0,0,0,.8), 0 0 0 1px var(--border);
+  }
+  .screen-bar {
+    padding:12px 16px; background:var(--bg2);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:8px;
+  }
+  .screen-dot { width:10px; height:10px; border-radius:50%; }
+  .screen-url {
+    flex:1; height:22px; background:var(--bg3);
+    border-radius:5px; margin:0 12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; color:var(--muted);
+  }
+  .screen-body {
+    aspect-ratio:16/9; background:#0E0E0E;
+    display:flex; align-items:center; justify-content:center;
+    position:relative; overflow:hidden;
+  }
+  .screen-hud-top {
+    position:absolute; top:0; left:0; right:0; padding:12px 16px;
+    background:linear-gradient(to bottom, rgba(0,0,0,.7) 0%, transparent 100%);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .screen-logo { font-family:'Montserrat',sans-serif; font-size:10px; font-weight:700; letter-spacing:3px; color:rgba(244,241,235,.8); }
+  .screen-clock { font-family:'Montserrat',sans-serif; font-size:13px; font-weight:600; color:rgba(244,241,235,.85); letter-spacing:2px; }
+  .screen-court-lines {
+    width:70%; height:70%; border:1px solid rgba(255,255,255,.06);
+    border-radius:2px; position:relative;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .screen-court-lines::before {
+    content:''; position:absolute; top:50%; left:0; right:0; height:1px;
+    background:rgba(255,255,255,.06);
+  }
+  .screen-court-lines::after {
+    content:''; position:absolute; left:50%; top:0; bottom:0; width:1px;
+    background:rgba(255,255,255,.06);
+  }
+  .screen-hud-bottom {
+    position:absolute; bottom:0; left:0; right:0; padding:12px 16px 14px;
+    background:linear-gradient(to top, rgba(0,0,0,.8) 0%, transparent 100%);
+    display:flex; align-items:flex-end; justify-content:space-between;
+  }
+  .screen-live { display:flex; align-items:center; gap:5px; }
+  .screen-live-dot { width:5px; height:5px; border-radius:50%; background:var(--accent); animation:blink 2s infinite; }
+  .screen-live-text { font-size:9px; color:var(--accent); font-weight:600; letter-spacing:1px; }
+  .screen-btns { display:flex; gap:6px; }
+  .screen-btn {
+    padding:4px 10px; border-radius:5px;
+    background:rgba(107,196,122,.9); font-size:9px; font-weight:700; color:#0A0A0A;
+  }
+  .screen-btn-ghost {
+    padding:4px 10px; border-radius:5px;
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15);
+    font-size:9px; color:rgba(244,241,235,.7);
+  }
+
+  /* ── STATS ── */
+  .stats {
+    padding:80px 48px;
+    display:flex; justify-content:center; gap:0;
+    border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+  }
+  .stat { text-align:center; padding:0 64px; border-right:1px solid var(--border); }
+  .stat:last-child { border-right:none; }
+  .stat-num { font-family:'Montserrat',sans-serif; font-size:42px; font-weight:800; color:var(--text); }
+  .stat-num span { color:var(--accent); }
+  .stat-label { font-size:13px; color:var(--muted); margin-top:6px; }
+
+  /* ── FEATURES ── */
+  .features { padding:120px 48px; max-width:1100px; margin:0 auto; }
+  .section-eyebrow {
+    font-size:11px; letter-spacing:3px; text-transform:uppercase;
+    color:var(--accent); font-weight:600; margin-bottom:16px;
+  }
+  .section-title {
+    font-family:'Montserrat',sans-serif; font-size:clamp(28px,4vw,44px);
+    font-weight:700; line-height:1.15; margin-bottom:64px;
+  }
+  .features-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+  .feature-card {
+    padding:32px; background:var(--bg2); border:1px solid var(--border);
+    border-radius:16px; transition:all .25s;
+  }
+  .feature-card:hover { border-color:rgba(107,196,122,.25); background:var(--bg3); transform:translateY(-4px); }
+  .feature-icon {
+    width:44px; height:44px; border-radius:12px;
+    background:rgba(107,196,122,.1); border:1px solid rgba(107,196,122,.2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; margin-bottom:20px;
+  }
+  .feature-title { font-family:'Montserrat',sans-serif; font-size:16px; font-weight:600; margin-bottom:10px; }
+  .feature-desc { font-size:14px; color:var(--muted); line-height:1.7; }
+
+  /* ── HOW IT WORKS ── */
+  .how { padding:120px 48px; background:var(--bg2); border-top:1px solid var(--border); }
+  .how-inner { max-width:1100px; margin:0 auto; }
+  .steps { display:grid; grid-template-columns:repeat(4,1fr); gap:32px; margin-top:64px; }
+  .step { position:relative; }
+  .step::after {
+    content:'→';
+    position:absolute; right:-20px; top:20px;
+    color:rgba(255,255,255,.12); font-size:18px;
+  }
+  .step:last-child::after { display:none; }
+  .step-num {
+    width:40px; height:40px; border-radius:50%;
+    background:var(--accent); color:#0A0A0A;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Montserrat',sans-serif; font-size:14px; font-weight:800;
+    margin-bottom:16px;
+  }
+  .step-title { font-weight:600; font-size:15px; margin-bottom:8px; }
+  .step-desc { font-size:13px; color:var(--muted); line-height:1.7; }
+
+  /* ── COMING SOON STRIP ── */
+  .coming-soon {
+    padding:80px 48px; text-align:center;
+    background:linear-gradient(135deg, var(--bg3) 0%, var(--bg2) 100%);
+    border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+  }
+  .coming-badge {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:5px 14px; border-radius:20px;
+    background:rgba(107,196,122,.08); border:1px solid rgba(107,196,122,.2);
+    font-size:11px; color:var(--accent); letter-spacing:1.5px; text-transform:uppercase;
+    margin-bottom:24px;
+  }
+  .coming-title { font-family:'Montserrat',sans-serif; font-size:clamp(22px,3vw,36px); font-weight:700; margin-bottom:12px; }
+  .coming-sub { font-size:15px; color:var(--muted); margin-bottom:36px; }
+  .notify-form { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .notify-input {
+    padding:12px 18px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:10px; font-size:14px; color:var(--text); width:280px;
+    font-family:'DM Sans',sans-serif; outline:none; transition:border-color .2s;
+  }
+  .notify-input:focus { border-color:rgba(107,196,122,.4); }
+  .notify-input::placeholder { color:var(--muted); }
+  .notify-btn {
+    padding:12px 24px; background:var(--accent); color:#0A0A0A;
+    border:none; border-radius:10px; font-size:14px; font-weight:700;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s;
+  }
+  .notify-btn:hover { background:var(--accent2); }
+
+  /* ── FOOTER ── */
+  footer {
+    padding:48px; border-top:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:24px;
+  }
+  .footer-brand { display:flex; align-items:center; gap:10px; }
+  .footer-name { font-family:'Montserrat',sans-serif; font-size:13px; font-weight:700; letter-spacing:3px; }
+  .footer-copy { font-size:12px; color:var(--muted); }
+  .footer-links { display:flex; gap:24px; }
+  .footer-links a { font-size:12px; color:var(--muted); text-decoration:none; transition:color .2s; }
+  .footer-links a:hover { color:var(--text); }
+
+  @media(max-width:768px){
+    nav { padding:16px 24px; }
+    nav.scrolled { padding:12px 24px; }
+    .nav-links { display:none; }
+    .stats { flex-direction:column; gap:32px; padding:48px 24px; }
+    .stat { border-right:none; border-bottom:1px solid var(--border); padding:0 0 32px; }
+    .stat:last-child { border-bottom:none; padding-bottom:0; }
+    .features { padding:80px 24px; }
+    .features-grid { grid-template-columns:1fr; }
+    .how { padding:80px 24px; }
+    .steps { grid-template-columns:1fr 1fr; }
+    footer { padding:32px 24px; flex-direction:column; align-items:flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <a href="/" class="nav-logo">
+    <svg class="nav-logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="32" height="32" rx="8" fill="#1A1A1A"/>
+      <circle cx="16" cy="16" r="8" fill="none" stroke="#6BC47A" stroke-width="2"/>
+      <circle cx="16" cy="16" r="3" fill="#6BC47A"/>
+    </svg>
+    <span class="nav-logo-name">PICALE</span>
+  </a>
+  <div class="nav-links">
+    <a href="#features">Funciones</a>
+    <a href="#how">Cómo funciona</a>
+    <a href="#contacto">Contacto</a>
+  </div>
+  <a href="/app/dashboard.html" class="nav-cta">Acceder →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">
+    <span class="hero-badge-dot"></span>
+    Disponible para clubes
+  </div>
+  <h1 class="hero-title">
+    Tu jugada,<br>
+    en <em>segundos</em>.
+  </h1>
+  <p class="hero-sub">
+    Replay instantáneo para canchas de pádel. Sin apps. Sin cables. 
+    Solo presiona un botón y revive la jugada desde cualquier ángulo.
+  </p>
+  <div class="hero-actions">
+    <a href="/app/dashboard.html" class="btn-primary">
+      Abrir Dashboard
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <a href="#how" class="btn-ghost">Cómo funciona</a>
+  </div>
+
+  <!-- SCREEN MOCKUP -->
+  <div class="hero-screen">
+    <div class="screen-wrap">
+      <div class="screen-bar">
+        <div class="screen-dot" style="background:#FF5F57"></div>
+        <div class="screen-dot" style="background:#FFBD2E"></div>
+        <div class="screen-dot" style="background:#28CA41"></div>
+        <div class="screen-url">picalereplay.com/app</div>
+      </div>
+      <div class="screen-body">
+        <div class="screen-hud-top">
+          <span class="screen-logo">PICALE</span>
+          <span class="screen-clock">14:32:18</span>
+          <div style="display:flex;gap:6px;">
+            <div style="padding:3px 8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:5px;font-size:9px;color:rgba(244,241,235,.6);">Cancha 1 ▾</div>
+          </div>
+        </div>
+        <div class="screen-court-lines"></div>
+        <div class="screen-hud-bottom">
+          <div class="screen-live">
+            <div class="screen-live-dot"></div>
+            <span class="screen-live-text">EN VIVO · 20 FPS</span>
+          </div>
+          <div class="screen-btns">
+            <div class="screen-btn-ghost">10s</div>
+            <div class="screen-btn-ghost">20s</div>
+            <div class="screen-btn">⏮ Replay</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num">&lt;<span>3</span>s</div>
+    <div class="stat-label">Tiempo al replay</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num"><span>20</span></div>
+    <div class="stat-label">FPS en tiempo real</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num"><span>100</span>%</div>
+    <div class="stat-label">Sin app del jugador</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num"><span>∞</span></div>
+    <div class="stat-label">Clips guardados</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <p class="section-eyebrow">Funciones</p>
+  <h2 class="section-title">Todo lo que necesita<br>tu cancha.</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">⏮</div>
+      <h3 class="feature-title">Replay Instantáneo</h3>
+      <p class="feature-desc">Un botón. Elige 10, 20 o 30 segundos hacia atrás. El video aparece al instante, sin esperas ni aplicaciones.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📹</div>
+      <h3 class="feature-title">Live View HD</h3>
+      <p class="feature-desc">Stream en vivo de tu cancha directamente en el panel. Conecta cualquier cámara IP o RTSP al sistema.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📎</div>
+      <h3 class="feature-title">Clips Guardados</h3>
+      <p class="feature-desc">Descarga y comparte tus mejores jugadas. Los clips se generan automáticamente y quedan disponibles al instante.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏋️</div>
+      <h3 class="feature-title">Modo Entrenamiento</h3>
+      <p class="feature-desc">Activa sesiones de entrenamiento con duración definida. El sistema graba y organiza los clips por sesión.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏟️</div>
+      <h3 class="feature-title">Multi-cancha</h3>
+      <p class="feature-desc">Administra múltiples clubes y canchas desde un solo panel. Cambia entre cámaras con un clic.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3 class="feature-title">Sin latencia</h3>
+      <p class="feature-desc">Sistema local en la cancha. El backend corre en tu red, sin depender de internet para el replay.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="how-inner">
+    <p class="section-eyebrow">Cómo funciona</p>
+    <h2 class="section-title">Simple para el jugador.<br>Poderoso por dentro.</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3 class="step-title">Instala la cámara</h3>
+        <p class="step-desc">Cualquier cámara IP con salida RTSP. La conectas a la red local de la cancha.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3 class="step-title">Configura PICALE</h3>
+        <p class="step-desc">Ingresa el RTSP de la cámara en el panel admin. En 2 minutos ya tienes live view.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3 class="step-title">Juega</h3>
+        <p class="step-desc">El sistema graba en buffer continuo. Nada que hacer. La cámara está siempre lista.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h3 class="step-title">Presiona Replay</h3>
+        <p class="step-desc">Un botón en la tablet o TV de la cancha. El clip aparece en 3 segundos. Los jugadores lo ven al instante.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMING SOON -->
+<section class="coming-soon" id="contacto">
+  <div class="coming-badge">🚀 Próximamente</div>
+  <h2 class="coming-title">Más funciones en camino</h2>
+  <p class="coming-sub">App móvil para jugadores · Estadísticas con IA · Transmisión en vivo</p>
+  <div class="notify-form">
+    <input type="email" class="notify-input" placeholder="tu@club.com" id="notifyEmail">
+    <button class="notify-btn" onclick="handleNotify()">Notifícame →</button>
+  </div>
+  <p id="notifyMsg" style="margin-top:12px;font-size:13px;color:var(--accent);display:none;">✓ Te avisamos cuando salga.</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">
+    <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="8" fill="#1A1A1A"/>
+      <circle cx="16" cy="16" r="8" fill="none" stroke="#6BC47A" stroke-width="2"/>
+      <circle cx="16" cy="16" r="3" fill="#6BC47A"/>
+    </svg>
+    <span class="footer-name">PICALE</span>
+    <span class="footer-copy">© 2026 · picalereplay.com</span>
+  </div>
+  <div class="footer-links">
+    <a href="/app/dashboard.html">Dashboard</a>
+    <a href="mailto:hola@picalereplay.com">Contacto</a>
+    <a href="/privacidad">Privacidad</a>
+  </div>
+</footer>
+
+<script>
+  // Nav scroll effect
+  const nav = document.getElementById('mainNav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  // Notify form
+  function handleNotify() {
+    const email = document.getElementById('notifyEmail').value;
+    if (!email || !email.includes('@')) return;
+    document.getElementById('notifyMsg').style.display = 'block';
+    document.getElementById('notifyEmail').value = '';
+  }
+
+  document.getElementById('notifyEmail').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleNotify();
+  });
+</script>
+</body>
+</html>

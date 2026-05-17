@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PICALE — Pádel · Video · Instantáneo</title>
+<meta name="description" content="PICALE — Replay instantáneo para pádel. Revisa tus jugadas en segundos.">
+<meta name="theme-color" content="#1A1A1A">
+<meta property="og:title" content="PICALE — Pádel · Video · Instantáneo">
+<meta property="og:description" content="Replay instantáneo para canchas de pádel.">
+<meta property="og:url" content="https://picalereplay.com">
+<link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg">
+<link rel="canonical" href="https://picalereplay.com/app/">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginModal">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg width="22" height="28" viewBox="0 0 28 34" fill="none"><circle cx="14" cy="9" r="6.5" stroke="#1F1F1F" stroke-width="2" stroke-dasharray="33 5" stroke-dashoffset="2.5"/><circle cx="14" cy="9" r="3.5" fill="#A7B0A4"/><rect x="11.5" y="16" width="5" height="18" rx="1" fill="#1F1F1F"/></svg>
+      <span style="font-family:'Montserrat',sans-serif;font-size:16px;font-weight:600;letter-spacing:3px;color:var(--carbon)">PICALE</span>
+    </div>
+    <div class="login-title">Panel de Administrador</div>
+    <div class="login-sub">Ingresa tus credenciales para continuar.</div>
+    <div class="login-field"><label class="login-label">Usuario</label><input class="login-input" id="loginUser" type="text" placeholder="admin" autocomplete="username"></div>
+    <div class="login-field"><label class="login-label">Contraseña</label><input class="login-input" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <div class="login-error" id="loginError">Usuario o contraseña incorrectos.</div>
+    <button class="login-submit" onclick="attemptLogin()">Entrar al panel</button>
+    <div style="margin-top:14px;text-align:center;"><button onclick="closeLoginModal()" style="font-size:12px;color:var(--sage-dk);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancelar</button></div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="page-home" class="page">
+  <div class="home-wrap">
+    <div class="home-logo fade-up">
+      <svg width="26" height="32" viewBox="0 0 28 34" fill="none"><circle cx="14" cy="9" r="6.5" stroke="#1F1F1F" stroke-width="2" stroke-dasharray="33 5" stroke-dashoffset="2.5"/><circle cx="14" cy="9" r="3.5" fill="#A7B0A4"/><rect x="11.5" y="16" width="5" height="18" rx="1" fill="#1F1F1F"/></svg>
+      <span class="home-logo-name">PICALE</span>
+    </div>
+    <h1 class="home-title fade-up" style="animation-delay:.08s">Replay Instantáneo<br><em>para tu Club de Pádel</em></h1>
+    <p class="home-sub fade-up" style="animation-delay:.16s">Genera clips de los últimos 10, 20 o 30 segundos con un solo toque. Compatible con cualquier cámara IP o RTSP.</p>
+    <div class="section-label fade-up" style="animation-delay:.22s">Clubs disponibles</div>
+    <div class="clubs-grid fade-up" id="clubsGrid" style="animation-delay:.26s"></div>
+    <button class="btn-admin-home fade-up" style="animation-delay:.34s" onclick="requireAdmin(()=>{showPage('page-admin');showAdminSection('dashboard');})">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
+      Panel de Administrador
+    </button>
+  </div>
+</div>
+
+<!-- CLUB PAGE -->
+<div id="page-club" class="page">
+  <div class="club-hero-dark">
+    <div class="club-hero-grid"></div>
+    <div class="club-hero-inner">
+      <div class="club-tag-pill"><div class="live-dot"></div> Club activo</div>
+      <div class="club-hero-name" id="clubHeroName">—</div>
+      <div class="club-hero-sub" id="clubHeroSub">Selecciona una cancha</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 48px 0;">
+    <button onclick="goHome()" style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--sage-dk);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;" onmouseover="this.style.color='var(--carbon)'" onmouseout="this.style.color='var(--sage-dk)'">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3L5 7l4 4"/></svg> Volver a clubs
+    </button>
+    <span class="section-label" style="margin:0">Canchas disponibles</span>
+  </div>
+  <div class="club-body-pad"><div class="courts-grid" id="courtsGrid"></div></div>
+</div>
+
+<!-- COURT FULLSCREEN -->
+<div id="page-court" class="page">
+  <div class="video-area" id="videoArea">
+    <img id="liveImg" alt="stream" style="display:none;">
+    <canvas id="liveCanvas" style="display:block;position:absolute;inset:0;width:100%;height:100%;z-index:3;background:#000;"></canvas>
+    <div class="no-signal" id="noSignal" style="display:none;">
+      <div class="no-signal-icon"><svg width="60" height="60" viewBox="0 0 64 64" fill="none" stroke="rgba(244,241,235,.4)" stroke-width="1.4"><rect x="4" y="14" width="40" height="28" rx="3"/><path d="M44 28l16-8v24l-16-8"/><line x1="20" y1="46" x2="28" y2="46"/><line x1="24" y1="42" x2="24" y2="50"/></svg></div>
+      <div class="no-signal-text" id="noSignalText">Conectando a la cámara…<br><b>Abre desde http://localhost:8000</b></div>
+    </div>
+    <div class="training-banner" id="trainingBanner">
+      <div class="t-rec-dot"></div>
+      <span>ENTRENAMIENTO EN CURSO</span>
+      <span id="trainingTimer" style="font-variant-numeric:tabular-nums;opacity:.85;">00:00:00</span>
+      <span style="opacity:.5">·</span>
+      <span id="trainingLeft" style="opacity:.6;font-size:11px;font-weight:400;"></span>
+    </div>
+    <!-- HUD TOP -->
+    <div class="hud-top">
+      <div class="hud-left">
+        <a class="hud-logo" onclick="goHome()"><svg width="18" height="22" viewBox="0 0 28 34" fill="none"><circle cx="14" cy="9" r="6.5" stroke="rgba(244,241,235,.7)" stroke-width="2" stroke-dasharray="33 5" stroke-dashoffset="2.5"/><circle cx="14" cy="9" r="3.5" fill="#A7B0A4"/><rect x="11.5" y="16" width="5" height="18" rx="1" fill="rgba(244,241,235,.7)"/></svg><span class="hud-logo-name">PICALE</span></a>
+        <div class="hud-sep"></div>
+        <div class="breadcrumb"><span class="bc-link" onclick="goHome()">Clubs</span><span>›</span><span class="bc-link" id="bcClub" onclick="goClub()">—</span><span>›</span><span class="bc-cur" id="bcCourt">—</span></div>
+      </div>
+      <div style="position:absolute;left:50%;transform:translateX(-50%);"><div class="hud-clock" id="hudClock">00:00:00</div></div>
+      <div class="hud-right">
+        <div class="cam-select-wrap" id="camSelectWrap">
+          <button class="cam-select-btn" onclick="toggleCamDD()"><div class="cam-dot" id="camDot"></div><span id="camLabel">Cámara</span><svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 3l3 3 3-3"/></svg></button>
+          <div class="cam-dropdown" id="camDD"></div>
+        </div>
+        <button class="hud-btn" onclick="toggleClipsPanel()"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="11" height="11" rx="2"/><line x1="4.5" y1="1" x2="4.5" y2="12"/></svg><span id="clipsToggleLbl">Clips</span></button>
+        <button class="hud-btn" onclick="requireAdmin(()=>{showPage('page-admin');showAdminSection('cameras');})" title="Admin"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="2"/><circle cx="6.5" cy="6.5" r="5" stroke-dasharray="3 2.5"/></svg></button>
+      </div>
+    </div>
+    <!-- HUD BOTTOM -->
+    <div class="hud-bottom">
+      <div class="hud-court-info">
+        <div class="live-badge"><div class="live-dot" id="liveDot" style="background:rgba(255,255,255,.2);animation:none"></div><span id="liveStatusTxt">Conectando</span><span class="live-fps" id="liveFps"></span></div>
+        <div class="court-title-big" id="courtTitleBig">—</div>
+        <div class="court-sub-text" id="courtSubText">—</div>
+        <div class="replay-controls">
+          <button class="replay-btn" id="replayBtn" onclick="triggerReplay()">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 1C3.69 1 1 3.69 1 7s2.69 6 6 6 6-2.69 6-6S10.31 1 7 1zm-1.5 8.5V4.5l4 2-4 2z"/></svg>
+            Generar Replay
+          </button>
+          <div class="dur-pills"><button class="dur-pill" onclick="setDur(10,this)">10s</button><button class="dur-pill active" onclick="setDur(20,this)">20s</button><button class="dur-pill" onclick="setDur(30,this)">30s</button></div>
+          <button class="training-btn" id="trainingBtn" onclick="onTrainingClick()">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5.5"/><polyline points="7,4 7,7 9,9"/></svg>
+            <span id="trainingBtnLbl">Iniciar Entrenamiento</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- CLIPS PANEL -->
+  <div class="clips-panel" id="clipsPanel">
+    <div class="clips-panel-hdr"><span class="clips-panel-title">Mis clips</span><span class="clips-count-badge" id="clipsCount">0</span></div>
+    <div class="clips-scroll" id="clipsScroll"><div class="clips-empty"><div style="font-size:28px;opacity:.2">🎬</div><div class="clips-empty-text">Genera tu primer replay<br>con el botón de abajo</div></div></div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="page-admin" class="page">
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-logo"><svg width="18" height="22" viewBox="0 0 28 34" fill="none"><circle cx="14" cy="9" r="6.5" stroke="rgba(244,241,235,.7)" stroke-width="2" stroke-dasharray="33 5" stroke-dashoffset="2.5"/><circle cx="14" cy="9" r="3.5" fill="#A7B0A4"/><rect x="11.5" y="16" width="5" height="18" rx="1" fill="rgba(244,241,235,.7)"/></svg><div><div class="admin-sidebar-title">PICALE</div><div class="admin-tag">Admin</div></div></div>
+      <div class="admin-nav-item active" id="nav-dashboard" onclick="showAdminSection('dashboard')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="4" height="4" rx="1"/><rect x="8" y="1" width="4" height="4" rx="1"/><rect x="1" y="8" width="4" height="4" rx="1"/><rect x="8" y="8" width="4" height="4" rx="1"/></svg>Dashboard</div>
+      <div class="admin-nav-item" id="nav-clubs" onclick="showAdminSection('clubs')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 12V5l5.5-4 5.5 4v7"/><rect x="4" y="7" width="2.5" height="5" rx=".5"/><rect x="6.5" y="7" width="2.5" height="5" rx=".5"/></svg>Clubs</div>
+      <div class="admin-nav-item" id="nav-cameras" onclick="showAdminSection('cameras')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="3" width="8" height="7" rx="1.2"/><path d="M9 5.5l3-1.5v5l-3-1.5"/></svg>Cámaras</div>
+      <div class="admin-nav-item" id="nav-clips-admin" onclick="showAdminSection('clips-admin')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="11" height="9" rx="1.5"/><path d="M4.5 5l4 2-4 2V5z" fill="currentColor" stroke="none"/></svg>Clips</div>
+      <div class="admin-nav-item" id="nav-settings" onclick="showAdminSection('settings')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6.5" cy="6.5" r="2"/><path d="M6.5 1v1.5M6.5 10.5V12M1 6.5h1.5M10.5 6.5H12" stroke-linecap="round"/></svg>Configuración</div>
+      <div class="admin-sidebar-footer">
+        <button class="admin-back-btn" onclick="showPage('page-home')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2L4 6l4 4"/></svg>Volver al inicio</button>
+        <button class="admin-logout-btn" onclick="adminLogout()"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 6H1M5.5 3l-3 3 3 3M9 2h2v8H9"/></svg>Cerrar sesión</button>
+      </div>
+    </aside>
+    <main class="admin-content">
+      <div class="admin-section active" id="section-dashboard">
+        <div class="admin-content-title">Dashboard</div>
+        <div class="admin-content-sub">Resumen general del sistema PICALE.</div>
+        <div class="admin-stats-grid">
+          <div class="admin-stat-card"><div class="admin-stat-val" id="stat-clubs">—</div><div class="admin-stat-label">Clubs activos</div></div>
+          <div class="admin-stat-card"><div class="admin-stat-val" id="stat-cameras">—</div><div class="admin-stat-label">Cámaras</div></div>
+          <div class="admin-stat-card"><div class="admin-stat-val" id="stat-clips">—</div><div class="admin-stat-label">Clips guardados</div></div>
+          <div class="admin-stat-card"><div class="admin-stat-val" id="stat-status">—</div><div class="admin-stat-label">Estado servidor</div></div>
+        </div>
+        <div style="background:var(--white);border:1px solid rgba(31,31,31,.08);border-radius:12px;padding:20px;">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--sage-dk);margin-bottom:14px;">Actividad reciente</div>
+          <div id="recentActivity" style="font-size:13px;color:var(--sage-dk);">Cargando…</div>
+        </div>
+      </div>
+      <div class="admin-section" id="section-clubs">
+        <div class="admin-content-title">Clubs</div>
+        <div class="admin-content-sub">Gestiona los clubs y sus canchas. Cada club puede tener múltiples canchas con cámaras independientes.</div>
+        <div class="admin-toolbar"><span style="font-size:13px;color:var(--sage-dk)" id="clubs-count-label">—</span><button class="btn-add" onclick="openAddClubModal()"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Agregar club</button></div>
+        <table class="admin-table"><thead><tr><th>Nombre</th><th>Ubicación</th><th>Canchas</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="clubsTableBody"></tbody></table>
+      </div>
+      <div class="admin-section" id="section-cameras">
+        <div class="admin-content-title">Cámaras</div>
+        <div class="admin-content-sub">Administra las cámaras IP. Cada cancha puede tener su propia URL RTSP y servidor backend.</div>
+        <div class="admin-toolbar"><span style="font-size:13px;color:var(--sage-dk)" id="cams-count-label">—</span><button class="btn-add" onclick="openAddCameraModal()"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Agregar cámara</button></div>
+        <table class="admin-table"><thead><tr><th>Nombre</th><th>Club / Cancha</th><th>API URL</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="camerasTableBody"></tbody></table>
+      </div>
+      <div class="admin-section" id="section-clips-admin">
+        <div class="admin-content-title">Clips</div>
+        <div class="admin-content-sub">Clips guardados en el servidor. Puedes reproducir, descargar o eliminar.</div>
+        <div class="admin-toolbar"><span style="font-size:13px;color:var(--sage-dk)" id="clips-admin-label">Cargando…</span></div>
+        <table class="admin-table"><thead><tr><th>Nombre</th><th>Tamaño</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="clipsAdminBody"></tbody></table>
+      </div>
+      <div class="admin-section" id="section-settings">
+        <div class="admin-content-title">Configuración</div>
+        <div class="admin-content-sub">Ajustes del sistema y credenciales de administrador.</div>
+        <div style="background:var(--white);border:1px solid rgba(31,31,31,.08);border-radius:12px;padding:24px;max-width:440px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:500;color:var(--carbon);margin-bottom:18px;">Cambiar contraseña de administrador</div>
+          <div style="font-size:12px;color:var(--sage-dk);margin-bottom:14px;">Contraseña por defecto: <code style="background:var(--ivory);padding:2px 6px;border-radius:4px;">picale2024</code></div>
+          <div class="form-group"><label class="form-label">Contraseña actual</label><input class="form-input" id="settOldPass" type="password" placeholder="••••••••"></div>
+          <div class="form-group"><label class="form-label">Nueva contraseña</label><input class="form-input" id="settNewPass" type="password" placeholder="••••••••"></div>
+          <div class="form-group"><label class="form-label">Confirmar nueva</label><input class="form-input" id="settConfPass" type="password" placeholder="••••••••"></div>
+          <button class="btn-save" onclick="changePassword()">Guardar contraseña</button>
+        </div>
+        <div style="background:var(--white);border:1px solid rgba(31,31,31,.08);border-radius:12px;padding:24px;max-width:440px;">
+          <div style="font-size:13px;font-weight:500;color:var(--carbon);margin-bottom:6px;">Duración del entrenamiento</div>
+          <div style="font-size:12px;color:var(--sage-dk);margin-bottom:14px;">Tiempo de grabación en modo entrenamiento.</div>
+          <div class="form-group"><label class="form-label">Duración (minutos)</label><input class="form-input" id="settTrainingDur" type="number" min="10" max="240" value="60"></div>
+          <button class="btn-save" onclick="saveTrainingDuration()">Guardar</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- VIDEO MODAL -->
+<div class="modal-overlay" id="videoModal">
+  <div class="video-modal"><button class="modal-close" onclick="closeVideoModal()">✕</button><video id="modalVideo" controls playsinline style="width:100%;max-height:70vh;display:block;background:#000;"></video></div>
+</div>
+
+<!-- ADD CLUB -->
+<div class="modal-overlay" id="addClubModal">
+  <div class="form-modal">
+    <div class="form-modal-title" id="clubModalTitle">Agregar club</div>
+    <div class="form-group"><label class="form-label">Nombre del club</label><input class="form-input" id="clubFormName" type="text" placeholder="Ej: Club Pádel Norte"></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Ciudad</label><input class="form-input" id="clubFormCity" type="text" placeholder="Monterrey"></div><div class="form-group"><label class="form-label">Estado</label><input class="form-input" id="clubFormState" type="text" placeholder="Nuevo León"></div></div>
+    <div class="form-group"><label class="form-label">Canchas (separadas por coma)</label><input class="form-input" id="clubFormCourts" type="text" placeholder="Cancha 1, Cancha 2, Cancha 3"></div>
+    <div class="form-actions"><button class="btn-cancel" onclick="closeAllModals()">Cancelar</button><button class="btn-save" onclick="saveClub()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- ADD CAMERA -->
+<div class="modal-overlay" id="addCameraModal">
+  <div class="form-modal">
+    <div class="form-modal-title" id="camModalTitle">Agregar cámara</div>
+    <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="camFormName" type="text" placeholder="Ej: Cancha 1 - Cámara Principal"></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Club</label><select class="form-input" id="camFormClub"></select></div><div class="form-group"><label class="form-label">Cancha</label><input class="form-input" id="camFormCourt" type="text" placeholder="Cancha 1"></div></div>
+    <div class="form-group"><label class="form-label">URL RTSP</label><input class="form-input" id="camFormRtsp" type="text" placeholder="rtsp://user:pass@192.168.1.100:554/stream"></div>
+    <div class="form-group"><label class="form-label">API URL (backend)</label><input class="form-input" id="camFormApi" type="text" placeholder="http://localhost:8000"></div>
+    <div class="form-actions"><button class="btn-cancel" onclick="closeAllModals()">Cancelar</button><button class="btn-save" onclick="saveCamera()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- TRAINING CONFIRM -->
+<div class="modal-overlay" id="trainingModal">
+  <div class="training-modal">
+    <div class="training-modal-icon">🏋️</div>
+    <div class="training-modal-title">Iniciar modo entrenamiento</div>
+    <div class="training-modal-sub" id="trainingModalSub">Se grabará el video completo de la sesión. Puedes generar replays durante el entrenamiento.</div>
+    <div class="training-modal-actions"><button class="btn-train-cancel" onclick="closeAllModals()">Cancelar</button><button class="btn-train-go" onclick="startTraining()">▶ Comenzar grabación</button></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><div class="toast-dot" id="toastDot"></div><span id="toastMsg">—</span></div>
+
+<script src="../js/config.js"></script>
+<script src="../js/app.js"></script>
+</body>
+</html>

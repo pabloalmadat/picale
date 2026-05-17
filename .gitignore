@@ -1,0 +1,15 @@
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# Editor
+.vscode/
+.idea/
+
+# Node (por si acaso)
+node_modules/
+
+# Env local (nunca subir)
+.env
+.env.local
