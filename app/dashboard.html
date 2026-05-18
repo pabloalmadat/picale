@@ -152,7 +152,7 @@ html,body{font-family:var(--body);background:var(--bg);color:var(--text);height:
 /* ── LIVE VIEW ── */
 #view-live{background:#000;}
 .live-video-wrap{flex:1;position:relative;overflow:hidden;background:#000;}
-#liveCanvas{display:block;width:100%;height:100%;object-fit:contain;}
+#liveCanvas{display:block;position:absolute;inset:0;width:100%;height:100%;}
 #liveImg{display:none;}
 .live-overlay-top{
   position:absolute;top:0;left:0;right:0;
@@ -899,28 +899,59 @@ function enterCourtClips(apiUrl){
 
 // ══ STREAM ══════════════════════════════════════
 function initStream(){
-  const noSig=document.getElementById('noSignal');
-  const canvas=document.getElementById('liveCanvas');
-  const img=document.getElementById('liveImg');
+  var noSig=document.getElementById('noSignal');
+  var canvas=document.getElementById('liveCanvas');
+  var img=document.getElementById('liveImg');
+  var wrap=document.getElementById('liveVideoWrap');
   if(img._snapInterval){clearInterval(img._snapInterval);img._snapInterval=null;}
   if(img._keepalive){clearInterval(img._keepalive);img._keepalive=null;}
   state.streamReady=false;
-  if(!state.courtApi){noSig.style.display='flex';document.getElementById('noSignalText').textContent='Sin cámara configurada.';return;}
+
+  if(!state.courtApi){
+    noSig.style.display='flex';
+    document.getElementById('noSignalText').textContent='Sin cámara configurada.';
+    return;
+  }
+
   noSig.style.display='none';
-  const ctx=canvas.getContext('2d');
-  const snapUrl=state.courtApi+'/snapshot';
-  let pending=false;
+
+  function resizeCanvas(){
+    var w=wrap.clientWidth||640;
+    var h=wrap.clientHeight||360;
+    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+  }
+  resizeCanvas();
+  window.addEventListener('resize',resizeCanvas);
+
+  var ctx=canvas.getContext('2d');
+  var snapUrl=state.courtApi+'/snapshot';
+  var pending=false;
+  var errCount=0;
+
   function drawFrame(){
-    if(pending)return;pending=true;
-    const tmp=new Image();
+    if(pending)return;
+    pending=true;
+    var tmp=new Image();
+    tmp.crossOrigin='anonymous';
     tmp.onload=function(){
-      canvas.width=tmp.naturalWidth||canvas.offsetWidth;
-      canvas.height=tmp.naturalHeight||canvas.offsetHeight;
-      ctx.drawImage(tmp,0,0,canvas.width,canvas.height);
-      pending=false;
-      if(!state.streamReady){state.streamReady=true;updateLiveStatus(true);}
+      resizeCanvas();
+      var iw=tmp.naturalWidth,ih=tmp.naturalHeight;
+      var cw=canvas.width,ch=canvas.height;
+      var scale=Math.min(cw/iw,ch/ih);
+      var dw=iw*scale,dh=ih*scale;
+      var dx=(cw-dw)/2,dy=(ch-dh)/2;
+      ctx.fillStyle='#000';ctx.fillRect(0,0,cw,ch);
+      ctx.drawImage(tmp,dx,dy,dw,dh);
+      pending=false;errCount=0;
+      if(!state.streamReady){state.streamReady=true;updateLiveStatus(true);noSig.style.display='none';}
     };
-    tmp.onerror=function(){pending=false;};
+    tmp.onerror=function(){
+      pending=false;errCount++;
+      if(errCount>10&&!state.streamReady){
+        noSig.style.display='flex';
+        document.getElementById('noSignalText').textContent='No se puede conectar. Verifica que el servidor esté corriendo.';
+      }
+    };
     tmp.src=snapUrl+'?_='+Date.now();
   }
   drawFrame();
