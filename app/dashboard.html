@@ -2,246 +2,1232 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PICALE — Pádel · Video · Instantáneo</title>
-<meta name="description" content="PICALE — Replay instantáneo para pádel. Revisa tus jugadas en segundos.">
-<meta name="theme-color" content="#1A1A1A">
-<meta property="og:title" content="PICALE — Pádel · Video · Instantáneo">
-<meta property="og:description" content="Replay instantáneo para canchas de pádel.">
-<meta property="og:url" content="https://picalereplay.com">
-<link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg">
-<link rel="canonical" href="https://picalereplay.com/app/">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/app.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PICALE</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0A0A;--bg2:#111;--bg3:#161616;--bg4:#1c1c1c;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --text:#F0EDE6;--muted:rgba(240,237,230,.45);--muted2:rgba(240,237,230,.22);
+  --green:#5EE87A;--green-bg:rgba(94,232,122,.1);--green-border:rgba(94,232,122,.25);
+  --warn:#E5A732;--danger:#E05252;
+  --mono:'JetBrains Mono',monospace;--display:'Bebas Neue',sans-serif;--body:'DM Sans',sans-serif;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --nav-h:64px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{font-family:var(--body);background:var(--bg);color:var(--text);height:100%;overflow:hidden;}
+
+/* ── VIEWS ── */
+.view{display:none;flex-direction:column;height:100vh;overflow:hidden;}
+.view.active{display:flex;}
+.view-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+.view-scroll::-webkit-scrollbar{display:none;}
+
+/* ── TOP BAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px));
+  background:rgba(10,10,10,.95);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;z-index:50;
+}
+.topbar-logo{font-family:var(--display);font-size:20px;letter-spacing:3px;color:var(--text);}
+.topbar-back{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);background:none;border:none;font-family:var(--body);cursor:pointer;padding:8px 0;}
+.topbar-back svg{flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:600;color:var(--text);}
+.topbar-action{padding:8px 14px;background:var(--green);color:#0A0A0A;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:var(--body);cursor:pointer;}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  display:flex;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  padding-bottom:var(--safe-bottom);
+  flex-shrink:0;z-index:50;
+}
+.bnav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:10px 4px 8px;cursor:pointer;
+  color:var(--muted);transition:color .2s;
+  gap:4px;border:none;background:none;font-family:var(--body);
+}
+.bnav-item.active{color:var(--green);}
+.bnav-item svg{width:22px;height:22px;flex-shrink:0;}
+.bnav-label{font-size:10px;font-weight:500;letter-spacing:.3px;}
+.bnav-dot{width:4px;height:4px;border-radius:50%;background:var(--green);position:absolute;top:6px;}
+
+/* ── HOME VIEW ── */
+.home-hero{
+  padding:28px 16px 20px;
+  background:linear-gradient(160deg,#0f0f0f 0%,#0A0A0A 100%);
+}
+.home-greeting{font-size:13px;color:var(--muted);margin-bottom:4px;font-family:var(--mono);}
+.home-title{font-family:var(--display);font-size:38px;letter-spacing:1px;line-height:1;color:var(--text);}
+.home-title span{color:var(--green);}
+.live-badge-sm{
+  display:inline-flex;align-items:center;gap:6px;margin-top:12px;
+  padding:5px 12px;border-radius:20px;
+  background:var(--green-bg);border:1px solid var(--green-border);
+  font-family:var(--mono);font-size:10px;color:var(--green);letter-spacing:1px;
+}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.section-title{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-family:var(--mono);padding:20px 16px 10px;}
+
+.club-list{padding:0 16px;display:flex;flex-direction:column;gap:10px;}
+.club-item{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 16px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:14px;cursor:pointer;
+  transition:all .2s;
+  -webkit-user-select:none;user-select:none;
+}
+.club-item:active{background:var(--bg3);transform:scale(.98);}
+.club-item-icon{
+  width:44px;height:44px;border-radius:10px;
+  background:var(--bg3);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.club-item-name{font-size:15px;font-weight:600;margin-bottom:2px;}
+.club-item-loc{font-size:12px;color:var(--muted);}
+.club-item-arrow{margin-left:auto;color:var(--muted2);flex-shrink:0;}
+
+.quick-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 20px;}
+.quick-btn{
+  display:flex;flex-direction:column;align-items:flex-start;
+  padding:16px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:14px;cursor:pointer;gap:10px;
+  transition:all .2s;-webkit-user-select:none;user-select:none;
+}
+.quick-btn:active{background:var(--bg3);transform:scale(.98);}
+.quick-btn-icon{width:36px;height:36px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;}
+.quick-btn-label{font-size:13px;font-weight:600;}
+.quick-btn-sub{font-size:11px;color:var(--muted);}
+.quick-btn.accent{background:var(--green-bg);border-color:var(--green-border);}
+.quick-btn.accent .quick-btn-icon{background:rgba(94,232,122,.15);border-color:rgba(94,232,122,.3);}
+.quick-btn.accent .quick-btn-label{color:var(--green);}
+
+/* ── CLUB VIEW ── */
+.club-header{padding:20px 16px 4px;}
+.club-header-name{font-family:var(--display);font-size:30px;letter-spacing:1px;margin-bottom:4px;}
+.club-header-sub{font-size:13px;color:var(--muted);}
+.court-list{padding:0 16px;display:flex;flex-direction:column;gap:10px;}
+.court-item{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;cursor:pointer;
+}
+.court-thumb{
+  height:140px;background:#080808;position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.court-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.court-thumb-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:30px 30px;}
+.court-live-tag{
+  position:absolute;top:10px;left:10px;
+  display:flex;align-items:center;gap:5px;
+  background:rgba(10,10,10,.8);backdrop-filter:blur(8px);
+  padding:4px 10px;border-radius:20px;
+  font-size:10px;color:var(--text);font-family:var(--mono);
+}
+.court-info{padding:14px 16px;}
+.court-info-name{font-size:15px;font-weight:600;margin-bottom:4px;}
+.court-info-sub{font-size:12px;color:var(--muted);margin-bottom:12px;}
+.court-btns{display:flex;gap:8px;}
+.court-btn{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+  padding:11px;border-radius:10px;font-size:13px;font-weight:600;
+  border:none;cursor:pointer;font-family:var(--body);
+  transition:all .15s;
+}
+.court-btn-live{background:var(--green);color:#0A0A0A;}
+.court-btn-live:active{background:#4dd469;}
+.court-btn-clips{background:var(--bg3);color:var(--text);border:1px solid var(--border2);}
+.court-btn-clips:active{background:var(--bg4);}
+
+/* ── LIVE VIEW ── */
+#view-live{background:#000;}
+.live-video-wrap{flex:1;position:relative;overflow:hidden;background:#000;}
+#liveCanvas{display:block;width:100%;height:100%;object-fit:contain;}
+#liveImg{display:none;}
+.live-overlay-top{
+  position:absolute;top:0;left:0;right:0;
+  padding:14px 16px;
+  background:linear-gradient(to bottom,rgba(0,0,0,.8) 0%,transparent 100%);
+  display:flex;align-items:center;justify-content:space-between;
+  pointer-events:none;
+}
+.live-overlay-top>*{pointer-events:all;}
+.live-status{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--green);}
+.live-clock{font-family:var(--mono);font-size:13px;color:rgba(240,237,230,.8);}
+.no-signal{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;
+  background:#080808;
+}
+.no-signal-text{font-size:13px;color:var(--muted);text-align:center;max-width:280px;line-height:1.6;}
+.training-banner{
+  position:absolute;top:56px;left:16px;right:16px;
+  display:none;align-items:center;gap:8px;
+  padding:8px 14px;background:rgba(229,167,50,.92);
+  border-radius:24px;color:#1a1a1a;font-size:12px;font-weight:600;
+}
+.training-banner.visible{display:flex;}
+.t-rec-dot{width:7px;height:7px;border-radius:50%;background:#1a1a1a;animation:blink 1s infinite;}
+
+.live-controls{
+  flex-shrink:0;
+  padding:16px;padding-bottom:calc(16px + var(--safe-bottom));
+  background:rgba(10,10,10,.97);
+  border-top:1px solid var(--border);
+}
+.court-label{font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:1px;margin-bottom:4px;}
+.court-name-big{font-family:var(--display);font-size:26px;letter-spacing:.5px;margin-bottom:14px;}
+.replay-row{display:flex;gap:8px;margin-bottom:10px;}
+.replay-main-btn{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:9px;
+  padding:14px;background:var(--green);color:#0A0A0A;
+  border:none;border-radius:12px;font-size:15px;font-weight:700;
+  cursor:pointer;font-family:var(--body);
+  transition:all .15s;
+}
+.replay-main-btn:active{background:#4dd469;transform:scale(.98);}
+.replay-main-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.dur-pills{display:flex;gap:6px;flex-shrink:0;}
+.dur-pill{
+  width:48px;height:48px;border-radius:10px;
+  border:1px solid var(--border2);background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;color:var(--muted);
+  cursor:pointer;font-family:var(--body);transition:all .15s;
+}
+.dur-pill.active{background:var(--bg4);border-color:rgba(240,237,230,.35);color:var(--text);}
+.dur-pill:active{transform:scale(.95);}
+.training-row{margin-top:8px;}
+.training-btn-full{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px;background:rgba(229,167,50,.1);color:var(--warn);
+  border:1px solid rgba(229,167,50,.25);border-radius:12px;
+  font-size:13px;font-weight:600;cursor:pointer;font-family:var(--body);
+}
+.training-btn-full:active{background:rgba(229,167,50,.2);}
+.training-btn-full.recording{background:rgba(229,167,50,.9);color:#1a1a1a;border-color:var(--warn);}
+
+/* ── CLIPS VIEW ── */
+.clips-filter{
+  display:flex;gap:8px;padding:12px 16px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.clips-filter::-webkit-scrollbar{display:none;}
+.filter-pill{
+  white-space:nowrap;padding:7px 14px;border-radius:20px;
+  background:var(--bg2);border:1px solid var(--border);
+  font-size:12px;font-weight:500;color:var(--muted);
+  cursor:pointer;transition:all .15s;flex-shrink:0;
+}
+.filter-pill.active{background:var(--green-bg);border-color:var(--green-border);color:var(--green);}
+.clips-grid{padding:0 16px 20px;display:flex;flex-direction:column;gap:10px;}
+.clip-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;
+  display:flex;gap:0;
+}
+.clip-card-thumb{
+  width:120px;height:80px;flex-shrink:0;
+  background:#0a0a0a;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.clip-card-thumb-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:20px 20px;}
+.clip-play-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.12);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;z-index:1;
+}
+.clip-card-info{flex:1;padding:10px 12px;min-width:0;display:flex;flex-direction:column;justify-content:space-between;}
+.clip-card-name{font-size:12px;font-weight:500;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+.clip-card-meta{font-size:11px;color:var(--muted);margin-bottom:8px;}
+.clip-card-actions{display:flex;gap:6px;}
+.clip-action-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:6px 10px;border-radius:7px;font-size:11px;font-weight:600;
+  border:none;cursor:pointer;font-family:var(--body);
+}
+.clip-btn-play{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.clip-btn-dl{background:var(--bg3);color:var(--muted);border:1px solid var(--border);}
+.clip-btn-share{background:var(--bg3);color:var(--muted);border:1px solid var(--border);}
+.clips-empty{padding:60px 20px;text-align:center;}
+.clips-empty-icon{font-size:40px;margin-bottom:12px;opacity:.3;}
+.clips-empty-text{font-size:14px;color:var(--muted);}
+
+/* ── MATCHES VIEW ── */
+.matches-list{padding:0 16px;display:flex;flex-direction:column;gap:10px;}
+.match-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:14px;padding:16px;
+  display:flex;align-items:center;gap:14px;
+}
+.match-icon{width:44px;height:44px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.match-info{flex:1;}
+.match-name{font-size:14px;font-weight:600;margin-bottom:3px;}
+.match-meta{font-size:12px;color:var(--muted);}
+.match-btn{padding:8px 14px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--body);}
+.coming-soon-card{margin:16px;padding:28px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;text-align:center;}
+.cs-icon{font-size:36px;margin-bottom:12px;opacity:.4;}
+.cs-title{font-size:16px;font-weight:600;margin-bottom:6px;}
+.cs-sub{font-size:13px;color:var(--muted);}
+
+/* ── ADMIN VIEW ── */
+.admin-section-wrap{padding:0 16px;display:flex;flex-direction:column;gap:10px;}
+.admin-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.admin-card-hdr{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.admin-card-title{font-size:13px;font-weight:600;}
+.admin-card-action{padding:6px 12px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:7px;font-size:12px;cursor:pointer;font-family:var(--body);}
+.admin-card-action.green{background:var(--green);color:#0A0A0A;border:none;}
+.admin-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);}
+.admin-row:last-child{border-bottom:none;}
+.admin-row-icon{width:36px;height:36px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.admin-row-info{flex:1;min-width:0;}
+.admin-row-name{font-size:13px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.admin-row-sub{font-size:11px;color:var(--muted);}
+.admin-row-btns{display:flex;gap:6px;}
+.admin-row-btn{padding:5px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--muted);cursor:pointer;font-family:var(--body);}
+.status-on{color:var(--green);}
+.status-off{color:var(--danger);}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);}
+.kpi-item{background:var(--bg2);padding:16px;text-align:center;}
+.kpi-val{font-family:var(--display);font-size:32px;color:var(--text);}
+.kpi-val span{color:var(--green);}
+.kpi-label{font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:1px;margin-top:2px;}
+.admin-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);}
+.admin-tab{flex:1;padding:12px;text-align:center;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;}
+.admin-tab.active{color:var(--green);border-bottom-color:var(--green);}
+
+/* ── LOGIN MODAL ── */
+#loginModal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(8px);}
+#loginModal.open{display:flex;}
+.login-sheet{
+  background:var(--bg2);border-radius:20px 20px 0 0;
+  padding:28px 20px;padding-bottom:calc(28px + var(--safe-bottom));
+  width:100%;max-width:480px;
+}
+.login-handle{width:36px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 20px;}
+.login-title{font-family:var(--display);font-size:26px;letter-spacing:1px;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+.login-field{margin-bottom:14px;}
+.login-label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:7px;font-family:var(--mono);}
+.login-input{width:100%;padding:13px 16px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;font-size:15px;font-family:var(--body);color:var(--text);}
+.login-input:focus{outline:none;border-color:rgba(94,232,122,.4);}
+.login-error{font-size:12px;color:var(--danger);margin-bottom:12px;display:none;}
+.login-error.show{display:block;}
+.login-submit{width:100%;padding:15px;background:var(--green);color:#0A0A0A;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--body);margin-top:4px;}
+
+/* ── VIDEO MODAL ── */
+.video-modal{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.95);display:none;flex-direction:column;}
+.video-modal.open{display:flex;}
+.video-modal-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top,0px));}
+.video-modal-close{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.video-modal video{flex:1;width:100%;object-fit:contain;background:#000;}
+.video-modal-footer{padding:14px 16px;padding-bottom:calc(14px + var(--safe-bottom));display:flex;gap:10px;}
+.video-action-btn{flex:1;padding:13px;border-radius:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--body);border:none;}
+.btn-dl{background:var(--green);color:#0A0A0A;}
+.btn-share{background:var(--bg3);color:var(--text);border:1px solid var(--border2);}
+
+/* ── TRAINING MODAL ── */
+.modal-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.8);display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);}
+.modal-overlay.open{display:flex;}
+.modal-sheet{background:var(--bg2);border-radius:20px 20px 0 0;padding:24px 20px;padding-bottom:calc(24px + var(--safe-bottom));width:100%;max-width:480px;}
+.modal-handle{width:36px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 20px;}
+.modal-title{font-family:var(--display);font-size:24px;letter-spacing:.5px;margin-bottom:8px;}
+.modal-sub{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.6;}
+.modal-actions{display:flex;gap:10px;}
+.modal-btn{flex:1;padding:14px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--body);border:none;}
+.modal-btn-cancel{background:var(--bg3);color:var(--muted);border:1px solid var(--border);}
+.modal-btn-go{background:var(--warn);color:#1a1a1a;}
+
+/* ── FORM MODAL ── */
+.form-sheet{background:var(--bg2);border-radius:20px 20px 0 0;padding:24px 20px;padding-bottom:calc(24px + var(--safe-bottom));width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+.form-title{font-size:17px;font-weight:700;margin-bottom:20px;}
+.form-field{margin-bottom:14px;}
+.form-label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-family:var(--mono);margin-bottom:7px;}
+.form-input{width:100%;padding:13px 16px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;font-size:14px;font-family:var(--body);color:var(--text);}
+.form-input:focus{outline:none;border-color:rgba(94,232,122,.4);}
+.form-actions{display:flex;gap:10px;margin-top:4px;}
+.btn-cancel{flex:1;padding:13px;background:var(--bg3);color:var(--muted);border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer;font-family:var(--body);}
+.btn-save{flex:1;padding:13px;background:var(--green);color:#0A0A0A;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--body);}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:calc(var(--nav-h) + 12px + var(--safe-bottom));
+  left:50%;transform:translateX(-50%) translateY(80px);
+  background:rgba(18,18,18,.97);border:1px solid rgba(255,255,255,.1);
+  padding:10px 18px;border-radius:30px;font-size:13px;color:var(--text);
+  display:flex;align-items:center;gap:9px;z-index:600;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  backdrop-filter:blur(10px);white-space:nowrap;
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast-dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .8s linear infinite;display:inline-block;}
+</style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="loginModal">
-  <div class="login-box">
-    <div class="login-logo">
-      <svg width="22" height="28" viewBox="0 0 28 34" fill="none"><circle cx="14" cy="9" r="6.5" stroke="#1F1F1F" stroke-width="2" stroke-dasharray="33 5" stroke-dashoffset="2.5"/><circle cx="14" cy="9" r="3.5" fill="#A7B0A4"/><rect x="11.5" y="16" width="5" height="18" rx="1" fill="#1F1F1F"/></svg>
-      <span style="font-family:'Montserrat',sans-serif;font-size:16px;font-weight:600;letter-spacing:3px;color:var(--carbon)">PICALE</span>
+<!-- ══ VIEW: HOME ══ -->
+<div id="view-home" class="view active">
+  <div class="topbar">
+    <span class="topbar-logo">PICALE</span>
+    <button class="topbar-action" onclick="requireAdmin(()=>{showAdminView();})">Admin</button>
+  </div>
+  <div class="view-scroll">
+    <div class="home-hero">
+      <div class="home-greeting" id="homeGreeting">Buenos días</div>
+      <h1 class="home-title">TU <span>CLUB</span>,<br>EN VIVO.</h1>
+      <div class="live-badge-sm"><span class="live-dot"></span>Sistema activo</div>
     </div>
-    <div class="login-title">Panel de Administrador</div>
+    <div class="section-title">Clubs disponibles</div>
+    <div class="club-list" id="clubList"></div>
+    <div class="section-title">Acceso rápido</div>
+    <div class="quick-btns">
+      <div class="quick-btn accent" onclick="navTo('view-clips')">
+        <div class="quick-btn-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#5EE87A" stroke-width="1.5"><rect x="1" y="2" width="16" height="14" rx="2"/><path d="M6 6l6 3-6 3V6z" fill="#5EE87A" stroke="none"/></svg></div>
+        <div><div class="quick-btn-label">Mis Clips</div><div class="quick-btn-sub">Ver y descargar</div></div>
+      </div>
+      <div class="quick-btn" onclick="navTo('view-matches')">
+        <div class="quick-btn-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="rgba(240,237,230,.4)" stroke-width="1.5"><rect x="1" y="3" width="16" height="12" rx="2"/><line x1="9" y1="3" x2="9" y2="15"/><line x1="1" y1="9" x2="17" y2="9"/></svg></div>
+        <div><div class="quick-btn-label">Partidos</div><div class="quick-btn-sub">Grabaciones</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav" id="bottomNavHome">
+    <button class="bnav-item active" onclick="navTo('view-home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      <span class="bnav-label">Inicio</span>
+    </button>
+    <button class="bnav-item" onclick="navTo('view-live')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="bnav-label">En Vivo</span>
+    </button>
+    <button class="bnav-item" onclick="navTo('view-clips')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M9 8l7 4-7 4V8z" fill="currentColor" stroke="none"/></svg>
+      <span class="bnav-label">Clips</span>
+    </button>
+    <button class="bnav-item" onclick="navTo('view-matches')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+      <span class="bnav-label">Partidos</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ VIEW: CLUB ══ -->
+<div id="view-club" class="view">
+  <div class="topbar">
+    <button class="topbar-back" onclick="navTo('view-home')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3L6 8l4 5"/></svg>
+      Clubs
+    </button>
+    <span class="topbar-title" id="clubViewTitle">Club</span>
+    <div style="width:60px"></div>
+  </div>
+  <div class="view-scroll">
+    <div class="club-header">
+      <div class="club-header-name" id="clubViewName">—</div>
+      <div class="club-header-sub" id="clubViewSub">—</div>
+    </div>
+    <div class="section-title">Canchas</div>
+    <div class="court-list" id="courtList"></div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- ══ VIEW: LIVE ══ -->
+<div id="view-live" class="view">
+  <div class="topbar">
+    <button class="topbar-back" onclick="stopStream();navTo('view-club')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3L6 8l4 5"/></svg>
+      <span id="liveBackLabel">Canchas</span>
+    </button>
+    <div class="cam-select-wrap" style="position:relative;">
+      <button style="display:flex;align-items:center;gap:6px;padding:7px 12px;background:rgba(255,255,255,.07);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--muted);cursor:pointer;font-family:var(--body);" onclick="toggleCamDD()">
+        <span class="live-dot" style="width:5px;height:5px;flex-shrink:0;"></span>
+        <span id="camLabel">Cámara</span>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3.5l3 3 3-3"/></svg>
+      </button>
+      <div id="camDD" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:rgba(18,18,18,.98);border:1px solid var(--border2);border-radius:12px;overflow:hidden;min-width:200px;z-index:100;"></div>
+    </div>
+  </div>
+  <div class="live-video-wrap" id="liveVideoWrap">
+    <canvas id="liveCanvas"></canvas>
+    <img id="liveImg" alt="stream">
+    <div class="no-signal" id="noSignal">
+      <svg width="52" height="52" viewBox="0 0 52 52" fill="none" stroke="rgba(240,237,230,.2)" stroke-width="1.2"><rect x="3" y="11" width="32" height="22" rx="2"/><path d="M35 22l14-7v20l-14-7"/><line x1="16" y1="36" x2="22" y2="36"/><line x1="19" y1="33" x2="19" y2="39"/></svg>
+      <div class="no-signal-text" id="noSignalText">Conectando a la cámara…</div>
+    </div>
+    <div class="live-overlay-top">
+      <div class="live-status"><span class="live-dot"></span><span id="liveStatusTxt">EN VIVO</span><span id="liveFps" style="margin-left:4px;opacity:.6;"></span></div>
+      <div class="live-clock" id="hudClock">00:00:00</div>
+    </div>
+    <div class="training-banner" id="trainingBanner">
+      <div class="t-rec-dot"></div>
+      <span>ENTRENAMIENTO</span>
+      <span id="trainingTimer" style="margin-left:auto;font-variant-numeric:tabular-nums;">00:00:00</span>
+    </div>
+  </div>
+  <div class="live-controls">
+    <div class="court-label" id="liveCourtLabel">CANCHA</div>
+    <div class="court-name-big" id="liveCourtName">—</div>
+    <div class="replay-row">
+      <button class="replay-main-btn" id="replayBtn" onclick="triggerReplay()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><path d="M2 9a7 7 0 0 1 7-7v2a5 5 0 1 0 4.33 2.5l1.73-1A7 7 0 1 1 2 9z"/><polyline points="9,2 9,6 13,4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        Generar Replay
+      </button>
+      <div class="dur-pills">
+        <button class="dur-pill" onclick="setDur(10,this)">10s</button>
+        <button class="dur-pill active" onclick="setDur(20,this)">20s</button>
+        <button class="dur-pill" onclick="setDur(30,this)">30s</button>
+      </div>
+    </div>
+    <div class="training-row">
+      <button class="training-btn-full" id="trainingBtn" onclick="onTrainingClick()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6.5"/><polyline points="8,4.5 8,8 10,10"/></svg>
+        <span id="trainingBtnLbl">Iniciar Entrenamiento</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VIEW: CLIPS ══ -->
+<div id="view-clips" class="view">
+  <div class="topbar">
+    <button class="topbar-back" onclick="navTo('view-home')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3L6 8l4 5"/></svg>
+      Inicio
+    </button>
+    <span class="topbar-title">Mis Clips</span>
+    <button onclick="loadClipsView()" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 2l-1.5 1.5M4 14l-2 2M2 2l2 2M14 16l2-2M2 9h2M14 9h2M9 2v2M9 14v2" stroke-linecap="round"/><circle cx="9" cy="9" r="3"/></svg>
+    </button>
+  </div>
+  <div class="clips-filter" id="clipsFilter">
+    <div class="filter-pill active" onclick="setClipFilter('all',this)">Todos</div>
+    <div class="filter-pill" onclick="setClipFilter('today',this)">Hoy</div>
+    <div class="filter-pill" onclick="setClipFilter('week',this)">Esta semana</div>
+  </div>
+  <div class="view-scroll" id="clipsScrollArea">
+    <div class="clips-grid" id="clipsGrid">
+      <div class="clips-empty"><div class="clips-empty-icon">🎬</div><div class="clips-empty-text">Cargando clips…</div></div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="bnav-item" onclick="navTo('view-home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      <span class="bnav-label">Inicio</span>
+    </button>
+    <button class="bnav-item" onclick="navTo('view-live')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="bnav-label">En Vivo</span>
+    </button>
+    <button class="bnav-item active" onclick="navTo('view-clips')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M9 8l7 4-7 4V8z" fill="currentColor" stroke="none"/></svg>
+      <span class="bnav-label">Clips</span>
+    </button>
+    <button class="bnav-item" onclick="navTo('view-matches')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+      <span class="bnav-label">Partidos</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ VIEW: MATCHES ══ -->
+<div id="view-matches" class="view">
+  <div class="topbar">
+    <button class="topbar-back" onclick="navTo('view-home')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3L6 8l4 5"/></svg>
+      Inicio
+    </button>
+    <span class="topbar-title">Partidos</span>
+    <div style="width:60px"></div>
+  </div>
+  <div class="view-scroll">
+    <div class="coming-soon-card">
+      <div class="cs-icon">🎥</div>
+      <div class="cs-title">Grabación completa de partidos</div>
+      <div class="cs-sub">Pronto podrás revisar y descargar el partido completo. El sistema grabará automáticamente cada sesión.</div>
+    </div>
+    <div class="section-title">Próximas funciones</div>
+    <div class="matches-list">
+      <div class="match-card">
+        <div class="match-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(240,237,230,.3)" stroke-width="1.4"><rect x="2" y="4" width="16" height="12" rx="2"/><line x1="10" y1="4" x2="10" y2="16"/><line x1="2" y1="10" x2="18" y2="10"/></svg></div>
+        <div class="match-info">
+          <div class="match-name">Grabación automática</div>
+          <div class="match-meta">Inicio y fin del partido detectado por IA</div>
+        </div>
+      </div>
+      <div class="match-card">
+        <div class="match-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(240,237,230,.3)" stroke-width="1.4"><polyline points="2,14 6,8 10,11 18,3"/></svg></div>
+        <div class="match-info">
+          <div class="match-name">Estadísticas de juego</div>
+          <div class="match-meta">Puntos, duración y análisis por cámara</div>
+        </div>
+      </div>
+      <div class="match-card">
+        <div class="match-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(240,237,230,.3)" stroke-width="1.4"><path d="M10 1l2.3 7h7.4l-6 4.3 2.3 7L10 15l-6 4.3 2.3-7-6-4.3h7.4z"/></svg></div>
+        <div class="match-info">
+          <div class="match-name">Highlights automáticos</div>
+          <div class="match-meta">Resumen de los mejores puntos del partido</div>
+        </div>
+      </div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+  <div class="bottom-nav">
+    <button class="bnav-item" onclick="navTo('view-home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      <span class="bnav-label">Inicio</span>
+    </button>
+    <button class="bnav-item" onclick="navTo('view-live')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="bnav-label">En Vivo</span>
+    </button>
+    <button class="bnav-item" onclick="navTo('view-clips')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M9 8l7 4-7 4V8z" fill="currentColor" stroke="none"/></svg>
+      <span class="bnav-label">Clips</span>
+    </button>
+    <button class="bnav-item active" onclick="navTo('view-matches')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+      <span class="bnav-label">Partidos</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ VIEW: ADMIN ══ -->
+<div id="view-admin" class="view">
+  <div class="topbar">
+    <button class="topbar-back" onclick="navTo('view-home')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3L6 8l4 5"/></svg>
+      Inicio
+    </button>
+    <span class="topbar-title">Administración</span>
+    <button onclick="adminLogout()" style="background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;font-family:var(--body);">Salir</button>
+  </div>
+  <div class="admin-tabs">
+    <div class="admin-tab active" id="atab-overview" onclick="showAdminTab('overview')">Overview</div>
+    <div class="admin-tab" id="atab-clubs" onclick="showAdminTab('clubs')">Clubs</div>
+    <div class="admin-tab" id="atab-cameras" onclick="showAdminTab('cameras')">Cámaras</div>
+    <div class="admin-tab" id="atab-clips" onclick="showAdminTab('clips')">Clips</div>
+    <div class="admin-tab" id="atab-settings" onclick="showAdminTab('settings')">Config</div>
+  </div>
+  <div class="view-scroll">
+    <div id="admin-overview" class="admin-tab-content">
+      <div style="padding:16px;">
+        <div class="kpi-grid" style="border-radius:12px;overflow:hidden;border:1px solid var(--border);">
+          <div class="kpi-item"><div class="kpi-val" id="stat-clubs">—</div><div class="kpi-label">clubs</div></div>
+          <div class="kpi-item"><div class="kpi-val" id="stat-cameras">—</div><div class="kpi-label">cámaras</div></div>
+          <div class="kpi-item"><div class="kpi-val" id="stat-clips">—</div><div class="kpi-label">clips</div></div>
+          <div class="kpi-item"><div class="kpi-val" id="stat-status">—</div><div class="kpi-label">servidor</div></div>
+        </div>
+      </div>
+      <div class="section-title">Actividad reciente</div>
+      <div style="padding:0 16px 20px;"><div id="recentActivity" style="font-size:13px;color:var(--muted);">Cargando…</div></div>
+    </div>
+    <div id="admin-clubs" class="admin-tab-content" style="display:none;">
+      <div style="padding:16px;"><button class="btn-save" style="width:100%;border-radius:12px;" onclick="openAddClubModal()">+ Agregar club</button></div>
+      <div class="admin-section-wrap" id="adminClubsList"></div>
+      <div style="height:20px"></div>
+    </div>
+    <div id="admin-cameras" class="admin-tab-content" style="display:none;">
+      <div style="padding:16px;"><button class="btn-save" style="width:100%;border-radius:12px;" onclick="openAddCameraModal()">+ Agregar cámara</button></div>
+      <div class="admin-section-wrap" id="adminCamerasList"></div>
+      <div style="height:20px"></div>
+    </div>
+    <div id="admin-clips" class="admin-tab-content" style="display:none;">
+      <div class="admin-section-wrap" id="adminClipsList"></div>
+      <div style="height:20px"></div>
+    </div>
+    <div id="admin-settings" class="admin-tab-content" style="display:none;">
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+        <div class="admin-card">
+          <div class="admin-card-hdr"><span class="admin-card-title">Duración entrenamiento</span></div>
+          <div style="padding:16px;">
+            <div class="form-field"><label class="form-label">Minutos</label><input class="form-input" id="settTrainingDur" type="number" min="10" max="240" value="60"></div>
+            <button class="btn-save" style="width:100%;border-radius:10px;" onclick="saveSettings()">Guardar</button>
+          </div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-hdr"><span class="admin-card-title">Cambiar contraseña</span></div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+            <input class="form-input" id="settOldPass" type="password" placeholder="Contraseña actual">
+            <input class="form-input" id="settNewPass" type="password" placeholder="Nueva contraseña">
+            <input class="form-input" id="settConfPass" type="password" placeholder="Confirmar contraseña">
+            <button class="btn-save" style="width:100%;border-radius:10px;" onclick="changePassword()">Cambiar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginModal">
+  <div class="login-sheet">
+    <div class="login-handle"></div>
+    <div class="login-title">PANEL ADMIN</div>
     <div class="login-sub">Ingresa tus credenciales para continuar.</div>
     <div class="login-field"><label class="login-label">Usuario</label><input class="login-input" id="loginUser" type="text" placeholder="admin" autocomplete="username"></div>
     <div class="login-field"><label class="login-label">Contraseña</label><input class="login-input" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
     <div class="login-error" id="loginError">Usuario o contraseña incorrectos.</div>
     <button class="login-submit" onclick="attemptLogin()">Entrar al panel</button>
-    <div style="margin-top:14px;text-align:center;"><button onclick="closeLoginModal()" style="font-size:12px;color:var(--sage-dk);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancelar</button></div>
+    <button onclick="closeLoginModal()" style="width:100%;margin-top:10px;padding:12px;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;font-family:var(--body);">Cancelar</button>
   </div>
 </div>
 
-<!-- HOME -->
-<div id="page-home" class="page">
-  <div class="home-wrap">
-    <div class="home-logo fade-up">
-      <svg width="26" height="32" viewBox="0 0 28 34" fill="none"><circle cx="14" cy="9" r="6.5" stroke="#1F1F1F" stroke-width="2" stroke-dasharray="33 5" stroke-dashoffset="2.5"/><circle cx="14" cy="9" r="3.5" fill="#A7B0A4"/><rect x="11.5" y="16" width="5" height="18" rx="1" fill="#1F1F1F"/></svg>
-      <span class="home-logo-name">PICALE</span>
-    </div>
-    <h1 class="home-title fade-up" style="animation-delay:.08s">Replay Instantáneo<br><em>para tu Club de Pádel</em></h1>
-    <p class="home-sub fade-up" style="animation-delay:.16s">Genera clips de los últimos 10, 20 o 30 segundos con un solo toque. Compatible con cualquier cámara IP o RTSP.</p>
-    <div class="section-label fade-up" style="animation-delay:.22s">Clubs disponibles</div>
-    <div class="clubs-grid fade-up" id="clubsGrid" style="animation-delay:.26s"></div>
-    <button class="btn-admin-home fade-up" style="animation-delay:.34s" onclick="requireAdmin(()=>{showPage('page-admin');showAdminSection('dashboard');})">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
-      Panel de Administrador
-    </button>
+<!-- ══ VIDEO MODAL ══ -->
+<div class="video-modal" id="videoModal">
+  <div class="video-modal-bar">
+    <div style="font-size:12px;color:var(--muted);font-family:var(--mono);" id="videoModalName">—</div>
+    <button class="video-modal-close" onclick="closeVideoModal()">×</button>
+  </div>
+  <video id="modalVideo" controls playsinline></video>
+  <div class="video-modal-footer">
+    <button class="video-action-btn btn-dl" id="modalDlBtn">↓ Descargar</button>
+    <button class="video-action-btn btn-share" id="modalShareBtn">Compartir</button>
   </div>
 </div>
 
-<!-- CLUB PAGE -->
-<div id="page-club" class="page">
-  <div class="club-hero-dark">
-    <div class="club-hero-grid"></div>
-    <div class="club-hero-inner">
-      <div class="club-tag-pill"><div class="live-dot"></div> Club activo</div>
-      <div class="club-hero-name" id="clubHeroName">—</div>
-      <div class="club-hero-sub" id="clubHeroSub">Selecciona una cancha</div>
+<!-- ══ TRAINING MODAL ══ -->
+<div class="modal-overlay" id="trainingModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">INICIAR ENTRENAMIENTO</div>
+    <div class="modal-sub" id="trainingModalSub">Se grabará el video completo. Puedes generar replays durante la sesión.</div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="closeAllModals()">Cancelar</button>
+      <button class="modal-btn modal-btn-go" onclick="startTraining()">▶ Comenzar</button>
     </div>
-  </div>
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 48px 0;">
-    <button onclick="goHome()" style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--sage-dk);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;" onmouseover="this.style.color='var(--carbon)'" onmouseout="this.style.color='var(--sage-dk)'">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3L5 7l4 4"/></svg> Volver a clubs
-    </button>
-    <span class="section-label" style="margin:0">Canchas disponibles</span>
-  </div>
-  <div class="club-body-pad"><div class="courts-grid" id="courtsGrid"></div></div>
-</div>
-
-<!-- COURT FULLSCREEN -->
-<div id="page-court" class="page">
-  <div class="video-area" id="videoArea">
-    <img id="liveImg" alt="stream" style="display:none;">
-    <canvas id="liveCanvas" style="display:block;position:absolute;inset:0;width:100%;height:100%;z-index:3;background:#000;"></canvas>
-    <div class="no-signal" id="noSignal" style="display:none;">
-      <div class="no-signal-icon"><svg width="60" height="60" viewBox="0 0 64 64" fill="none" stroke="rgba(244,241,235,.4)" stroke-width="1.4"><rect x="4" y="14" width="40" height="28" rx="3"/><path d="M44 28l16-8v24l-16-8"/><line x1="20" y1="46" x2="28" y2="46"/><line x1="24" y1="42" x2="24" y2="50"/></svg></div>
-      <div class="no-signal-text" id="noSignalText">Conectando a la cámara…<br><b>Abre desde http://localhost:8000</b></div>
-    </div>
-    <div class="training-banner" id="trainingBanner">
-      <div class="t-rec-dot"></div>
-      <span>ENTRENAMIENTO EN CURSO</span>
-      <span id="trainingTimer" style="font-variant-numeric:tabular-nums;opacity:.85;">00:00:00</span>
-      <span style="opacity:.5">·</span>
-      <span id="trainingLeft" style="opacity:.6;font-size:11px;font-weight:400;"></span>
-    </div>
-    <!-- HUD TOP -->
-    <div class="hud-top">
-      <div class="hud-left">
-        <a class="hud-logo" onclick="goHome()"><svg width="18" height="22" viewBox="0 0 28 34" fill="none"><circle cx="14" cy="9" r="6.5" stroke="rgba(244,241,235,.7)" stroke-width="2" stroke-dasharray="33 5" stroke-dashoffset="2.5"/><circle cx="14" cy="9" r="3.5" fill="#A7B0A4"/><rect x="11.5" y="16" width="5" height="18" rx="1" fill="rgba(244,241,235,.7)"/></svg><span class="hud-logo-name">PICALE</span></a>
-        <div class="hud-sep"></div>
-        <div class="breadcrumb"><span class="bc-link" onclick="goHome()">Clubs</span><span>›</span><span class="bc-link" id="bcClub" onclick="goClub()">—</span><span>›</span><span class="bc-cur" id="bcCourt">—</span></div>
-      </div>
-      <div style="position:absolute;left:50%;transform:translateX(-50%);"><div class="hud-clock" id="hudClock">00:00:00</div></div>
-      <div class="hud-right">
-        <div class="cam-select-wrap" id="camSelectWrap">
-          <button class="cam-select-btn" onclick="toggleCamDD()"><div class="cam-dot" id="camDot"></div><span id="camLabel">Cámara</span><svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 3l3 3 3-3"/></svg></button>
-          <div class="cam-dropdown" id="camDD"></div>
-        </div>
-        <button class="hud-btn" onclick="toggleClipsPanel()"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="11" height="11" rx="2"/><line x1="4.5" y1="1" x2="4.5" y2="12"/></svg><span id="clipsToggleLbl">Clips</span></button>
-        <button class="hud-btn" onclick="requireAdmin(()=>{showPage('page-admin');showAdminSection('cameras');})" title="Admin"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="2"/><circle cx="6.5" cy="6.5" r="5" stroke-dasharray="3 2.5"/></svg></button>
-      </div>
-    </div>
-    <!-- HUD BOTTOM -->
-    <div class="hud-bottom">
-      <div class="hud-court-info">
-        <div class="live-badge"><div class="live-dot" id="liveDot" style="background:rgba(255,255,255,.2);animation:none"></div><span id="liveStatusTxt">Conectando</span><span class="live-fps" id="liveFps"></span></div>
-        <div class="court-title-big" id="courtTitleBig">—</div>
-        <div class="court-sub-text" id="courtSubText">—</div>
-        <div class="replay-controls">
-          <button class="replay-btn" id="replayBtn" onclick="triggerReplay()">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 1C3.69 1 1 3.69 1 7s2.69 6 6 6 6-2.69 6-6S10.31 1 7 1zm-1.5 8.5V4.5l4 2-4 2z"/></svg>
-            Generar Replay
-          </button>
-          <div class="dur-pills"><button class="dur-pill" onclick="setDur(10,this)">10s</button><button class="dur-pill active" onclick="setDur(20,this)">20s</button><button class="dur-pill" onclick="setDur(30,this)">30s</button></div>
-          <button class="training-btn" id="trainingBtn" onclick="onTrainingClick()">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5.5"/><polyline points="7,4 7,7 9,9"/></svg>
-            <span id="trainingBtnLbl">Iniciar Entrenamiento</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- CLIPS PANEL -->
-  <div class="clips-panel" id="clipsPanel">
-    <div class="clips-panel-hdr"><span class="clips-panel-title">Mis clips</span><span class="clips-count-badge" id="clipsCount">0</span></div>
-    <div class="clips-scroll" id="clipsScroll"><div class="clips-empty"><div style="font-size:28px;opacity:.2">🎬</div><div class="clips-empty-text">Genera tu primer replay<br>con el botón de abajo</div></div></div>
   </div>
 </div>
 
-<!-- ADMIN -->
-<div id="page-admin" class="page">
-  <div class="admin-layout">
-    <aside class="admin-sidebar">
-      <div class="admin-sidebar-logo"><svg width="18" height="22" viewBox="0 0 28 34" fill="none"><circle cx="14" cy="9" r="6.5" stroke="rgba(244,241,235,.7)" stroke-width="2" stroke-dasharray="33 5" stroke-dashoffset="2.5"/><circle cx="14" cy="9" r="3.5" fill="#A7B0A4"/><rect x="11.5" y="16" width="5" height="18" rx="1" fill="rgba(244,241,235,.7)"/></svg><div><div class="admin-sidebar-title">PICALE</div><div class="admin-tag">Admin</div></div></div>
-      <div class="admin-nav-item active" id="nav-dashboard" onclick="showAdminSection('dashboard')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="4" height="4" rx="1"/><rect x="8" y="1" width="4" height="4" rx="1"/><rect x="1" y="8" width="4" height="4" rx="1"/><rect x="8" y="8" width="4" height="4" rx="1"/></svg>Dashboard</div>
-      <div class="admin-nav-item" id="nav-clubs" onclick="showAdminSection('clubs')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 12V5l5.5-4 5.5 4v7"/><rect x="4" y="7" width="2.5" height="5" rx=".5"/><rect x="6.5" y="7" width="2.5" height="5" rx=".5"/></svg>Clubs</div>
-      <div class="admin-nav-item" id="nav-cameras" onclick="showAdminSection('cameras')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="3" width="8" height="7" rx="1.2"/><path d="M9 5.5l3-1.5v5l-3-1.5"/></svg>Cámaras</div>
-      <div class="admin-nav-item" id="nav-clips-admin" onclick="showAdminSection('clips-admin')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="11" height="9" rx="1.5"/><path d="M4.5 5l4 2-4 2V5z" fill="currentColor" stroke="none"/></svg>Clips</div>
-      <div class="admin-nav-item" id="nav-settings" onclick="showAdminSection('settings')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6.5" cy="6.5" r="2"/><path d="M6.5 1v1.5M6.5 10.5V12M1 6.5h1.5M10.5 6.5H12" stroke-linecap="round"/></svg>Configuración</div>
-      <div class="admin-sidebar-footer">
-        <button class="admin-back-btn" onclick="showPage('page-home')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2L4 6l4 4"/></svg>Volver al inicio</button>
-        <button class="admin-logout-btn" onclick="adminLogout()"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 6H1M5.5 3l-3 3 3 3M9 2h2v8H9"/></svg>Cerrar sesión</button>
-      </div>
-    </aside>
-    <main class="admin-content">
-      <div class="admin-section active" id="section-dashboard">
-        <div class="admin-content-title">Dashboard</div>
-        <div class="admin-content-sub">Resumen general del sistema PICALE.</div>
-        <div class="admin-stats-grid">
-          <div class="admin-stat-card"><div class="admin-stat-val" id="stat-clubs">—</div><div class="admin-stat-label">Clubs activos</div></div>
-          <div class="admin-stat-card"><div class="admin-stat-val" id="stat-cameras">—</div><div class="admin-stat-label">Cámaras</div></div>
-          <div class="admin-stat-card"><div class="admin-stat-val" id="stat-clips">—</div><div class="admin-stat-label">Clips guardados</div></div>
-          <div class="admin-stat-card"><div class="admin-stat-val" id="stat-status">—</div><div class="admin-stat-label">Estado servidor</div></div>
-        </div>
-        <div style="background:var(--white);border:1px solid rgba(31,31,31,.08);border-radius:12px;padding:20px;">
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--sage-dk);margin-bottom:14px;">Actividad reciente</div>
-          <div id="recentActivity" style="font-size:13px;color:var(--sage-dk);">Cargando…</div>
-        </div>
-      </div>
-      <div class="admin-section" id="section-clubs">
-        <div class="admin-content-title">Clubs</div>
-        <div class="admin-content-sub">Gestiona los clubs y sus canchas. Cada club puede tener múltiples canchas con cámaras independientes.</div>
-        <div class="admin-toolbar"><span style="font-size:13px;color:var(--sage-dk)" id="clubs-count-label">—</span><button class="btn-add" onclick="openAddClubModal()"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Agregar club</button></div>
-        <table class="admin-table"><thead><tr><th>Nombre</th><th>Ubicación</th><th>Canchas</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="clubsTableBody"></tbody></table>
-      </div>
-      <div class="admin-section" id="section-cameras">
-        <div class="admin-content-title">Cámaras</div>
-        <div class="admin-content-sub">Administra las cámaras IP. Cada cancha puede tener su propia URL RTSP y servidor backend.</div>
-        <div class="admin-toolbar"><span style="font-size:13px;color:var(--sage-dk)" id="cams-count-label">—</span><button class="btn-add" onclick="openAddCameraModal()"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>Agregar cámara</button></div>
-        <table class="admin-table"><thead><tr><th>Nombre</th><th>Club / Cancha</th><th>API URL</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="camerasTableBody"></tbody></table>
-      </div>
-      <div class="admin-section" id="section-clips-admin">
-        <div class="admin-content-title">Clips</div>
-        <div class="admin-content-sub">Clips guardados en el servidor. Puedes reproducir, descargar o eliminar.</div>
-        <div class="admin-toolbar"><span style="font-size:13px;color:var(--sage-dk)" id="clips-admin-label">Cargando…</span></div>
-        <table class="admin-table"><thead><tr><th>Nombre</th><th>Tamaño</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="clipsAdminBody"></tbody></table>
-      </div>
-      <div class="admin-section" id="section-settings">
-        <div class="admin-content-title">Configuración</div>
-        <div class="admin-content-sub">Ajustes del sistema y credenciales de administrador.</div>
-        <div style="background:var(--white);border:1px solid rgba(31,31,31,.08);border-radius:12px;padding:24px;max-width:440px;margin-bottom:16px;">
-          <div style="font-size:13px;font-weight:500;color:var(--carbon);margin-bottom:18px;">Cambiar contraseña de administrador</div>
-          <div style="font-size:12px;color:var(--sage-dk);margin-bottom:14px;">Contraseña por defecto: <code style="background:var(--ivory);padding:2px 6px;border-radius:4px;">picale2024</code></div>
-          <div class="form-group"><label class="form-label">Contraseña actual</label><input class="form-input" id="settOldPass" type="password" placeholder="••••••••"></div>
-          <div class="form-group"><label class="form-label">Nueva contraseña</label><input class="form-input" id="settNewPass" type="password" placeholder="••••••••"></div>
-          <div class="form-group"><label class="form-label">Confirmar nueva</label><input class="form-input" id="settConfPass" type="password" placeholder="••••••••"></div>
-          <button class="btn-save" onclick="changePassword()">Guardar contraseña</button>
-        </div>
-        <div style="background:var(--white);border:1px solid rgba(31,31,31,.08);border-radius:12px;padding:24px;max-width:440px;">
-          <div style="font-size:13px;font-weight:500;color:var(--carbon);margin-bottom:6px;">Duración del entrenamiento</div>
-          <div style="font-size:12px;color:var(--sage-dk);margin-bottom:14px;">Tiempo de grabación en modo entrenamiento.</div>
-          <div class="form-group"><label class="form-label">Duración (minutos)</label><input class="form-input" id="settTrainingDur" type="number" min="10" max="240" value="60"></div>
-          <button class="btn-save" onclick="saveTrainingDuration()">Guardar</button>
-        </div>
-      </div>
-    </main>
-  </div>
-</div>
-
-<!-- VIDEO MODAL -->
-<div class="modal-overlay" id="videoModal">
-  <div class="video-modal"><button class="modal-close" onclick="closeVideoModal()">✕</button><video id="modalVideo" controls playsinline style="width:100%;max-height:70vh;display:block;background:#000;"></video></div>
-</div>
-
-<!-- ADD CLUB -->
+<!-- ══ ADD CLUB MODAL ══ -->
 <div class="modal-overlay" id="addClubModal">
-  <div class="form-modal">
-    <div class="form-modal-title" id="clubModalTitle">Agregar club</div>
-    <div class="form-group"><label class="form-label">Nombre del club</label><input class="form-input" id="clubFormName" type="text" placeholder="Ej: Club Pádel Norte"></div>
-    <div class="form-row"><div class="form-group"><label class="form-label">Ciudad</label><input class="form-input" id="clubFormCity" type="text" placeholder="Monterrey"></div><div class="form-group"><label class="form-label">Estado</label><input class="form-input" id="clubFormState" type="text" placeholder="Nuevo León"></div></div>
-    <div class="form-group"><label class="form-label">Canchas (separadas por coma)</label><input class="form-input" id="clubFormCourts" type="text" placeholder="Cancha 1, Cancha 2, Cancha 3"></div>
+  <div class="form-sheet">
+    <div class="modal-handle"></div>
+    <div class="form-title" id="clubModalTitle">Agregar club</div>
+    <div class="form-field"><label class="form-label">Nombre</label><input class="form-input" id="clubFormName" type="text" placeholder="Club de Pádel Ejemplo"></div>
+    <div class="form-field"><label class="form-label">Ciudad</label><input class="form-input" id="clubFormCity" type="text" placeholder="Ciudad Obregón"></div>
+    <div class="form-field"><label class="form-label">Estado</label><input class="form-input" id="clubFormState" type="text" placeholder="Sonora"></div>
+    <div class="form-field"><label class="form-label">Canchas (separadas por coma)</label><input class="form-input" id="clubFormCourts" type="text" placeholder="Cancha 1, Cancha 2"></div>
     <div class="form-actions"><button class="btn-cancel" onclick="closeAllModals()">Cancelar</button><button class="btn-save" onclick="saveClub()">Guardar</button></div>
   </div>
 </div>
 
-<!-- ADD CAMERA -->
+<!-- ══ ADD CAMERA MODAL ══ -->
 <div class="modal-overlay" id="addCameraModal">
-  <div class="form-modal">
-    <div class="form-modal-title" id="camModalTitle">Agregar cámara</div>
-    <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="camFormName" type="text" placeholder="Ej: Cancha 1 - Cámara Principal"></div>
-    <div class="form-row"><div class="form-group"><label class="form-label">Club</label><select class="form-input" id="camFormClub"></select></div><div class="form-group"><label class="form-label">Cancha</label><input class="form-input" id="camFormCourt" type="text" placeholder="Cancha 1"></div></div>
-    <div class="form-group"><label class="form-label">URL RTSP</label><input class="form-input" id="camFormRtsp" type="text" placeholder="rtsp://user:pass@192.168.1.100:554/stream"></div>
-    <div class="form-group"><label class="form-label">API URL (backend)</label><input class="form-input" id="camFormApi" type="text" placeholder="http://localhost:8000"></div>
+  <div class="form-sheet">
+    <div class="modal-handle"></div>
+    <div class="form-title" id="camModalTitle">Agregar cámara</div>
+    <div class="form-field"><label class="form-label">Nombre</label><input class="form-input" id="camFormName" type="text" placeholder="Cancha 1 - Principal"></div>
+    <div class="form-field"><label class="form-label">Club</label><select class="form-input" id="camFormClub"></select></div>
+    <div class="form-field"><label class="form-label">Cancha</label><input class="form-input" id="camFormCourt" type="text" placeholder="Cancha 1"></div>
+    <div class="form-field"><label class="form-label">URL RTSP</label><input class="form-input" id="camFormRtsp" type="text" placeholder="rtsp://192.168.1.100:554/stream"></div>
+    <div class="form-field"><label class="form-label">API URL (backend)</label><input class="form-input" id="camFormApi" type="text" placeholder="http://localhost:8000"></div>
     <div class="form-actions"><button class="btn-cancel" onclick="closeAllModals()">Cancelar</button><button class="btn-save" onclick="saveCamera()">Guardar</button></div>
-  </div>
-</div>
-
-<!-- TRAINING CONFIRM -->
-<div class="modal-overlay" id="trainingModal">
-  <div class="training-modal">
-    <div class="training-modal-icon">🏋️</div>
-    <div class="training-modal-title">Iniciar modo entrenamiento</div>
-    <div class="training-modal-sub" id="trainingModalSub">Se grabará el video completo de la sesión. Puedes generar replays durante el entrenamiento.</div>
-    <div class="training-modal-actions"><button class="btn-train-cancel" onclick="closeAllModals()">Cancelar</button><button class="btn-train-go" onclick="startTraining()">▶ Comenzar grabación</button></div>
   </div>
 </div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"><div class="toast-dot" id="toastDot"></div><span id="toastMsg">—</span></div>
 
-<script src="../js/config.js"></script>
-<script src="../js/app.js"></script>
+<script>
+// ══ AUTH ════════════════════════════════════════
+const ADMIN_USER_KEY='picale_admin_user',ADMIN_PASS_KEY='picale_admin_pass',ADMIN_SESSION='picale_admin_session';
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++){h=(Math.imul(31,h)+s.charCodeAt(i))|0;}return h.toString(16);}
+function getAdminCreds(){return{user:localStorage.getItem(ADMIN_USER_KEY)||'admin',passhash:localStorage.getItem(ADMIN_PASS_KEY)||hashStr('picale2024')};}
+function isAdminLoggedIn(){return sessionStorage.getItem(ADMIN_SESSION)==='1';}
+function attemptLogin(){
+  const user=document.getElementById('loginUser').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  const creds=getAdminCreds();
+  const err=document.getElementById('loginError');
+  if(user===creds.user&&hashStr(pass)===creds.passhash){
+    sessionStorage.setItem(ADMIN_SESSION,'1');err.classList.remove('show');
+    closeLoginModal();if(pendingAdminAction){pendingAdminAction();pendingAdminAction=null;}
+    toast('✅ Sesión iniciada');
+  }else{err.classList.add('show');document.getElementById('loginPass').value='';document.getElementById('loginPass').focus();}
+}
+function adminLogout(){sessionStorage.removeItem(ADMIN_SESSION);navTo('view-home');toast('👋 Sesión cerrada');}
+let pendingAdminAction=null;
+function requireAdmin(fn){if(isAdminLoggedIn()){fn();return;}pendingAdminAction=fn;document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';document.getElementById('loginError').classList.remove('show');document.getElementById('loginModal').classList.add('open');setTimeout(()=>document.getElementById('loginUser').focus(),100);}
+function closeLoginModal(){document.getElementById('loginModal').classList.remove('open');}
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')attemptLogin();});
+function changePassword(){
+  const oldP=document.getElementById('settOldPass').value;
+  const newP=document.getElementById('settNewPass').value;
+  const confP=document.getElementById('settConfPass').value;
+  const creds=getAdminCreds();
+  if(hashStr(oldP)!==creds.passhash){toast('⚠️ Contraseña actual incorrecta','warn');return;}
+  if(newP.length<6){toast('⚠️ Mínimo 6 caracteres','warn');return;}
+  if(newP!==confP){toast('⚠️ Las contraseñas no coinciden','warn');return;}
+  localStorage.setItem(ADMIN_PASS_KEY,hashStr(newP));
+  ['settOldPass','settNewPass','settConfPass'].forEach(id=>document.getElementById(id).value='');
+  toast('✅ Contraseña actualizada');
+}
+
+// ══ CONFIG ══════════════════════════════════════
+const STORE_KEY='picale_config_v2';
+function loadConfig(){try{const r=localStorage.getItem(STORE_KEY);if(r)return JSON.parse(r);}catch(e){}return getDefaultConfig();}
+function saveConfig(c){localStorage.setItem(STORE_KEY,JSON.stringify(c));}
+function migrateConfig(cfg){
+  const def=getDefaultConfig();
+  cfg.cameras.forEach(cam=>{
+    if(!cam.api){const dc=def.cameras.find(c=>c.id===cam.id||c.name===cam.name);cam.api=dc?dc.api:'http://localhost:8000';}
+  });
+  return cfg;
+}
+function getDefaultConfig(){return{clubs:[{id:'demo',name:'Cancha Demo Local',city:'Localhost',state:'',courts:['Cancha Demo'],isDemo:true},{id:'duo',name:'Duo Padel Park Obregón',city:'Ciudad Obregón',state:'Sonora',courts:['Cancha 1','Cancha 2','Cancha 3','Cancha 4','Cancha 5'],isDemo:false}],cameras:[{id:'cam-demo',name:'Demo Camera',clubId:'demo',court:'Cancha Demo',rtsp:'rtsp://admin:Padel2026!@192.168.100.64:554/Streaming/Channels/102',api:'http://localhost:8000',status:'online'}],trainingDurationMin:60};}
+let config=migrateConfig(loadConfig());
+
+// ══ STATE ═══════════════════════════════════════
+let state={
+  clubId:null,clubName:null,courtName:null,courtApi:null,
+  replaySeconds:20,activeCamId:null,
+  statusInterval:null,clipsInterval:null,clockInterval:null,
+  editingClubId:null,editingCamId:null,
+  trainingActive:false,trainingStartTs:null,trainingDurationMs:null,trainingInterval:null,
+  streamReady:false,currentClips:[],clipFilter:'all',currentClipUrl:null,currentClipName:null,
+};
+
+// ══ GREETING ════════════════════════════════════
+function updateGreeting(){
+  const h=new Date().getHours();
+  document.getElementById('homeGreeting').textContent=h<12?'Buenos días':h<18?'Buenas tardes':'Buenas noches';
+}
+
+// ══ NAV ═════════════════════════════════════════
+function navTo(viewId){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+  if(viewId==='view-home'){renderHome();updateGreeting();}
+  if(viewId==='view-clips'){loadClipsView();}
+  if(viewId==='view-live'){startClock();}
+}
+function showAdminView(){showPage_admin();}
+function showPage_admin(){
+  navTo('view-admin');
+  showAdminTab('overview');
+}
+
+// ══ HOME ════════════════════════════════════════
+function renderHome(){
+  document.getElementById('clubList').innerHTML=config.clubs.map(club=>`
+    <div class="club-item" onclick="selectClub('${club.id}')">
+      <div class="club-item-icon">
+        ${club.isDemo
+          ?'<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(94,232,122,.6)" stroke-width="1.4"><rect x="1" y="4" width="12" height="9" rx="1.2"/><path d="M13 7l6-3v9l-6-3"/></svg>'
+          :'<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(240,237,230,.35)" stroke-width="1.4"><rect x="1" y="4" width="18" height="12" rx="1.5"/><line x1="10" y1="4" x2="10" y2="16"/><line x1="1" y1="10" x2="19" y2="10"/></svg>'}
+      </div>
+      <div>
+        <div class="club-item-name">${club.name}</div>
+        <div class="club-item-loc">${club.city}${club.state?', '+club.state:''} · ${club.courts.length} canchas</div>
+      </div>
+      <svg class="club-item-arrow" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l5 5-5 5"/></svg>
+    </div>`).join('');
+}
+
+// ══ CLUB ════════════════════════════════════════
+function selectClub(clubId){
+  const club=config.clubs.find(c=>c.id===clubId);if(!club)return;
+  state.clubId=clubId;state.clubName=club.name;
+  document.getElementById('clubViewTitle').textContent=club.name;
+  document.getElementById('clubViewName').textContent=club.name;
+  document.getElementById('clubViewSub').textContent=`${club.city}${club.state?', '+club.state:''} · ${club.courts.length} canchas`;
+  const cams=config.cameras.filter(c=>c.clubId===clubId);
+  document.getElementById('courtList').innerHTML=club.courts.map(court=>{
+    const cam=cams.find(c=>c.court===court);
+    return`<div class="court-item">
+      <div class="court-thumb">
+        <div class="court-thumb-grid"></div>
+        ${cam?`<img src="${cam.api}/snapshot?_=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" alt="preview">`:''}
+        <svg width="80" height="54" viewBox="0 0 80 54" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1"><rect x="2" y="2" width="76" height="50" rx="1"/><line x1="40" y1="2" x2="40" y2="52"/><line x1="2" y1="27" x2="78" y2="27"/></svg>
+        <div class="court-live-tag"><span class="live-dot" style="${cam?'':'background:rgba(255,255,255,.2);animation:none'}"></span>${cam?'En vivo':'Sin cámara'}</div>
+      </div>
+      <div class="court-info">
+        <div class="court-info-name">${court}</div>
+        <div class="court-info-sub">${cam?cam.name+' · '+cam.api:'Sin cámara asignada'}</div>
+        <div class="court-btns">
+          <button class="court-btn court-btn-live" onclick="enterCourt('${court}','${club.name}','${clubId}','${cam?cam.api:''}','${cam?cam.id:''}')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><circle cx="7" cy="7" r="3"/><circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+            Ver en vivo
+          </button>
+          <button class="court-btn court-btn-clips" onclick="enterCourtClips('${cam?cam.api:''}')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="1" width="12" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 4l5 2.5-5 2.5V4z"/></svg>
+            Clips
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  navTo('view-club');
+}
+
+// ══ ENTER COURT ═════════════════════════════════
+function enterCourt(courtName,clubName,clubId,apiUrl,camId){
+  var resolvedApi=apiUrl||'';
+  if(!resolvedApi&&camId){const cam=config.cameras.find(c=>c.id===camId);if(cam)resolvedApi=cam.api||'';}
+  if(!resolvedApi){const cam2=config.cameras.find(c=>c.clubId===clubId&&c.court===courtName);if(cam2)resolvedApi=cam2.api||'';}
+  state.courtName=courtName;state.clubName=clubName;state.clubId=clubId;
+  state.courtApi=resolvedApi;state.activeCamId=camId||null;
+  document.getElementById('liveCourtLabel').textContent=clubName.toUpperCase();
+  document.getElementById('liveCourtName').textContent=courtName;
+  document.getElementById('liveBackLabel').textContent=clubName.split(' ')[0];
+  buildCamDD(clubId,courtName,camId);
+  navTo('view-live');
+  startPolling();
+  initStream();
+}
+function enterCourtClips(apiUrl){
+  if(apiUrl)state.courtApi=apiUrl;
+  navTo('view-clips');
+}
+
+// ══ STREAM ══════════════════════════════════════
+function initStream(){
+  const noSig=document.getElementById('noSignal');
+  const canvas=document.getElementById('liveCanvas');
+  const img=document.getElementById('liveImg');
+  if(img._snapInterval){clearInterval(img._snapInterval);img._snapInterval=null;}
+  if(img._keepalive){clearInterval(img._keepalive);img._keepalive=null;}
+  state.streamReady=false;
+  if(!state.courtApi){noSig.style.display='flex';document.getElementById('noSignalText').textContent='Sin cámara configurada.';return;}
+  noSig.style.display='none';
+  const ctx=canvas.getContext('2d');
+  const snapUrl=state.courtApi+'/snapshot';
+  let pending=false;
+  function drawFrame(){
+    if(pending)return;pending=true;
+    const tmp=new Image();
+    tmp.onload=function(){
+      canvas.width=tmp.naturalWidth||canvas.offsetWidth;
+      canvas.height=tmp.naturalHeight||canvas.offsetHeight;
+      ctx.drawImage(tmp,0,0,canvas.width,canvas.height);
+      pending=false;
+      if(!state.streamReady){state.streamReady=true;updateLiveStatus(true);}
+    };
+    tmp.onerror=function(){pending=false;};
+    tmp.src=snapUrl+'?_='+Date.now();
+  }
+  drawFrame();
+  img._snapInterval=setInterval(drawFrame,80);
+}
+function stopStream(){
+  const img=document.getElementById('liveImg');
+  if(img._snapInterval){clearInterval(img._snapInterval);img._snapInterval=null;}
+  if(img._keepalive){clearInterval(img._keepalive);img._keepalive=null;}
+}
+
+// ══ CAM DROPDOWN ════════════════════════════════
+function buildCamDD(clubId,courtName,activeCamId){
+  const cams=config.cameras.filter(c=>c.clubId===clubId);
+  const dd=document.getElementById('camDD');
+  if(cams.length<=1){dd.style.display='none';if(cams[0])document.getElementById('camLabel').textContent=cams[0].name;return;}
+  dd.innerHTML=cams.map(c=>`<div style="padding:10px 14px;font-size:13px;color:${c.id===activeCamId?'var(--green)':'var(--muted)'};cursor:pointer;" onclick="switchCamera('${c.id}')">${c.name}</div>`).join('');
+  const ac=cams.find(c=>c.id===activeCamId)||cams[0];
+  if(ac)document.getElementById('camLabel').textContent=ac.name;
+}
+function toggleCamDD(){const dd=document.getElementById('camDD');dd.style.display=dd.style.display==='none'?'block':'none';}
+function switchCamera(camId){
+  const cam=config.cameras.find(c=>c.id===camId);if(!cam)return;
+  state.activeCamId=camId;state.courtApi=cam.api;
+  document.getElementById('camLabel').textContent=cam.name;
+  document.getElementById('camDD').style.display='none';
+  stopStream();initStream();
+  toast('📡 Cámara: '+cam.name);
+}
+
+// ══ STATUS & POLLING ════════════════════════════
+function updateLiveStatus(online){
+  const dot=document.getElementById('liveDot');
+  const txt=document.getElementById('liveStatusTxt');
+  if(dot){dot.style.background=online?'var(--green)':'rgba(255,255,255,.2)';}
+  if(txt)txt.textContent=online?'EN VIVO':'Conectando';
+}
+function fetchStatus(){
+  if(!state.courtApi)return;
+  fetch(`${state.courtApi}/status`,{signal:AbortSignal.timeout(3000)})
+    .then(r=>r.json())
+    .then(d=>{
+      updateLiveStatus(true);
+      const fps=d.fps?` · ${Math.round(d.fps)} FPS`:'';
+      const buf=d.buffer_seconds?` · ${Math.round(d.buffer_seconds)}s`:'';
+      const el=document.getElementById('liveFps');
+      if(el)el.textContent=fps+buf;
+    })
+    .catch(()=>updateLiveStatus(false));
+}
+function loadClips(){
+  if(!state.courtApi)return;
+  fetch(`${state.courtApi}/clips`,{signal:AbortSignal.timeout(5000)})
+    .then(r=>r.json())
+    .then(d=>{state.currentClips=d.clips||[];})
+    .catch(()=>{});
+}
+function startPolling(){
+  stopPolling();
+  fetchStatus();loadClips();
+  state.statusInterval=setInterval(fetchStatus,3000);
+  state.clipsInterval=setInterval(loadClips,8000);
+}
+function stopPolling(){
+  clearInterval(state.statusInterval);clearInterval(state.clipsInterval);
+}
+
+// ══ CLOCK ═══════════════════════════════════════
+function startClock(){clearInterval(state.clockInterval);tickClock();state.clockInterval=setInterval(tickClock,1000);}
+function tickClock(){const n=new Date();const el=document.getElementById('hudClock');if(el)el.textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;}
+
+// ══ REPLAY ══════════════════════════════════════
+function setDur(s,el){
+  state.replaySeconds=s;
+  document.querySelectorAll('.dur-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+}
+function triggerReplay(){
+  if(!state.courtApi){toast('⚠️ Sin cámara','warn');return;}
+  const btn=document.getElementById('replayBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spin">↻</span> Generando…';
+  fetch(`${state.courtApi}/replay?seconds=${state.replaySeconds}`,{method:'POST',signal:AbortSignal.timeout(60000)})
+    .then(r=>r.json())
+    .then(d=>{
+      btn.disabled=false;btn.innerHTML='<svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><path d="M2 9a7 7 0 0 1 7-7v2a5 5 0 1 0 4.33 2.5l1.73-1A7 7 0 1 1 2 9z"/><polyline points="9,2 9,6 13,4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg> Generar Replay';
+      if(d.file){
+        const url=`${state.courtApi}/clip/${d.file}`;
+        playClip(url,d.file);
+        loadClips();
+        toast('✅ Replay listo');
+      }else{toast('⚠️ Error generando replay','warn');}
+    })
+    .catch(()=>{
+      btn.disabled=false;btn.innerHTML='<svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><path d="M2 9a7 7 0 0 1 7-7v2a5 5 0 1 0 4.33 2.5l1.73-1A7 7 0 1 1 2 9z"/><polyline points="9,2 9,6 13,4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg> Generar Replay';
+      toast('⚠️ Error de conexión','warn');
+    });
+}
+
+// ══ TRAINING ════════════════════════════════════
+function onTrainingClick(){
+  if(state.trainingActive){stopTraining();}
+  else{
+    document.getElementById('trainingModalSub').textContent=`Sesión de ${config.trainingDurationMin} minutos. Se grabará el video completo.`;
+    document.getElementById('trainingModal').classList.add('open');
+  }
+}
+function startTraining(){
+  closeAllModals();
+  state.trainingActive=true;
+  state.trainingStartTs=Date.now();
+  state.trainingDurationMs=(config.trainingDurationMin||60)*60000;
+  document.getElementById('trainingBanner').classList.add('visible');
+  document.getElementById('trainingBtnLbl').textContent='Detener Entrenamiento';
+  document.getElementById('trainingBtn').classList.add('recording');
+  state.trainingInterval=setInterval(tickTraining,1000);
+  toast('🏋️ Entrenamiento iniciado');
+}
+function tickTraining(){
+  if(!state.trainingActive)return;
+  const elapsed=Date.now()-state.trainingStartTs;
+  const secs=Math.floor(elapsed/1000);
+  const h=String(Math.floor(secs/3600)).padStart(2,'0');
+  const m=String(Math.floor((secs%3600)/60)).padStart(2,'0');
+  const s=String(secs%60).padStart(2,'0');
+  document.getElementById('trainingTimer').textContent=`${h}:${m}:${s}`;
+  if(elapsed>=state.trainingDurationMs)stopTraining();
+}
+function stopTraining(){
+  state.trainingActive=false;
+  clearInterval(state.trainingInterval);
+  document.getElementById('trainingBanner').classList.remove('visible');
+  document.getElementById('trainingBtnLbl').textContent='Iniciar Entrenamiento';
+  document.getElementById('trainingBtn').classList.remove('recording');
+  toast('✅ Entrenamiento finalizado');
+}
+
+// ══ CLIPS VIEW ══════════════════════════════════
+function loadClipsView(){
+  const api=state.courtApi||config.cameras[0]?.api;
+  if(!api){document.getElementById('clipsGrid').innerHTML='<div class="clips-empty"><div class="clips-empty-icon">📡</div><div class="clips-empty-text">Selecciona una cancha primero para ver sus clips.</div></div>';return;}
+  document.getElementById('clipsGrid').innerHTML='<div class="clips-empty"><div class="clips-empty-text">Cargando…</div></div>';
+  fetch(`${api}/clips`,{signal:AbortSignal.timeout(8000)})
+    .then(r=>r.json())
+    .then(d=>{
+      state.currentClips=d.clips||[];
+      renderClipsGrid(api);
+    })
+    .catch(()=>{document.getElementById('clipsGrid').innerHTML='<div class="clips-empty"><div class="clips-empty-icon">⚠️</div><div class="clips-empty-text">No se pudo conectar al servidor.</div></div>';});
+}
+function setClipFilter(f,el){
+  state.clipFilter=f;
+  document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  const api=state.courtApi||config.cameras[0]?.api;
+  if(api)renderClipsGrid(api);
+}
+function renderClipsGrid(api){
+  let clips=state.currentClips;
+  if(state.clipFilter==='today'){const t=new Date();clips=clips.filter(c=>{const d=new Date(c.created_at*1000);return d.toDateString()===t.toDateString();});}
+  if(state.clipFilter==='week'){const w=Date.now()-7*86400000;clips=clips.filter(c=>c.created_at*1000>w);}
+  if(!clips.length){document.getElementById('clipsGrid').innerHTML='<div class="clips-empty"><div class="clips-empty-icon">🎬</div><div class="clips-empty-text">Sin clips en este período.</div></div>';return;}
+  document.getElementById('clipsGrid').innerHTML=clips.map(c=>{
+    const url=`${api}/clip/${c.name}`;
+    const d=new Date(c.created_at*1000);
+    const label=formatDate(d);
+    return`<div class="clip-card">
+      <div class="clip-card-thumb">
+        <div class="clip-card-thumb-grid"></div>
+        <div class="clip-play-btn" onclick="playClip('${url}','${c.name}')">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="white"><path d="M4 2l8 5-8 5V2z"/></svg>
+        </div>
+      </div>
+      <div class="clip-card-info">
+        <div>
+          <div class="clip-card-name">${c.name.replace('replay_','').replace('.mp4','')}</div>
+          <div class="clip-card-meta">${label} · ${c.size_mb} MB</div>
+        </div>
+        <div class="clip-card-actions">
+          <button class="clip-action-btn clip-btn-play" onclick="playClip('${url}','${c.name}')">▶ Ver</button>
+          <button class="clip-action-btn clip-btn-dl" onclick="downloadClip('${url}','${c.name}')">↓</button>
+          <button class="clip-action-btn clip-btn-share" onclick="shareClip('${url}','${c.name}')">↗</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function formatDate(d){const n=new Date();const isT=d.toDateString()===n.toDateString();const t=d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});return isT?`Hoy ${t}`:d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+t;}
+
+// ══ VIDEO PLAYER ════════════════════════════════
+function playClip(url,name){
+  state.currentClipUrl=url;state.currentClipName=name||'clip.mp4';
+  const vid=document.getElementById('modalVideo');vid.src=url;
+  document.getElementById('videoModalName').textContent=(name||'').replace('replay_','').replace('.mp4','');
+  document.getElementById('videoModal').classList.add('open');vid.play();
+  document.getElementById('modalDlBtn').onclick=()=>downloadClip(url,name||'clip.mp4');
+  document.getElementById('modalShareBtn').onclick=()=>shareClip(url,name||'clip.mp4');
+}
+function closeVideoModal(){const vid=document.getElementById('modalVideo');vid.pause();vid.src='';document.getElementById('videoModal').classList.remove('open');}
+function downloadClip(url,name){const a=document.createElement('a');a.href=url;a.download=name;a.click();toast('⬇️ Descargando…');}
+function shareClip(url,name){
+  if(navigator.share){navigator.share({title:'PICALE Replay',text:`Mira este replay: ${name}`,url}).catch(()=>{});}
+  else{navigator.clipboard.writeText(url).then(()=>toast('🔗 Link copiado')).catch(()=>toast('⚠️ No se pudo copiar','warn'));}
+}
+
+// ══ ADMIN ════════════════════════════════════════
+function showAdminTab(tab){
+  document.querySelectorAll('.admin-tab-content').forEach(t=>t.style.display='none');
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('admin-'+tab).style.display='block';
+  document.getElementById('atab-'+tab).classList.add('active');
+  if(tab==='overview')renderAdminOverview();
+  if(tab==='clubs')renderAdminClubs();
+  if(tab==='cameras')renderAdminCameras();
+  if(tab==='clips')renderAdminClips();
+  if(tab==='settings')document.getElementById('settTrainingDur').value=config.trainingDurationMin||60;
+}
+function renderAdminOverview(){
+  document.getElementById('stat-clubs').textContent=config.clubs.length;
+  document.getElementById('stat-cameras').textContent=config.cameras.length;
+  const api=config.cameras[0]?.api||'';
+  if(api){fetch(`${api}/clips`,{signal:AbortSignal.timeout(3000)}).then(r=>r.json()).then(d=>{document.getElementById('stat-clips').textContent=d.clips?.length??0;document.getElementById('stat-status').innerHTML='<span style="color:var(--green)">●</span>';document.getElementById('recentActivity').innerHTML=(d.clips||[]).slice(0,5).map(c=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;"><span style="font-family:var(--mono)">${c.name.replace('replay_','').replace('.mp4','')}</span><span style="color:var(--muted)">${c.size_mb}MB</span></div>`).join('')||'<p style="color:var(--muted);font-size:13px;">Sin clips aún.</p>';}).catch(()=>{document.getElementById('stat-status').innerHTML='<span style="color:var(--danger)">●</span>';document.getElementById('recentActivity').innerHTML='<p style="color:var(--muted);font-size:13px;">No se pudo conectar.</p>';});}
+  else{document.getElementById('recentActivity').innerHTML='<p style="color:var(--muted);font-size:13px;">Sin cámaras configuradas.</p>';}
+}
+function renderAdminClubs(){
+  document.getElementById('adminClubsList').innerHTML=config.clubs.map(c=>`
+    <div class="admin-card">
+      <div class="admin-row">
+        <div class="admin-row-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="rgba(240,237,230,.4)" stroke-width="1.4"><rect x="1" y="4" width="16" height="11" rx="1.5"/><line x1="9" y1="4" x2="9" y2="15"/><line x1="1" y1="9.5" x2="17" y2="9.5"/></svg></div>
+        <div class="admin-row-info">
+          <div class="admin-row-name">${c.name}</div>
+          <div class="admin-row-sub">${c.city}${c.state?', '+c.state:''} · ${c.courts.length} canchas</div>
+        </div>
+        <div class="admin-row-btns">
+          <button class="admin-row-btn" onclick="openEditClubModal('${c.id}')">Editar</button>
+          ${!c.isDemo?`<button class="admin-row-btn" style="color:var(--danger)" onclick="deleteClub('${c.id}')">×</button>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+function renderAdminCameras(){
+  document.getElementById('adminCamerasList').innerHTML=config.cameras.map(cam=>{
+    const club=config.clubs.find(c=>c.id===cam.clubId);
+    return`<div class="admin-card">
+      <div class="admin-row">
+        <div class="admin-row-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="rgba(94,232,122,.5)" stroke-width="1.4"><rect x="1" y="4" width="11" height="9" rx="1.2"/><path d="M12 7l5-2.5v7L12 9"/></svg></div>
+        <div class="admin-row-info">
+          <div class="admin-row-name">${cam.name}</div>
+          <div class="admin-row-sub">${club?club.name:'—'} · ${cam.court}</div>
+        </div>
+        <div class="admin-row-btns">
+          <button class="admin-row-btn" onclick="openEditCameraModal('${cam.id}')">Editar</button>
+          <button class="admin-row-btn" style="color:var(--danger)" onclick="deleteCamera('${cam.id}')">×</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function renderAdminClips(){
+  const api=config.cameras[0]?.api||'';
+  const el=document.getElementById('adminClipsList');
+  if(!api){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">Sin cámaras configuradas</div>';return;}
+  el.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">Cargando…</div>';
+  try{
+    const d=await fetch(`${api}/clips`,{signal:AbortSignal.timeout(5000)}).then(r=>r.json());
+    const clips=d.clips||[];
+    el.innerHTML=clips.map(c=>`<div class="admin-card">
+      <div class="admin-row">
+        <div class="admin-row-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="rgba(240,237,230,.3)" stroke-width="1.4"><rect x="1" y="2" width="16" height="14" rx="2"/><path d="M6 6l6 3-6 3V6z" fill="rgba(240,237,230,.3)" stroke="none"/></svg></div>
+        <div class="admin-row-info">
+          <div class="admin-row-name" style="font-family:var(--mono)">${c.name.replace('replay_','').replace('.mp4','')}</div>
+          <div class="admin-row-sub">${c.size_mb} MB · ${formatDate(new Date(c.created_at*1000))}</div>
+        </div>
+        <div class="admin-row-btns">
+          <button class="admin-row-btn" onclick="playClip('${api}/clip/${c.name}','${c.name}')">▶</button>
+          <button class="admin-row-btn" onclick="downloadClip('${api}/clip/${c.name}','${c.name}')">↓</button>
+        </div>
+      </div>
+    </div>`).join('')||'<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">Sin clips aún.</div>';
+  }catch{el.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">Error de conexión</div>';}
+}
+function saveSettings(){
+  const dur=parseInt(document.getElementById('settTrainingDur').value)||60;
+  config.trainingDurationMin=dur;saveConfig(config);toast('✅ Guardado');
+}
+
+// ══ CLUB CRUD ════════════════════════════════════
+function openAddClubModal(){state.editingClubId=null;document.getElementById('clubModalTitle').textContent='Agregar club';['clubFormName','clubFormCity','clubFormState','clubFormCourts'].forEach(id=>document.getElementById(id).value='');document.getElementById('addClubModal').classList.add('open');}
+function openEditClubModal(id){const c=config.clubs.find(x=>x.id===id);if(!c)return;state.editingClubId=id;document.getElementById('clubModalTitle').textContent='Editar club';document.getElementById('clubFormName').value=c.name;document.getElementById('clubFormCity').value=c.city;document.getElementById('clubFormState').value=c.state||'';document.getElementById('clubFormCourts').value=c.courts.join(', ');document.getElementById('addClubModal').classList.add('open');}
+function saveClub(){const name=document.getElementById('clubFormName').value.trim();const city=document.getElementById('clubFormCity').value.trim();const st=document.getElementById('clubFormState').value.trim();const courts=document.getElementById('clubFormCourts').value.split(',').map(s=>s.trim()).filter(Boolean);if(!name){toast('⚠️ El nombre es obligatorio','warn');return;}if(state.editingClubId){const c=config.clubs.find(x=>x.id===state.editingClubId);if(c){c.name=name;c.city=city;c.state=st;if(courts.length)c.courts=courts;}}else{config.clubs.push({id:'club_'+Date.now(),name,city,state:st,courts:courts.length?courts:['Cancha 1'],isDemo:false});}saveConfig(config);closeAllModals();renderAdminClubs();renderHome();toast('✅ Club guardado');}
+function deleteClub(id){if(!confirm('¿Eliminar este club?'))return;config.clubs=config.clubs.filter(c=>c.id!==id);config.cameras=config.cameras.filter(c=>c.clubId!==id);saveConfig(config);renderAdminClubs();renderHome();toast('🗑️ Club eliminado');}
+
+// ══ CAMERA CRUD ══════════════════════════════════
+function openAddCameraModal(){state.editingCamId=null;document.getElementById('camModalTitle').textContent='Agregar cámara';['camFormName','camFormCourt','camFormRtsp'].forEach(id=>document.getElementById(id).value='');document.getElementById('camFormApi').value='http://localhost:8000';populateClubSelect('');document.getElementById('addCameraModal').classList.add('open');}
+function openEditCameraModal(id){const c=config.cameras.find(x=>x.id===id);if(!c)return;state.editingCamId=id;document.getElementById('camModalTitle').textContent='Editar cámara';document.getElementById('camFormName').value=c.name;document.getElementById('camFormCourt').value=c.court;document.getElementById('camFormRtsp').value=c.rtsp;document.getElementById('camFormApi').value=c.api;populateClubSelect(c.clubId);document.getElementById('addCameraModal').classList.add('open');}
+function populateClubSelect(sel){document.getElementById('camFormClub').innerHTML=config.clubs.map(c=>`<option value="${c.id}" ${c.id===sel?'selected':''}>${c.name}</option>`).join('');}
+function saveCamera(){const name=document.getElementById('camFormName').value.trim();const clubId=document.getElementById('camFormClub').value;const court=document.getElementById('camFormCourt').value.trim();const rtsp=document.getElementById('camFormRtsp').value.trim();const api=document.getElementById('camFormApi').value.trim();if(!name||!api){toast('⚠️ Nombre y API son obligatorios','warn');return;}if(state.editingCamId){const c=config.cameras.find(x=>x.id===state.editingCamId);if(c){c.name=name;c.clubId=clubId;c.court=court;c.rtsp=rtsp;c.api=api;}}else{config.cameras.push({id:'cam_'+Date.now(),name,clubId,court,rtsp,api,status:'online'});}saveConfig(config);closeAllModals();renderAdminCameras();renderHome();toast('✅ Cámara guardada');}
+function deleteCamera(id){if(!confirm('¿Eliminar esta cámara?'))return;config.cameras=config.cameras.filter(c=>c.id!==id);saveConfig(config);renderAdminCameras();renderHome();toast('🗑️ Cámara eliminada');}
+
+// ══ MODALS & TOAST ════════════════════════════════
+function closeAllModals(){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open'));}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeAllModals();}));
+let toastTimer;
+function toast(msg,type='info'){clearTimeout(toastTimer);document.getElementById('toastMsg').textContent=msg;document.getElementById('toastDot').style.background=type==='warn'?'var(--warn)':type==='error'?'var(--danger)':'var(--green)';const el=document.getElementById('toast');el.classList.add('show');toastTimer=setTimeout(()=>el.classList.remove('show'),3600);}
+
+// ══ INIT ══════════════════════════════════════════
+updateGreeting();
+renderHome();
+</script>
 </body>
 </html>
