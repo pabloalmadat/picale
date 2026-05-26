@@ -791,7 +791,7 @@ function migrateConfig(cfg){
   });
   return cfg;
 }
-function getDefaultConfig(){return{clubs:[{id:'3b33bc89-8cc0-44fe-831f-4b980c675180',name:'Club Demo',city:'Monterrey',state:'NL',courts:['Cancha 1'],isDemo:true}],cameras:[{id:'cam-demo',name:'Demo Camera',clubId:'3b33bc89-8cc0-44fe-831f-4b980c675180',court:'Cancha 1',rtsp:'rtsp://admin:Padel2026!@192.168.100.64:554/Streaming/Channels/102',api:'http://localhost:8000',status:'online'}],trainingDurationMin:60};}
+function getDefaultConfig(){return{clubs:[{id:'3b33bc89-8cc0-44fe-831f-4b980c675180',name:'Club Demo',city:'Monterrey',state:'NL',courts:['Cancha 1'],isDemo:true},{id:'duo-padel-obregon',name:'Duo Padel Park Obregón',city:'Ciudad Obregón',state:'Sonora',courts:['Cancha 2','Cancha 3'],isDemo:false}],cameras:[{id:'cam-demo',name:'Demo Camera',clubId:'3b33bc89-8cc0-44fe-831f-4b980c675180',court:'Cancha 1',rtsp:'rtsp://admin:Padel2026!@192.168.100.64:554/Streaming/Channels/102',api:'http://localhost:8000',status:'online'}],trainingDurationMin:60};}
 let config=migrateConfig(loadConfig());
 
 // ══ STATE ═══════════════════════════════════════
