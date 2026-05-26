@@ -150,7 +150,7 @@ html,body{font-family:var(--body);background:var(--bg);color:var(--text);height:
 .court-btn-clips:active{background:var(--bg4);}
 
 /* ── LIVE VIEW ── */
-#view-live{background:#000;}
+#view-live{background:#000;height:100svh;}
 .live-video-wrap{flex:1;position:relative;overflow:hidden;background:#000;}
 #liveCanvas{display:block;position:absolute;inset:0;width:100%;height:100%;}
 #liveImg{display:none;}
@@ -181,13 +181,13 @@ html,body{font-family:var(--body);background:var(--bg);color:var(--text);height:
 
 .live-controls{
   flex-shrink:0;
-  padding:16px;padding-bottom:calc(16px + var(--safe-bottom));
+  padding:16px;padding-bottom:calc(80px + var(--safe-bottom));
   background:rgba(10,10,10,.97);
   border-top:1px solid var(--border);
 }
 .court-label{font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:1px;margin-bottom:4px;}
 .court-name-big{font-family:var(--display);font-size:26px;letter-spacing:.5px;margin-bottom:14px;}
-.replay-row{display:flex;gap:8px;margin-bottom:10px;}
+.replay-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:nowrap;overflow:visible;}
 .replay-main-btn{
   flex:1;display:flex;align-items:center;justify-content:center;gap:9px;
   padding:14px;background:var(--green);color:#0A0A0A;
@@ -199,11 +199,11 @@ html,body{font-family:var(--body);background:var(--bg);color:var(--text);height:
 .replay-main-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 .dur-pills{display:flex;gap:6px;flex-shrink:0;}
 .dur-pill{
-  width:48px;height:48px;border-radius:10px;
+  width:44px;height:48px;border-radius:10px;
   border:1px solid var(--border2);background:var(--bg3);
   display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:600;color:var(--muted);
-  cursor:pointer;font-family:var(--body);transition:all .15s;
+  font-size:11px;font-weight:600;color:var(--muted);
+  cursor:pointer;font-family:var(--body);transition:all .15s;flex-shrink:0;
 }
 .dur-pill.active{background:var(--bg4);border-color:rgba(240,237,230,.35);color:var(--text);}
 .dur-pill:active{transform:scale(.95);}
