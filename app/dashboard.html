@@ -485,17 +485,7 @@ html,body{font-family:var(--body);background:var(--bg);color:var(--text);height:
   <div class="live-controls">
     <div class="court-label" id="liveCourtLabel">CANCHA</div>
     <div class="court-name-big" id="liveCourtName">—</div>
-    <div class="replay-row">
-      <button class="replay-main-btn" id="replayBtn" onclick="triggerReplay()">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><path d="M2 9a7 7 0 0 1 7-7v2a5 5 0 1 0 4.33 2.5l1.73-1A7 7 0 1 1 2 9z"/><polyline points="9,2 9,6 13,4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-        Generar Replay
-      </button>
-      <div class="dur-pills">
-        <button class="dur-pill" onclick="setDur(10,this)">10s</button>
-        <button class="dur-pill active" onclick="setDur(20,this)">20s</button>
-        <button class="dur-pill" onclick="setDur(30,this)">30s</button>
-      </div>
-    </div>
+
     <div class="training-row">
       <button class="training-btn-full" id="trainingBtn" onclick="onTrainingClick()">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6.5"/><polyline points="8,4.5 8,8 10,10"/></svg>
@@ -911,7 +901,7 @@ function initStream(){
 
   if(!state.courtApi){
     noSig.style.display='flex';
-    document.getElementById('noSignalText').textContent='Sin cámara configurada.';
+    document.getElementById('noSignalText').innerHTML='Cargando stream en vivo…<br><small style="font-size:11px;opacity:.6">El replay se genera desde la cancha con el botón físico</small>';
     return;
   }
 
@@ -926,7 +916,7 @@ function initStream(){
     video=document.createElement('video');
     video.id='liveVideo';
     video.autoplay=true;
-    video.muted=true;
+    video.muted=false;
     video.playsInline=true;
     video.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:3;background:#000;';
     wrap.appendChild(video);
@@ -1074,10 +1064,11 @@ function setDur(s,el){
   el.classList.add('active');
 }
 function triggerReplay(){
-  if(!state.courtApi){toast('⚠️ Sin cámara','warn');return;}
   const btn=document.getElementById('replayBtn');
   btn.disabled=true;btn.innerHTML='<span class="spin">↻</span> Generando…';
-  fetch(`${state.courtApi}/replay?seconds=${state.replaySeconds}`,{method:'POST',signal:AbortSignal.timeout(60000)})
+  // Usa cloud API relay → edge
+  const courtId=state.activeCamId==='cam-cancha2'?'6ee6d28e-75c3-4cf4-87d0-6d052fb81ab4':state.courtId||'6ee6d28e-75c3-4cf4-87d0-6d052fb81ab4';
+  fetch(`https://api.picalereplay.com/api/v1/courts/${courtId}/replay?seconds=${state.replaySeconds}`,{method:'POST',signal:AbortSignal.timeout(90000)})
     .then(r=>r.json())
     .then(d=>{
       btn.disabled=false;btn.innerHTML='<svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><path d="M2 9a7 7 0 0 1 7-7v2a5 5 0 1 0 4.33 2.5l1.73-1A7 7 0 1 1 2 9z"/><polyline points="9,2 9,6 13,4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg> Generar Replay';
