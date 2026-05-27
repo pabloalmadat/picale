@@ -378,6 +378,7 @@ html,body{font-family:var(--body);background:var(--bg);color:var(--text);height:
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{animation:spin .8s linear infinite;display:inline-block;}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
 </head>
 <body>
 
@@ -791,7 +792,7 @@ function migrateConfig(cfg){
   });
   return cfg;
 }
-function getDefaultConfig(){return{clubs:[{id:'3b33bc89-8cc0-44fe-831f-4b980c675180',name:'Club Demo',city:'Monterrey',state:'NL',courts:['Cancha 1'],isDemo:true},{id:'duo-padel-obregon',name:'Duo Padel Park Obregón',city:'Ciudad Obregón',state:'Sonora',courts:['Cancha 2','Cancha 3'],isDemo:false}],cameras:[{id:'cam-demo',name:'Demo Camera',clubId:'3b33bc89-8cc0-44fe-831f-4b980c675180',court:'Cancha 1',rtsp:'rtsp://admin:Padel2026!@192.168.100.64:554/Streaming/Channels/102',api:'http://localhost:8000',status:'online'}],trainingDurationMin:60};}
+function getDefaultConfig(){return{clubs:[{id:'duo-padel-obregon',name:'Duo Padel Park Obregón',city:'Ciudad Obregón',state:'Sonora',courts:['Cancha 2','Cancha 3'],isDemo:false}],cameras:[{id:'cam-cancha2',name:'Cámara Cancha 2',clubId:'duo-padel-obregon',court:'Cancha 2',rtsp:'rtsp://admin:Padel2026!@192.168.100.64:554/Streaming/Channels/102',api:'http://192.168.100.45:8000',status:'online'}],trainingDurationMin:60};}
 let config=migrateConfig(loadConfig());
 
 // ══ STATE ═══════════════════════════════════════
@@ -897,7 +898,7 @@ function enterCourtClips(apiUrl){
   navTo('view-clips');
 }
 
-// ══ STREAM ══════════════════════════════════════
+// ══ STREAM ═════════════════════════════════════
 function initStream(){
   var noSig=document.getElementById('noSignal');
   var canvas=document.getElementById('liveCanvas');
@@ -905,6 +906,7 @@ function initStream(){
   var wrap=document.getElementById('liveVideoWrap');
   if(img._snapInterval){clearInterval(img._snapInterval);img._snapInterval=null;}
   if(img._keepalive){clearInterval(img._keepalive);img._keepalive=null;}
+  if(img._hls){img._hls.destroy();img._hls=null;}
   state.streamReady=false;
 
   if(!state.courtApi){
@@ -915,47 +917,89 @@ function initStream(){
 
   noSig.style.display='none';
 
-  function resizeCanvas(){
-    var w=wrap.clientWidth||640;
-    var h=wrap.clientHeight||360;
-    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
-  }
-  resizeCanvas();
-  window.addEventListener('resize',resizeCanvas);
+  // Intentar HLS primero (cloud stream)
+  var hlsUrl='https://api.picalereplay.com/hls/7bcdb57bcfe843f5/index.m3u8';
 
-  var ctx=canvas.getContext('2d');
-  var snapUrl=state.courtApi+'/snapshot';
-  var pending=false;
-  var errCount=0;
-
-  function drawFrame(){
-    if(pending)return;
-    pending=true;
-    var tmp=new Image();
-    tmp.crossOrigin='anonymous';
-    tmp.onload=function(){
-      resizeCanvas();
-      var iw=tmp.naturalWidth,ih=tmp.naturalHeight;
-      var cw=canvas.width,ch=canvas.height;
-      var scale=Math.min(cw/iw,ch/ih);
-      var dw=iw*scale,dh=ih*scale;
-      var dx=(cw-dw)/2,dy=(ch-dh)/2;
-      ctx.fillStyle='#000';ctx.fillRect(0,0,cw,ch);
-      ctx.drawImage(tmp,dx,dy,dw,dh);
-      pending=false;errCount=0;
-      if(!state.streamReady){state.streamReady=true;updateLiveStatus(true);noSig.style.display='none';}
-    };
-    tmp.onerror=function(){
-      pending=false;errCount++;
-      if(errCount>10&&!state.streamReady){
-        noSig.style.display='flex';
-        document.getElementById('noSignalText').textContent='No se puede conectar. Verifica que el servidor esté corriendo.';
-      }
-    };
-    tmp.src=snapUrl+'?_='+Date.now();
+  // Crear elemento video si no existe
+  var video=document.getElementById('liveVideo');
+  if(!video){
+    video=document.createElement('video');
+    video.id='liveVideo';
+    video.autoplay=true;
+    video.muted=true;
+    video.playsInline=true;
+    video.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:3;background:#000;';
+    wrap.appendChild(video);
   }
-  drawFrame();
-  img._snapInterval=setInterval(drawFrame,80);
+
+  function startHLS(){
+    if(typeof Hls !== 'undefined' && Hls.isSupported()){
+      var hls=new Hls({
+        liveSyncDurationCount:2,
+        liveMaxLatencyDurationCount:4,
+        maxBufferLength:8,
+      });
+      img._hls=hls;
+      hls.loadSource(hlsUrl);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED,function(){
+        video.play();
+        noSig.style.display='none';
+        state.streamReady=true;
+        updateLiveStatus(true);
+      });
+      hls.on(Hls.Events.ERROR,function(e,data){
+        if(data.fatal){
+          // Fallback a snapshot polling
+          hls.destroy();
+          img._hls=null;
+          video.style.display='none';
+          startSnapshotFallback();
+        }
+      });
+    } else if(video.canPlayType('application/vnd.apple.mpegurl')){
+      // iOS Safari soporta HLS nativo
+      video.src=hlsUrl;
+      video.play();
+      noSig.style.display='none';
+      state.streamReady=true;
+      updateLiveStatus(true);
+    } else {
+      startSnapshotFallback();
+    }
+  }
+
+  function startSnapshotFallback(){
+    video.style.display='none';
+    canvas.style.display='block';
+    var ctx=canvas.getContext('2d');
+    var snapUrl=state.courtApi+'/snapshot';
+    var pending=false;
+    function drawFrame(){
+      if(pending)return;pending=true;
+      var tmp=new Image();
+      tmp.crossOrigin='anonymous';
+      tmp.onload=function(){
+        canvas.width=wrap.clientWidth||640;
+        canvas.height=wrap.clientHeight||360;
+        var iw=tmp.naturalWidth,ih=tmp.naturalHeight;
+        var cw=canvas.width,ch=canvas.height;
+        var scale=Math.min(cw/iw,ch/ih);
+        var dw=iw*scale,dh=ih*scale;
+        var dx=(cw-dw)/2,dy=(ch-dh)/2;
+        ctx.fillStyle='#000';ctx.fillRect(0,0,cw,ch);
+        ctx.drawImage(tmp,dx,dy,dw,dh);
+        pending=false;
+        if(!state.streamReady){state.streamReady=true;updateLiveStatus(true);noSig.style.display='none';}
+      };
+      tmp.onerror=function(){pending=false;};
+      tmp.src=snapUrl+'?_='+Date.now();
+    }
+    drawFrame();
+    img._snapInterval=setInterval(drawFrame,80);
+  }
+
+  startHLS();
 }
 function stopStream(){
   const img=document.getElementById('liveImg');
