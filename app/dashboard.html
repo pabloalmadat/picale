@@ -995,11 +995,19 @@ function initStream(){
   startHLS();
 }
 function toggleFullscreen(){
-  const wrap=document.getElementById('liveVideoWrap');
+  // En iOS Safari usar el fullscreen nativo del video
+  var video=document.getElementById('liveVideo');
+  var wrap=document.getElementById('liveVideoWrap');
+  if(video && video.webkitEnterFullscreen){
+    // iOS Safari
+    video.webkitEnterFullscreen();
+    return;
+  }
+  // Desktop y Android
   if(!document.fullscreenElement){
-    wrap.requestFullscreen().catch(()=>{});
+    (wrap.requestFullscreen||wrap.webkitRequestFullscreen||wrap.mozRequestFullScreen).call(wrap).catch(()=>{});
   } else {
-    document.exitFullscreen();
+    (document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen).call(document);
   }
 }
 document.addEventListener('fullscreenchange',()=>{
@@ -1145,14 +1153,19 @@ function stopTraining(){
 
 // ══ CLIPS VIEW ══════════════════════════════════
 function loadClipsView(){
-  const api=state.courtApi||config.cameras[0]?.api;
-  if(!api){document.getElementById('clipsGrid').innerHTML='<div class="clips-empty"><div class="clips-empty-icon">📡</div><div class="clips-empty-text">Selecciona una cancha primero para ver sus clips.</div></div>';return;}
   document.getElementById('clipsGrid').innerHTML='<div class="clips-empty"><div class="clips-empty-text">Cargando…</div></div>';
-  fetch(`${api}/clips`,{signal:AbortSignal.timeout(8000)})
+  const courtId='6ee6d28e-75c3-4cf4-87d0-6d052fb81ab4';
+  fetch(`https://api.picalereplay.com/api/v1/clips/?court_id=${courtId}&limit=50`,{signal:AbortSignal.timeout(8000)})
     .then(r=>r.json())
     .then(d=>{
-      state.currentClips=d.clips||[];
-      renderClipsGrid(api);
+      const clips=(d.clips||[]).map(c=>({
+        name:c.filename,
+        size_mb:c.size_mb,
+        created_at:c.created_at,
+        url:c.url
+      }));
+      state.currentClips=clips;
+      renderClipsGrid('https://api.picalereplay.com');
     })
     .catch(()=>{document.getElementById('clipsGrid').innerHTML='<div class="clips-empty"><div class="clips-empty-icon">⚠️</div><div class="clips-empty-text">No se pudo conectar al servidor.</div></div>';});
 }
