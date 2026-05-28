@@ -472,7 +472,10 @@ html,body{font-family:var(--body);background:var(--bg);color:var(--text);height:
       <svg width="52" height="52" viewBox="0 0 52 52" fill="none" stroke="rgba(240,237,230,.2)" stroke-width="1.2"><rect x="3" y="11" width="32" height="22" rx="2"/><path d="M35 22l14-7v20l-14-7"/><line x1="16" y1="36" x2="22" y2="36"/><line x1="19" y1="33" x2="19" y2="39"/></svg>
       <div class="no-signal-text" id="noSignalText">Conectando a la cámara…</div>
     </div>
-    <div class="live-overlay-top">
+    <button onclick="toggleFullscreen()" style="position:absolute;bottom:16px;right:16px;z-index:20;width:40px;height:40px;border-radius:8px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);color:#F0EDE6;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <svg id="fsIcon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5"/></svg>
+</button>
+<div class="live-overlay-top">
       <div class="live-status"><span class="live-dot"></span><span id="liveStatusTxt">EN VIVO</span><span id="liveFps" style="margin-left:4px;opacity:.6;"></span></div>
       <div class="live-clock" id="hudClock">00:00:00</div>
     </div>
@@ -991,6 +994,23 @@ function initStream(){
 
   startHLS();
 }
+function toggleFullscreen(){
+  const wrap=document.getElementById('liveVideoWrap');
+  if(!document.fullscreenElement){
+    wrap.requestFullscreen().catch(()=>{});
+  } else {
+    document.exitFullscreen();
+  }
+}
+document.addEventListener('fullscreenchange',()=>{
+  const icon=document.getElementById('fsIcon');
+  if(!icon)return;
+  if(document.fullscreenElement){
+    icon.innerHTML='<path d="M6 1H1v5M10 1h5v5M15 10v5h-5M1 10v5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>';
+  } else {
+    icon.innerHTML='<path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>';
+  }
+});
 function stopStream(){
   const img=document.getElementById('liveImg');
   if(img._snapInterval){clearInterval(img._snapInterval);img._snapInterval=null;}
