@@ -460,20 +460,23 @@ async function loadClips(){
     const d=await r.json();
     const clips=d.clips||[];
     if(!clips.length){grid.innerHTML='<div class="clips-empty">Sin clips aún</div>';return;}
-    grid.innerHTML=clips.map(c=>`
-      <div class="clip-row" onclick="playClip('${c.url}','${c.filename}')">
+    grid.innerHTML=clips.map(c=>{
+      const fileUrl=`${CLOUD_API}/api/v1/clips/${c.id}/file`;
+      const label=(c.filename||'').replace(/^[a-f0-9-]+_/,'').replace('replay_','').replace('.mp4','');
+      const t=new Date(c.created_at*1000).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+      return`<div class="clip-row" onclick="playClip('${fileUrl}','${c.filename}')">
         <div class="clip-thumb">
           <div class="clip-thumb-grid"></div>
           <div class="clip-play"><svg width="12" height="12" viewBox="0 0 12 12" fill="var(--neon)"><path d="M3 1.5l7 4.5-7 4.5V1.5z"/></svg></div>
         </div>
         <div class="clip-info">
-          <div class="clip-name">${c.filename.replace('replay_','').replace('.mp4','')}</div>
-          <div class="clip-meta"><span>${c.size_mb} MB</span><span>${new Date(c.created_at*1000).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}</span></div>
+          <div class="clip-name">${label}</div>
+          <div class="clip-meta"><span>${c.size_mb} MB</span><span>${t}</span></div>
         </div>
         <div class="clip-actions">
-          <a class="clip-btn" href="${c.url}" download="${c.filename}" onclick="event.stopPropagation()">↓</a>
+          <a class="clip-btn" href="${fileUrl}" download="${c.filename}" onclick="event.stopPropagation()">↓</a>
         </div>
-      </div>`).join('');
+      </div>`;}).join('');
   }catch{grid.innerHTML='<div class="clips-empty">Error de conexión</div>';}
 }
 

@@ -1194,7 +1194,7 @@ function renderClipsGrid(api){
       </div>
       <div class="clip-card-info">
         <div>
-          <div class="clip-card-name">${c.name.replace('replay_','').replace('.mp4','')}</div>
+          <div class="clip-card-name">${(c.name||c.filename||'').replace(/^[a-f0-9-]+_/,'').replace('replay_','').replace('.mp4','')}</div>
           <div class="clip-card-meta">${label} · ${c.size_mb} MB</div>
         </div>
         <div class="clip-card-actions">
