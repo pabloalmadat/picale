@@ -254,9 +254,10 @@ body{background:var(--ink);color:var(--chalk);font-family:var(--fb);-webkit-font
     <button class="vmodal-close" onclick="closeModal()">×</button>
   </div>
   <video id="vmodalVideo" controls playsinline></video>
-  <div class="vmodal-foot">
-    <button class="vmodal-btn vmodal-back" onclick="closeModal()">← Volver</button>
-    <a class="vmodal-btn vmodal-dl" id="vmodalDl" download>↓ Descargar</a>
+  <div class="vmodal-foot" style="flex-wrap:wrap;gap:8px;">
+    <button class="vmodal-btn vmodal-back" onclick="closeModal()" style="flex:1;min-width:100px;">← Volver</button>
+    <button class="vmodal-btn" id="vmodalShare" onclick="shareCurrentClip()" style="flex:1;min-width:100px;background:rgba(37,211,102,.15);color:#25D366;border:1px solid rgba(37,211,102,.3);">↗ Compartir</button>
+    <a class="vmodal-btn vmodal-dl" id="vmodalDl" download style="flex:1;min-width:100px;">↓ Descargar</a>
   </div>
 </div>
 
@@ -571,8 +572,9 @@ function renderClips(){
               <span class="clip-court-tag">${c.courtName||''}</span>
             </div>
           </div>
-          <div class="clip-actions">
-            <a class="clip-dl" href="${fileUrl}" download="${c.filename||'clip.mp4'}" onclick="event.stopPropagation()">↓</a>
+          <div class="clip-actions" style="display:flex;gap:6px;align-items:center;padding-right:12px;">
+            <a class="clip-dl" href="${fileUrl}" download="${c.filename||'clip.mp4'}" onclick="event.stopPropagation()" title="Descargar">↓</a>
+            <button class="clip-dl" onclick="event.stopPropagation();shareClip('${fileUrl}','${c.filename||'clip.mp4'}')" title="Compartir" style="border:none;cursor:pointer;font-size:14px;background:var(--ink3);border:1px solid var(--wire);">↗</button>
           </div>
         </div>`;
       }).join('')}
@@ -580,13 +582,54 @@ function renderClips(){
 }
 
 // ═══ MODAL ═══════════════════════════════
+let currentClipUrl='';let currentClipName='';
 function playClip(url,name){
+  currentClipUrl=url;currentClipName=name||'clip.mp4';
   const v=document.getElementById('vmodalVideo');
   v.src=url;v.play();
   document.getElementById('vmodalName').textContent=(name||'').replace(/^[a-f0-9-]+_/,'').replace('replay_','').replace('.mp4','');
   document.getElementById('vmodalDl').href=url;
   document.getElementById('vmodalDl').download=name||'clip.mp4';
   document.getElementById('vmodal').classList.add('open');
+}
+
+function shareCurrentClip(){
+  shareClip(currentClipUrl,currentClipName);
+}
+
+function shareClip(url,name){
+  const label=(name||'clip').replace(/^[a-f0-9-]+_/,'').replace('replay_','').replace('.mp4','');
+  const text=`🎾 Mira este replay de pádel: ${label}`;
+  if(navigator.share){
+    navigator.share({title:'PICALE Replay',text,url}).catch(()=>{});
+    return;
+  }
+  // Fallback desktop — mostrar opciones
+  const wa=`https://api.whatsapp.com/send?text=${encodeURIComponent(text+' '+url)}`;
+  const tg=`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+  const menu=document.createElement('div');
+  menu.style.cssText='position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);';
+  menu.innerHTML=`
+    <div style="background:#141416;border-radius:16px 16px 0 0;padding:24px 20px;width:100%;max-width:480px;">
+      <div style="font-family:var(--f);font-size:14px;letter-spacing:1px;margin-bottom:16px;color:var(--chalk2);">COMPARTIR CLIP</div>
+      <div style="display:flex;gap:12px;margin-bottom:16px;">
+        <a href="${wa}" target="_blank" style="flex:1;padding:14px;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.25);border-radius:10px;text-align:center;text-decoration:none;">
+          <div style="font-size:22px;margin-bottom:4px;">💬</div>
+          <div style="font-family:var(--fm);font-size:9px;color:#25D366;letter-spacing:1px;">WHATSAPP</div>
+        </a>
+        <button onclick="navigator.clipboard.writeText('${url}').then(()=>{this.innerHTML='<div style=\'font-size:22px;margin-bottom:4px;\'>✓</div><div style=\'font-family:var(--fm);font-size:9px;color:var(--neon);letter-spacing:1px;\'>COPIADO</div>'})" style="flex:1;padding:14px;background:rgba(232,255,71,.06);border:1px solid rgba(232,255,71,.2);border-radius:10px;cursor:pointer;">
+          <div style="font-size:22px;margin-bottom:4px;">🔗</div>
+          <div style="font-family:var(--fm);font-size:9px;color:var(--neon);letter-spacing:1px;">COPIAR LINK</div>
+        </button>
+        <a href="${tg}" target="_blank" style="flex:1;padding:14px;background:rgba(71,170,255,.1);border:1px solid rgba(71,170,255,.25);border-radius:10px;text-align:center;text-decoration:none;">
+          <div style="font-size:22px;margin-bottom:4px;">✈️</div>
+          <div style="font-family:var(--fm);font-size:9px;color:#47AAFF;letter-spacing:1px;">TELEGRAM</div>
+        </a>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" style="width:100%;padding:12px;background:var(--ink3);border:1px solid var(--wire);border-radius:10px;color:var(--chalk3);font-family:var(--fb);font-size:13px;cursor:pointer;">Cancelar</button>
+    </div>`;
+  document.body.appendChild(menu);
+  menu.addEventListener('click',e=>{if(e.target===menu)menu.remove();});
 }
 function closeModal(){
   const v=document.getElementById('vmodalVideo');v.pause();v.src='';
