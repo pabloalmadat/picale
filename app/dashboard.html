@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>PICALE</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 <style>
 :root{
   --bg:#0A0A0A;--bg2:#111;--bg3:#161616;--bg4:#1c1c1c;
@@ -774,7 +775,7 @@ function changePassword(){
   toast('✅ Contraseña actualizada');
 }
 
-// ══ CONFIG ══════════════════════════════════════
+// ══ CONFIG ════════════════════════���═════════════
 const STORE_KEY='picale_config_v2';
 function loadConfig(){try{const r=localStorage.getItem(STORE_KEY);if(r)return JSON.parse(r);}catch(e){}return getDefaultConfig();}
 function saveConfig(c){localStorage.setItem(STORE_KEY,JSON.stringify(c));}
