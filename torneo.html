@@ -206,8 +206,9 @@ body{background:var(--ink);color:var(--chalk);font-family:var(--fb);-webkit-font
       <div class="court-indicator"></div>
       <div class="court-thumb">
         <img src="/assets/images.png" style="width:80%;height:80%;object-fit:contain;position:relative;z-index:1;" alt="DUO Padel Park">
+        <div class="court-live-tag"><div class="court-live-dot"></div><span class="court-live-label">LIVE</span></div>
       </div>
-      <div class="court-info"><div class="court-name">Cancha 3</div><div class="court-sub" id="c3sub">RUBA · Configurando</div></div>
+      <div class="court-info"><div class="court-name">Cancha 3</div><div class="court-sub" id="c3sub">RUBA · En vivo</div></div>
     </div>
   </div>
 </div>
@@ -281,9 +282,9 @@ const COURTS = {
   },
   cancha3: {
     name: 'Cancha 3', sub: 'RUBA',
-    hls: '', // agregar cuando esté lista
-    courtId: '', // agregar cuando esté lista
-    live: false
+    hls: 'https://api.picalereplay.com/hls/c3f9a17e2d8b5047/index.m3u8',
+    courtId: 'c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3',
+    live: true
   }
 };
 let activeCourt = 'cancha2';
