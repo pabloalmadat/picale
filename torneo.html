@@ -206,9 +206,8 @@ body{background:var(--ink);color:var(--chalk);font-family:var(--fb);-webkit-font
       <div class="court-indicator"></div>
       <div class="court-thumb">
         <img src="/assets/images.png" style="width:80%;height:80%;object-fit:contain;position:relative;z-index:1;" alt="DUO Padel Park">
-        <div class="court-live-tag"><div class="court-live-dot"></div><span class="court-live-label">LIVE</span></div>
       </div>
-      <div class="court-info"><div class="court-name">Cancha 3</div><div class="court-sub" id="c3sub">RUBA · En vivo</div></div>
+      <div class="court-info"><div class="court-name">Cancha 3</div><div class="court-sub" id="c3sub">RUBA · Configurando</div></div>
     </div>
   </div>
 </div>
@@ -282,9 +281,9 @@ const COURTS = {
   },
   cancha3: {
     name: 'Cancha 3', sub: 'RUBA',
-    hls: 'https://api.picalereplay.com/hls/c3f9a17e2d8b5047/index.m3u8',
-    courtId: 'c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3',
-    live: true
+    hls: '', // agregar cuando esté lista
+    courtId: '', // agregar cuando esté lista
+    live: false
   }
 };
 let activeCourt = 'cancha2';
@@ -296,20 +295,24 @@ let activeCourtFilter = 'all';
 // ═══ HORARIOS ═══════════════════════════
 const schedule = {
   cancha2: [
-    {startTime:"16:00",endTime:"17:30",category:"Primera",group:"Grupo C",teamA:["David Rodriguez","Francisco Lencina"],teamB:["Gonzalo Blanco","Javier Victoria"]},
-    {startTime:"17:30",endTime:"19:00",category:"Primera",group:"Grupo A",teamA:["Adolfo Schraidt","Luis Mario Campa"],teamB:["Carlo Peña","Andres Bleizeffer"]},
-    {startTime:"19:00",endTime:"20:30",category:"Open",group:"Grupo B",teamA:["Mauri EL PELUSA Giordana","Timo Almada"],teamB:["Sascha Dominguez","German Milla"]},
-    {startTime:"20:30",endTime:"22:00",category:"Open",group:"Grupo A",teamA:["Bernardo Pereyra","Joaquin Farias"],teamB:["Lucas Rodriguez","Facundo Sayes"]},
-    {startTime:"22:00",endTime:"23:30",category:"Open",group:"Grupo B",teamA:["Mathy Lopez","Benja Benitez"],teamB:["Mauri EL PELUSA Giordana","Timo Almada"]},
-    {startTime:"23:30",endTime:"01:00",category:"Cuarta",group:"Grupo E",teamA:["Juan Pablo Gandara","Felizardo Pablos"],teamB:["Jorge Campa","Rene Barraza"]},
+    {startTime:"11:30",endTime:"13:00",category:"Primera",group:"Grupo A",teamA:["Adolfo Schraidt","Luis Mario Campa"],teamB:["Jesus Tadeo Mendivil","Damian Avendaño"]},
+    {startTime:"13:00",endTime:"14:30",category:"Cuarta Femenil",group:"Grupo A",teamA:["Valeria Rodriguez","Olga Diazbrown"],teamB:["Natty Schnierle","Paola Borquez"]},
+    {startTime:"14:30",endTime:"16:00",category:"Segunda",group:"Grupo C",teamA:["Eduardo Prado","Francisco Lencina"],teamB:["Gerardo Gonzalez","Ricardo Encinas"]},
+    {startTime:"16:00",endTime:"17:30",category:"Open",group:"Grupo A",teamA:["Lucas Rodriguez","Facundo Sayes"],teamB:["Franco Caputto","Damian Avendaño"]},
+    {startTime:"17:30",endTime:"19:00",category:"Open",group:"Grupo B",teamA:["Mathy Lopez","Benja Benitez"],teamB:["Mauri EL PELUSA Giordana","Hector Almada"]},
+    {startTime:"19:00",endTime:"20:30",category:"Primera",group:"Grupo C",teamA:["Luis Alberto Zamorano Morales","Andres Reyes"],teamB:["Gonzalo Blanco","Javier Victoria"]},
+    {startTime:"20:30",endTime:"22:00",category:"Open",group:"Semifinals",teamA:["Por definir",""],teamB:["Por definir",""]},
+    {startTime:"22:00",endTime:"23:30",category:"Open",group:"Semifinals",teamA:["Por definir",""],teamB:["Por definir",""]},
   ],
   cancha3: [
-    {startTime:"16:00",endTime:"17:30",category:"Primera",group:"Grupo B",teamA:["Franco Caputto","Coke Urrea"],teamB:["Andres Gastelum","German Milla"]},
-    {startTime:"17:30",endTime:"19:00",category:"Segunda",group:"Grupo B",teamA:["Gerardo Esquer","Juan Luis Gomez"],teamB:["Jesus Tadeo Mendivil","Luis Duarte S"]},
-    {startTime:"19:00",endTime:"20:30",category:"Open",group:"Grupo A",teamA:["Bernardo Pereyra","Joaquin Farias"],teamB:["Franco Caputto","Damian Avendaño"]},
-    {startTime:"20:30",endTime:"22:00",category:"Primera",group:"Grupo A",teamA:["Jesus Tadeo Mendivil","Damian Avendaño"],teamB:["Carlo Peña","Andres Bleizeffer"]},
-    {startTime:"22:00",endTime:"23:30",category:"Primera",group:"Grupo B",teamA:["Miguel Salgado","Rolando Leon"],teamB:["Andres Gastelum","German Milla"]},
-    {startTime:"23:30",endTime:"01:00",category:"Cuarta",group:"Grupo D",teamA:["Salvador Renteria","Yurem Medrano"],teamB:["Santiago Valdez","Armado Cota"]},
+    {startTime:"11:30",endTime:"13:00",category:"Cuarta",group:"Grupo D",teamA:["Santiago Valdez","Armado Cota"],teamB:["Mario Nava","Sebastian Acosta Beltran"]},
+    {startTime:"13:00",endTime:"14:30",category:"KINGS PÁDEL ELITE SUMA10",group:"Grupo B",teamA:["Ramon Romero","Pollito S"],teamB:["Rafa Renero","Turry Parada"]},
+    {startTime:"14:30",endTime:"16:00",category:"Segunda",group:"Grupo A",teamA:["Diego Campa","Matko Jakes"],teamB:["Ernesto Padilla","Andres Bleizeffer"]},
+    {startTime:"16:00",endTime:"17:30",category:"Primera",group:"Grupo C",teamA:["Gonzalo Blanco","Javier Victoria"],teamB:["Sascha Dominguez","Eric Ortega"]},
+    {startTime:"17:30",endTime:"19:00",category:"Primera",group:"Grupo C",teamA:["Luis Alberto Zamorano Morales","Andres Reyes"],teamB:["Sascha Dominguez","Eric Ortega"]},
+    {startTime:"19:00",endTime:"20:30",category:"Primera",group:"Grupo C",teamA:["Sascha Dominguez","Eric Ortega"],teamB:["David Rodriguez","Francisco Lencina"]},
+    {startTime:"20:30",endTime:"22:00",category:"Segunda",group:"Quarterfinals",teamA:["Por definir",""],teamB:["Por definir",""]},
+    {startTime:"22:00",endTime:"23:30",category:"Primera",group:"Quarterfinals",teamA:["Por definir",""],teamB:["Por definir",""]},
   ]
 };
 
