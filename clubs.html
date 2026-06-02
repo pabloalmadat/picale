@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PICALE · Replay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0A0A0A;
+  --bg2:#111;
+  --bg3:#161616;
+  --bg4:#1c1c1c;
+  --border:rgba(255,255,255,.07);
+  --border2:rgba(255,255,255,.13);
+  --text:#F0EDE6;
+  --muted:rgba(240,237,230,.45);
+  --muted2:rgba(240,237,230,.22);
+  --green:#5EE87A;
+  --green-bg:rgba(94,232,122,.1);
+  --green-border:rgba(94,232,122,.25);
+  --accent:#E5A732;
+  --mono:'JetBrains Mono',monospace;
+  --display:'Bebas Neue',sans-serif;
+  --body:'DM Sans',sans-serif;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --nav-h:64px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--body);overflow:hidden;}
+
+/* ── PAGES ── */
+.page{position:fixed;inset:0;display:none;flex-direction:column;overflow:hidden;}
+.page.active{display:flex;}
+
+/* ── LANDING ── */
+#page-landing{background:var(--bg);}
+.landing-header{padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between;}
+.landing-logo{font-family:var(--display);font-size:28px;letter-spacing:2px;color:var(--text);}
+.landing-logo span{color:var(--green);}
+.landing-scroll{flex:1;overflow-y:auto;padding:24px 16px calc(var(--safe-bottom) + 20px);}
+.landing-hero{text-align:center;padding:32px 0 40px;}
+.landing-hero-title{font-family:var(--display);font-size:48px;letter-spacing:3px;line-height:1;margin-bottom:8px;}
+.landing-hero-sub{font-size:13px;color:var(--muted);letter-spacing:1px;}
+.section-label{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;margin-bottom:12px;}
+
+/* ── CLUB CARD ── */
+.clubs-grid{display:flex;flex-direction:column;gap:12px;}
+.club-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s;}
+.club-card:active{transform:scale(.98);}
+.club-card:hover{border-color:var(--border2);}
+.club-img{width:100%;height:160px;object-fit:cover;display:block;}
+.club-img-placeholder{width:100%;height:160px;background:var(--bg3);display:flex;align-items:center;justify-content:center;}
+.club-body{padding:16px;}
+.club-name{font-size:17px;font-weight:600;margin-bottom:4px;}
+.club-meta{font-size:12px;color:var(--muted);margin-bottom:12px;}
+.club-courts{display:flex;gap:8px;}
+.court-pill{padding:5px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px;}
+.court-pill-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.coming-club{opacity:.45;cursor:default;}
+.coming-club:active{transform:none;}
+.coming-badge{display:inline-block;padding:3px 8px;background:var(--bg4);border:1px solid var(--border);border-radius:20px;font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px;}
+
+/* ── CLUB PAGE ── */
+#page-club{background:var(--bg);}
+.topbar{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.topbar-back{background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;display:flex;align-items:center;gap:6px;font-family:var(--body);font-size:13px;}
+.topbar-title{font-family:var(--display);font-size:18px;letter-spacing:1px;}
+.club-scroll{flex:1;overflow-y:auto;padding-bottom:calc(var(--safe-bottom) + 20px);}
+
+/* ── COURTS TABS ── */
+.courts-tabs{display:flex;gap:8px;padding:16px 16px 0;}
+.court-tab{flex:1;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s;}
+.court-tab.active{background:var(--bg3);border-color:var(--border2);}
+.court-tab-name{font-size:13px;font-weight:600;margin-bottom:2px;}
+.court-tab-sub{font-size:10px;color:var(--muted);}
+.live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;margin-right:4px;}
+
+/* ── SECTION TABS ── */
+.section-tabs{display:flex;border-bottom:1px solid var(--border);margin-top:16px;}
+.section-tab{flex:1;padding:12px 8px;text-align:center;font-size:11px;font-family:var(--mono);letter-spacing:1px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.section-tab.active{color:var(--text);border-bottom-color:var(--green);}
+
+/* ── LIVE VIDEO ── */
+.live-container{position:relative;width:100%;background:#000;aspect-ratio:16/9;}
+.live-container video{width:100%;height:100%;object-fit:cover;display:block;}
+.live-overlay{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.6);padding:4px 10px;border-radius:20px;}
+.live-label{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--green);}
+.live-status{padding:20px;text-align:center;color:var(--muted);font-size:13px;}
+
+/* ── CLIPS ── */
+.clips-grid{padding:12px 16px;display:flex;flex-direction:column;gap:8px;}
+.clip-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .2s;}
+.clip-card:active{border-color:var(--border2);}
+.clip-icon{width:36px;height:36px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;}
+.clip-info{flex:1;min-width:0;}
+.clip-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.clip-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.clip-play{padding:6px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:11px;color:var(--text);cursor:pointer;font-family:var(--body);}
+
+/* ── MATCHES ── */
+.matches-grid{padding:12px 16px;display:flex;flex-direction:column;gap:8px;}
+.match-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:border-color .2s;}
+.match-card:active{border-color:var(--border2);}
+.match-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.match-court{font-family:var(--mono);font-size:10px;color:var(--green);letter-spacing:1px;}
+.match-date{font-size:11px;color:var(--muted);}
+.match-dur{font-size:11px;color:var(--muted);}
+.match-actions{display:flex;gap:8px;margin-top:12px;}
+.match-btn{flex:1;padding:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:11px;color:var(--text);cursor:pointer;font-family:var(--body);text-align:center;}
+.match-btn-dl{text-decoration:none;display:flex;align-items:center;justify-content:center;}
+
+/* ── EMPTY ── */
+.empty-state{padding:48px 20px;text-align:center;}
+.empty-icon{font-size:32px;opacity:.25;margin-bottom:10px;}
+.empty-text{font-size:13px;color:var(--muted);}
+.loading-state{padding:40px;text-align:center;font-size:13px;color:var(--muted);}
+
+/* ── VIDEO MODAL ── */
+.vmodal{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:999;display:none;flex-direction:column;}
+.vmodal.open{display:flex;}
+.vmodal-bar{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;}
+.vmodal-close{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;padding:8px;}
+.vmodal video{width:100%;flex:1;object-fit:contain;background:#000;}
+</style>
+</head>
+<body>
+
+<!-- ── LANDING ── -->
+<div class="page active" id="page-landing">
+  <div class="landing-header">
+    <div class="landing-logo">PICALE<span>.</span></div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;">REPLAY</div>
+  </div>
+  <div class="landing-scroll">
+    <div class="landing-hero">
+      <div class="landing-hero-title">CLUBES</div>
+      <div class="landing-hero-sub">Selecciona tu club para ver en vivo</div>
+    </div>
+    <div class="section-label">Disponibles</div>
+    <div class="clubs-grid">
+      <!-- DUO PADEL PARK -->
+      <div class="club-card" onclick="openClub('duo')">
+        <img class="club-img" src="/assets/images.png" alt="DUO Padel Park" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div class="club-img-placeholder" style="display:none;">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="rgba(240,237,230,.15)" stroke-width="1.5"><circle cx="24" cy="24" r="20"/><path d="M16 24c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8"/></svg>
+        </div>
+        <div class="club-body">
+          <div class="club-name">DUO Padel Park</div>
+          <div class="club-meta">Obregón, Sonora · 2 canchas</div>
+          <div class="club-courts">
+            <div class="court-pill"><span class="live-dot"></span>Cancha 2</div>
+            <div class="court-pill"><span class="live-dot"></span>Cancha 3</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRÓXIMAMENTE -->
+      <div class="club-card coming-club">
+        <div class="club-img-placeholder">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="rgba(240,237,230,.1)" stroke-width="1.5"><circle cx="24" cy="24" r="20"/><path d="M24 16v8l5 3"/></svg>
+        </div>
+        <div class="club-body">
+          <div class="coming-badge">PRÓXIMAMENTE</div>
+          <div class="club-name" style="color:var(--muted);">Tu club aquí</div>
+          <div class="club-meta">Contáctanos para agregar tu club</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CLUB PAGE ── -->
+<div class="page" id="page-club">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goBack()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3L6 8l4 5"/></svg>
+      Clubes
+    </button>
+    <div class="topbar-title">DUO PADEL PARK</div>
+    <div style="width:60px;"></div>
+  </div>
+
+  <div class="club-scroll">
+    <!-- Court selector -->
+    <div class="courts-tabs">
+      <div class="court-tab active" id="tab-c2" onclick="selectCourt('c2')">
+        <div class="court-tab-name"><span class="live-dot"></span>Cancha 2</div>
+        <div class="court-tab-sub">TOSSA</div>
+      </div>
+      <div class="court-tab" id="tab-c3" onclick="selectCourt('c3')">
+        <div class="court-tab-name"><span class="live-dot"></span>Cancha 3</div>
+        <div class="court-tab-sub">RUBA</div>
+      </div>
+    </div>
+
+    <!-- Section tabs -->
+    <div class="section-tabs">
+      <div class="section-tab active" id="stab-live" onclick="selectSection('live')">EN VIVO</div>
+      <div class="section-tab" id="stab-clips" onclick="selectSection('clips')">CLIPS</div>
+      <div class="section-tab" id="stab-matches" onclick="selectSection('matches')">PARTIDOS</div>
+    </div>
+
+    <!-- LIVE -->
+    <div id="section-live">
+      <div class="live-container">
+        <video id="liveVideo" autoplay muted playsinline></video>
+        <div class="live-overlay"><span class="live-dot"></span><span class="live-label">EN VIVO</span></div>
+      </div>
+      <div id="live-status" class="live-status" style="display:none;">Conectando stream...</div>
+    </div>
+
+    <!-- CLIPS -->
+    <div id="section-clips" style="display:none;">
+      <div id="clips-loading" class="loading-state">Cargando clips...</div>
+      <div id="clips-grid" class="clips-grid" style="display:none;"></div>
+      <div id="clips-empty" class="empty-state" style="display:none;">
+        <div class="empty-icon">🎬</div>
+        <div class="empty-text">No hay clips aún</div>
+      </div>
+    </div>
+
+    <!-- MATCHES -->
+    <div id="section-matches" style="display:none;">
+      <div id="matches-loading" class="loading-state">Cargando partidos...</div>
+      <div id="matches-grid" class="matches-grid" style="display:none;"></div>
+      <div id="matches-empty" class="empty-state" style="display:none;">
+        <div class="empty-icon">🎥</div>
+        <div class="empty-text">No hay partidos grabados aún</div>
+      </div>
+    </div>
+
+    <div style="height:32px;"></div>
+  </div>
+</div>
+
+<!-- ── VIDEO MODAL ── -->
+<div class="vmodal" id="vmodal">
+  <div class="vmodal-bar">
+    <div style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:1px;" id="vmodal-title">—</div>
+    <button class="vmodal-close" onclick="closeModal()">×</button>
+  </div>
+  <video id="modal-video" controls playsinline style="width:100%;flex:1;object-fit:contain;background:#000;"></video>
+</div>
+
+<script>
+const CLOUD = 'https://api.picalereplay.com';
+
+const COURTS = {
+  c2: {
+    name: 'Cancha 2',
+    sub: 'TOSSA',
+    courtId: '6ee6d28e-75c3-4cf4-87d0-6d052fb81ab4',
+    hls: CLOUD + '/hls/7bcdb57bcfe843f5/index.m3u8',
+  },
+  c3: {
+    name: 'Cancha 3',
+    sub: 'RUBA',
+    courtId: 'c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3',
+    hls: CLOUD + '/hls/c3f9a17e2d8b5047/index.m3u8',
+  }
+};
+
+var activeCourt = 'c2';
+var activeSection = 'live';
+var hlsInstance = null;
+
+// ── NAVIGATION ──
+function openClub(id) {
+  document.getElementById('page-landing').classList.remove('active');
+  document.getElementById('page-club').classList.add('active');
+  selectCourt('c2');
+  selectSection('live');
+}
+
+function goBack() {
+  stopHLS();
+  document.getElementById('page-club').classList.remove('active');
+  document.getElementById('page-landing').classList.add('active');
+}
+
+// ── COURT SELECT ──
+function selectCourt(id) {
+  activeCourt = id;
+  ['c2','c3'].forEach(function(c) {
+    document.getElementById('tab-'+c).classList.toggle('active', c === id);
+  });
+  if (activeSection === 'live') loadLive();
+  else if (activeSection === 'clips') loadClips();
+  else if (activeSection === 'matches') loadMatches();
+}
+
+// ── SECTION SELECT ──
+function selectSection(s) {
+  activeSection = s;
+  ['live','clips','matches'].forEach(function(sec) {
+    document.getElementById('stab-'+sec).classList.toggle('active', sec === s);
+    document.getElementById('section-'+sec).style.display = sec === s ? 'block' : 'none';
+  });
+  if (s === 'live') loadLive();
+  else if (s === 'clips') loadClips();
+  else if (s === 'matches') loadMatches();
+}
+
+// ── HLS LIVE ──
+function stopHLS() {
+  if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+  var v = document.getElementById('liveVideo');
+  v.pause(); v.src = '';
+}
+
+function loadLive() {
+  stopHLS();
+  var court = COURTS[activeCourt];
+  var v = document.getElementById('liveVideo');
+  var status = document.getElementById('live-status');
+  status.style.display = 'none';
+  if (Hls.isSupported()) {
+    hlsInstance = new Hls({ lowLatencyMode: true });
+    hlsInstance.loadSource(court.hls);
+    hlsInstance.attachMedia(v);
+    hlsInstance.on(Hls.Events.ERROR, function(e, data) {
+      if (data.fatal) {
+        status.style.display = 'block';
+        status.textContent = 'Stream no disponible';
+      }
+    });
+    v.play();
+  } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
+    v.src = court.hls;
+    v.play();
+  }
+}
+
+// ── CLIPS ──
+function loadClips() {
+  var court = COURTS[activeCourt];
+  var loading = document.getElementById('clips-loading');
+  var grid = document.getElementById('clips-grid');
+  var empty = document.getElementById('clips-empty');
+  loading.style.display = 'block';
+  grid.style.display = 'none';
+  empty.style.display = 'none';
+
+  fetch(CLOUD + '/api/v1/clips/?court_id=' + court.courtId + '&limit=50', {signal: AbortSignal.timeout(8000)})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var clips = d.clips || [];
+      loading.style.display = 'none';
+      if (!clips.length) { empty.style.display = 'block'; return; }
+      grid.style.display = 'flex';
+      grid.innerHTML = clips.map(function(c) {
+        var url = CLOUD + '/api/v1/clips/' + c.id + '/file';
+        var date = c.created_at ? new Date(c.created_at * 1000).toLocaleString('es-MX', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '';
+        var size = c.size_mb ? c.size_mb.toFixed(1) + ' MB' : '';
+        return '<div class="clip-card" onclick="playVideo(\'' + url + '\',\'Clip\')">'
+          + '<div class="clip-icon">&#9654;</div>'
+          + '<div class="clip-info"><div class="clip-name">' + (c.filename || 'Clip') + '</div>'
+          + '<div class="clip-meta">' + [date, size].filter(Boolean).join(' · ') + '</div></div>'
+          + '<button class="clip-play" onclick="event.stopPropagation();playVideo(\'' + url + '\',\'Clip\')">Ver</button>'
+          + '</div>';
+      }).join('');
+    })
+    .catch(function() { loading.style.display = 'none'; empty.style.display = 'block'; });
+}
+
+// ── MATCHES ──
+function loadMatches() {
+  var court = COURTS[activeCourt];
+  var loading = document.getElementById('matches-loading');
+  var grid = document.getElementById('matches-grid');
+  var empty = document.getElementById('matches-empty');
+  loading.style.display = 'block';
+  grid.style.display = 'none';
+  empty.style.display = 'none';
+
+  fetch(CLOUD + '/api/v1/matches/?court_id=' + court.courtId + '&limit=50', {signal: AbortSignal.timeout(8000)})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var matches = d.matches || [];
+      loading.style.display = 'none';
+      if (!matches.length) { empty.style.display = 'block'; return; }
+      grid.style.display = 'flex';
+      grid.innerHTML = matches.map(function(m) {
+        var url = CLOUD + '/api/v1/matches/' + m.id + '/file';
+        var date = m.created_at ? new Date(m.created_at * 1000).toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric'}) : '';
+        var dur = m.duration_min ? m.duration_min + ' min' : '';
+        var size = m.size_mb ? m.size_mb.toFixed(1) + ' MB' : '';
+        return '<div class="match-card">'
+          + '<div class="match-header"><span class="match-court">' + court.name + '</span><span class="match-date">' + date + '</span></div>'
+          + '<div class="match-dur">' + [dur, size].filter(Boolean).join(' · ') + '</div>'
+          + '<div class="match-actions">'
+          + '<button class="match-btn" onclick="playVideo(\'' + url + '\',\'Partido\')">&#9654; Ver partido</button>'
+          + '<a href="' + url + '" download class="match-btn match-btn-dl">&#8595; Descargar</a>'
+          + '</div></div>';
+      }).join('');
+    })
+    .catch(function() { loading.style.display = 'none'; empty.style.display = 'block'; });
+}
+
+// ── VIDEO MODAL ──
+function playVideo(url, title) {
+  var modal = document.getElementById('vmodal');
+  var video = document.getElementById('modal-video');
+  var t = document.getElementById('vmodal-title');
+  t.textContent = title || '';
+  video.src = url;
+  modal.classList.add('open');
+  video.play();
+}
+
+function closeModal() {
+  var modal = document.getElementById('vmodal');
+  var video = document.getElementById('modal-video');
+  modal.classList.remove('open');
+  video.pause();
+  video.src = '';
+}
+</script>
+</body>
+</html>
