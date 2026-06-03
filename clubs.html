@@ -121,6 +121,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--b
 .empty-text{font-size:13px;color:var(--muted);}
 .loading-state{padding:40px;text-align:center;font-size:13px;color:var(--muted);}
 
+.day-pill{padding:6px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;font-size:11px;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .2s;font-family:var(--mono);}
+.day-pill.active{background:var(--bg3);border-color:var(--green);color:var(--text);}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.5;}
+
 /* ── VIDEO MODAL ── */
 .vmodal{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:999;display:none;flex-direction:column;}
 .vmodal.open{display:flex;}
@@ -217,6 +221,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--b
 
     <!-- CLIPS -->
     <div id="section-clips" style="display:none;">
+      <div id="clips-date-filter" style="display:none;padding:12px 16px 0;">
+        <div id="clips-day-pills" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
+        <input type="date" id="clips-date-picker" style="background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;color:var(--text);font-family:var(--mono);font-size:11px;width:100%;margin-bottom:4px;" oninput="filterByDate(this.value)">
+      </div>
       <div id="clips-loading" class="loading-state">Cargando clips...</div>
       <div id="clips-grid" class="clips-grid" style="display:none;"></div>
       <div id="clips-empty" class="empty-state" style="display:none;">
@@ -243,7 +251,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--b
 <div class="vmodal" id="vmodal">
   <div class="vmodal-bar">
     <div style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:1px;" id="vmodal-title">—</div>
-    <button class="vmodal-close" onclick="closeModal()">×</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="toggleFullscreen()" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;font-size:18px;">&#x26F6;</button>
+      <button class="vmodal-close" onclick="closeModal()">×</button>
+    </div>
   </div>
   <video id="modal-video" controls playsinline style="width:100%;flex:1;object-fit:contain;background:#000;"></video>
 </div>
@@ -338,33 +349,84 @@ function loadLive() {
 }
 
 // ── CLIPS ──
+var allClips = [];
+var activeDay = null;
+
+function renderClipCard(c) {
+  var url = CLOUD + '/api/v1/clips/' + c.id + '/file';
+  var date = c.created_at ? new Date(c.created_at * 1000).toLocaleString('es-MX', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '';
+  var size = c.size_mb ? c.size_mb.toFixed(1) + ' MB' : '';
+  return '<div class="clip-card">'
+    + '<div class="clip-icon" onclick="playVideo(\'' + url + '\',\'Clip\')" >&#9654;</div>'
+    + '<div class="clip-info" onclick="playVideo(\'' + url + '\',\'Clip\')"><div class="clip-name">' + (c.filename || 'Clip') + '</div>'
+    + '<div class="clip-meta">' + [date, size].filter(Boolean).join(' · ') + '</div></div>'
+    + '<div style="display:flex;gap:6px;">'
+    + '<button class="clip-play" onclick="playVideo(\'' + url + '\',\'Clip\')">Ver</button>'
+    + '<a href="' + url + '" download style="padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:13px;color:var(--muted);text-decoration:none;display:flex;align-items:center;">&#8595;</a>'
+    + '</div></div>';
+}
+
+function dateKey(ts) {
+  var d = new Date(ts * 1000);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function buildDayPills() {
+  var days = {};
+  allClips.forEach(function(c){ if(c.created_at){ var k=dateKey(c.created_at); days[k]=(days[k]||0)+1; } });
+  var sorted = Object.keys(days).sort().reverse();
+  var today = new Date().toISOString().slice(0,10);
+  var yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  var dayBefore = new Date(Date.now()-172800000).toISOString().slice(0,10);
+  var pills = document.getElementById('clips-day-pills');
+  pills.innerHTML = sorted.slice(0,3).map(function(d){
+    var label = d===today?'Hoy':d===yesterday?'Ayer':d===dayBefore?'Anteayer':d;
+    return '<div class="day-pill" data-date="'+d+'" onclick="filterByDate(''+d+'')">'+label+' ('+days[d]+')</div>';
+  }).join('') + (sorted.length > 3 ? '<div class="day-pill" onclick="openDatePicker()">+ Ver más</div>' : '');
+}
+
+function filterByDate(dateStr) {
+  if(!dateStr) return;
+  activeDay = dateStr;
+  document.getElementById('clips-date-picker').value = dateStr;
+  document.querySelectorAll('.day-pill').forEach(function(p){
+    p.classList.toggle('active', p.dataset.date === dateStr);
+  });
+  var filtered = allClips.filter(function(c){ return c.created_at && dateKey(c.created_at)===dateStr; });
+  var grid = document.getElementById('clips-grid');
+  var empty = document.getElementById('clips-empty');
+  if(!filtered.length){ grid.style.display='none'; empty.style.display='block'; return; }
+  grid.style.display='flex';
+  empty.style.display='none';
+  grid.innerHTML = filtered.map(renderClipCard).join('');
+}
+
+function openDatePicker() {
+  document.getElementById('clips-date-picker').showPicker();
+}
+
 function loadClips() {
   var court = COURTS[activeCourt];
   var loading = document.getElementById('clips-loading');
   var grid = document.getElementById('clips-grid');
   var empty = document.getElementById('clips-empty');
+  var filter = document.getElementById('clips-date-filter');
   loading.style.display = 'block';
   grid.style.display = 'none';
   empty.style.display = 'none';
+  if(filter) filter.style.display = 'none';
+  allClips = [];
 
-  fetch(CLOUD + '/api/v1/clips/?court_id=' + court.courtId + '&limit=50', {signal: AbortSignal.timeout(8000)})
+  fetch(CLOUD + '/api/v1/clips/?court_id=' + court.courtId + '&limit=500', {signal: AbortSignal.timeout(8000)})
     .then(function(r) { return r.json(); })
     .then(function(d) {
-      var clips = d.clips || [];
+      allClips = d.clips || [];
       loading.style.display = 'none';
-      if (!clips.length) { empty.style.display = 'block'; return; }
-      grid.style.display = 'flex';
-      grid.innerHTML = clips.map(function(c) {
-        var url = CLOUD + '/api/v1/clips/' + c.id + '/file';
-        var date = c.created_at ? new Date(c.created_at * 1000).toLocaleString('es-MX', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '';
-        var size = c.size_mb ? c.size_mb.toFixed(1) + ' MB' : '';
-        return '<div class="clip-card" onclick="playVideo(\'' + url + '\',\'Clip\')">'
-          + '<div class="clip-icon">&#9654;</div>'
-          + '<div class="clip-info"><div class="clip-name">' + (c.filename || 'Clip') + '</div>'
-          + '<div class="clip-meta">' + [date, size].filter(Boolean).join(' · ') + '</div></div>'
-          + '<button class="clip-play" onclick="event.stopPropagation();playVideo(\'' + url + '\',\'Clip\')">Ver</button>'
-          + '</div>';
-      }).join('');
+      if (!allClips.length) { empty.style.display = 'block'; return; }
+      if(filter) filter.style.display = 'block';
+      buildDayPills();
+      var today = new Date().toISOString().slice(0,10);
+      filterByDate(today);
     })
     .catch(function() { loading.style.display = 'none'; empty.style.display = 'block'; });
 }
@@ -412,6 +474,13 @@ function playVideo(url, title) {
   video.src = url;
   modal.classList.add('open');
   video.play();
+}
+
+function toggleFullscreen() {
+  var video = document.getElementById('modal-video');
+  if (video.requestFullscreen) video.requestFullscreen();
+  else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
+  else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
 }
 
 function closeModal() {
