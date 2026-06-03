@@ -220,11 +220,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
 
     <!-- CLIPS -->
     <div id="section-clips" style="display:none;">
-      <div id="clips-date-filter" style="display:none;padding:12px 16px 4px;">
-        <div id="clips-day-pills" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;"></div>
-        <input type="date" id="clips-date-picker" style="background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;color:var(--text);font-size:11px;width:100%;" oninput="filterByDate(this.value)">
-      </div>
-      <div id="clips-loading" class="loading-state">Cargando clips...</div>
+      <div id="clips-date-filter" style="display:none;padding:12px 16px 4px;"><div id="clips-day-pills" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;"></div><input type="date" id="clips-date-picker" style="background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;color:var(--text);font-size:11px;width:100%;margin-top:4px;" oninput="_filterByDate(this.value)"></div><div id="clips-loading" class="loading-state">Cargando clips...</div>
       <div id="clips-grid" class="clips-grid" style="display:none;"></div>
       <div id="clips-empty" class="empty-state" style="display:none;">
         <div class="empty-icon">🎬</div>
@@ -250,7 +246,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
 <div class="vmodal" id="vmodal">
   <div class="vmodal-bar">
     <div style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:1px;" id="vmodal-title">—</div>
-    <button onclick="toggleFullscreen()" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;font-size:18px;">&#x26F6;</button><button class="vmodal-close" onclick="closeModal()">×</button>
+    <button onclick="(function(){var v=document.getElementById('modal-video');if(v.requestFullscreen)v.requestFullscreen();else if(v.webkitEnterFullscreen)v.webkitEnterFullscreen();})()" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;font-size:18px;">&#x26F6;</button><button class="vmodal-close" onclick="closeModal()">×</button>
   </div>
   <video id="modal-video" controls playsinline style="width:100%;flex:1;object-fit:contain;background:#000;"></video>
 </div>
@@ -345,59 +341,80 @@ function loadLive() {
 }
 
 // ── CLIPS ──
-function renderClipCard(c) {
-  var url = CLOUD + '/api/v1/clips/' + c.id + '/file';
-  var date = c.created_at ? new Date(c.created_at * 1000).toLocaleString('es-MX', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '';
-  var size = c.size_mb ? c.size_mb.toFixed(1) + ' MB' : '';
-  return '<div class="clip-card">'
-    + '<div style="display:flex;align-items:center;gap:12px;flex:1;" onclick="playVideo('' + url + '','Clip')">'
-    + '<div class="clip-icon">&#9654;</div>'
-    + '<div class="clip-info"><div class="clip-name">' + (c.filename || 'Clip') + '</div>'
-    + '<div class="clip-meta">' + [date, size].filter(Boolean).join(' · ') + '</div></div>'
-    + '</div>'
-    + '<div style="display:flex;gap:6px;flex-shrink:0;">'
-    + '<button class="clip-play" onclick="playVideo('' + url + '','Clip')">Ver</button>'
-    + '<a href="' + url + '" download style="padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:13px;color:var(--muted);text-decoration:none;display:flex;align-items:center;">&#8595;</a>'
-    + '</div></div>';
-}
+var _allClips = [];
 
-function dateKey(ts) {
+function _dateKey(ts) {
   var d = new Date(ts * 1000);
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
-var allClips = [];
-
-function buildDayPills() {
-  var days = {};
-  allClips.forEach(function(c) { if (c.created_at) { var k = dateKey(c.created_at); days[k] = (days[k] || 0) + 1; } });
-  var sorted = Object.keys(days).sort().reverse();
-  var today = new Date().toISOString().slice(0,10);
-  var yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
-  var daybefore = new Date(Date.now()-172800000).toISOString().slice(0,10);
-  var labels = {}; labels[today]='Hoy'; labels[yesterday]='Ayer'; labels[daybefore]='Anteayer';
-  var pills = document.getElementById('clips-day-pills');
-  var recent = sorted.slice(0,3);
-  var hasMore = sorted.length > 3;
-  pills.innerHTML = recent.map(function(d) {
-    var label = labels[d] || d;
-    return '<div class="day-pill" data-date="' + d + '" onclick="filterByDate('' + d + '')">' + label + ' (' + days[d] + ')</div>';
-  }).join('') + (hasMore ? '<div class="day-pill" onclick="document.getElementById('clips-date-picker').showPicker()">+ Más</div>' : '');
+function _renderClips(clips) {
+  var grid = document.getElementById('clips-grid');
+  var empty = document.getElementById('clips-empty');
+  if (!clips.length) { grid.style.display='none'; empty.style.display='block'; return; }
+  grid.style.display = 'flex';
+  empty.style.display = 'none';
+  grid.innerHTML = '';
+  clips.forEach(function(c) {
+    var url = CLOUD + '/api/v1/clips/' + c.id + '/file';
+    var date = c.created_at ? new Date(c.created_at * 1000).toLocaleString('es-MX', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '';
+    var size = c.size_mb ? c.size_mb.toFixed(1) + ' MB' : '';
+    var div = document.createElement('div');
+    div.className = 'clip-card';
+    var inner = document.createElement('div');
+    inner.style.cssText = 'display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;';
+    inner.innerHTML = '<div class="clip-icon">&#9654;</div>'
+      + '<div class="clip-info"><div class="clip-name">' + (c.filename || 'Clip') + '</div>'
+      + '<div class="clip-meta">' + [date, size].filter(Boolean).join(' · ') + '</div></div>';
+    inner.onclick = (function(u){ return function(){ playVideo(u, 'Clip'); }; })(url);
+    var btns = document.createElement('div');
+    btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
+    var ver = document.createElement('button');
+    ver.className = 'clip-play';
+    ver.textContent = 'Ver';
+    ver.onclick = (function(u){ return function(){ playVideo(u, 'Clip'); }; })(url);
+    var dl = document.createElement('a');
+    dl.href = url;
+    dl.setAttribute('download', '');
+    dl.style.cssText = 'padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:13px;color:var(--muted);text-decoration:none;display:flex;align-items:center;';
+    dl.innerHTML = '&#8595;';
+    btns.appendChild(ver);
+    btns.appendChild(dl);
+    div.appendChild(inner);
+    div.appendChild(btns);
+    grid.appendChild(div);
+  });
 }
 
-function filterByDate(dateStr) {
+function _filterByDate(dateStr) {
   if (!dateStr) return;
   document.getElementById('clips-date-picker').value = dateStr;
   document.querySelectorAll('.day-pill').forEach(function(p) {
-    p.classList.toggle('active', p.dataset && p.dataset.date === dateStr);
+    p.classList.toggle('active', p.getAttribute('data-date') === dateStr);
   });
-  var filtered = allClips.filter(function(c) { return c.created_at && dateKey(c.created_at) === dateStr; });
-  var grid = document.getElementById('clips-grid');
-  var empty = document.getElementById('clips-empty');
-  if (!filtered.length) { grid.style.display = 'none'; empty.style.display = 'block'; return; }
-  grid.style.display = 'flex';
-  empty.style.display = 'none';
-  grid.innerHTML = filtered.map(renderClipCard).join('');
+  var filtered = _allClips.filter(function(c) { return c.created_at && _dateKey(c.created_at) === dateStr; });
+  _renderClips(filtered);
+}
+
+function _buildDayPills() {
+  var days = {};
+  _allClips.forEach(function(c) { if (c.created_at) { var k = _dateKey(c.created_at); days[k] = (days[k]||0)+1; }});
+  var sorted = Object.keys(days).sort().reverse();
+  var now = new Date();
+  var labels = {};
+  labels[now.toISOString().slice(0,10)] = 'Hoy';
+  labels[new Date(now-86400000).toISOString().slice(0,10)] = 'Ayer';
+  labels[new Date(now-172800000).toISOString().slice(0,10)] = 'Anteayer';
+  var pills = document.getElementById('clips-day-pills');
+  var recent = sorted.slice(0, 3);
+  pills.innerHTML = recent.map(function(d) {
+    return '<div class="day-pill" data-date="' + d + '">' + (labels[d]||d) + ' (' + days[d] + ')</div>';
+  }).join('') + (sorted.length > 3 ? '<div class="day-pill" id="pill-more">+ Mas</div>' : '');
+  pills.querySelectorAll('.day-pill').forEach(function(p) {
+    var date = p.getAttribute('data-date');
+    if (date) p.onclick = (function(dd){ return function(){ _filterByDate(dd); }; })(date);
+    else p.onclick = function() { try { document.getElementById('clips-date-picker').showPicker(); } catch(e){} };
+  });
 }
 
 function loadClips() {
@@ -410,17 +427,17 @@ function loadClips() {
   grid.style.display = 'none';
   empty.style.display = 'none';
   if (filter) filter.style.display = 'none';
-  allClips = [];
+  _allClips = [];
 
   fetch(CLOUD + '/api/v1/clips/?court_id=' + court.courtId + '&limit=500', {signal: AbortSignal.timeout(8000)})
     .then(function(r) { return r.json(); })
     .then(function(d) {
-      allClips = d.clips || [];
+      _allClips = d.clips || [];
       loading.style.display = 'none';
-      if (!allClips.length) { empty.style.display = 'block'; return; }
+      if (!_allClips.length) { empty.style.display = 'block'; return; }
       if (filter) filter.style.display = 'block';
-      buildDayPills();
-      filterByDate(new Date().toISOString().slice(0,10));
+      _buildDayPills();
+      _filterByDate(new Date().toISOString().slice(0,10));
     })
     .catch(function() { loading.style.display = 'none'; empty.style.display = 'block'; });
 }
@@ -476,13 +493,6 @@ function closeModal() {
   modal.classList.remove('open');
   video.pause();
   video.src = '';
-}
-
-function toggleFullscreen() {
-  var video = document.getElementById('modal-video');
-  if (video.requestFullscreen) video.requestFullscreen();
-  else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
-  else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
 }
 </script>
 </body>
