@@ -131,6 +131,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
 .vmodal-close{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;padding:8px;}
 .vmodal video{width:100%;flex:1;object-fit:contain;background:#000;}
 </style>
+<script src="picale.js"></script>
 </head>
 <body>
 
@@ -186,7 +187,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
       Clubes
     </button>
     <div class="topbar-title">DUO PADEL PARK</div>
-    <div style="width:60px;"></div>
+    <div id="auth-btn-container"></div>
   </div>
 
   <div class="club-scroll">
@@ -567,5 +568,6 @@ function closeModal() {
   video.src = '';
 }
 </script>
+<script>if(window.PICALE){PICALE.renderAuthBtn("auth-btn-container","clubs.html");}</script>
 </body>
 </html>

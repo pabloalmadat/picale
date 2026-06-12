@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PICALE · Acceder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0A0A0A;
+  --bg2:#111;
+  --bg3:#161616;
+  --border:rgba(255,255,255,.07);
+  --border2:rgba(255,255,255,.15);
+  --text:#F0EDE6;
+  --muted:rgba(240,237,230,.5);
+  --muted2:rgba(240,237,230,.25);
+  --green:#5EE87A;
+  --green-dim:rgba(94,232,122,.12);
+  --green-border:rgba(94,232,122,.3);
+  --danger:#E05252;
+  --display:'Bebas Neue',sans-serif;
+  --body:'DM Sans',sans-serif;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{
+  min-height:100%;background:var(--bg);
+  color:var(--text);font-family:var(--body);
+  overscroll-behavior:none;
+}
+
+/* ── LAYOUT ── */
+.screen{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:calc(var(--safe-top) + 20px) 20px calc(var(--safe-bottom) + 20px);
+}
+
+/* ── LOGO ── */
+.logo{
+  font-family:var(--display);font-size:42px;
+  letter-spacing:4px;margin-bottom:4px;
+  text-align:center;
+}
+.logo span{color:var(--green);}
+.logo-sub{font-size:12px;color:var(--muted);letter-spacing:2px;margin-bottom:40px;text-align:center;}
+
+/* ── CARD ── */
+.card{
+  width:100%;max-width:400px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  overflow:hidden;
+}
+
+/* ── TABS ── */
+.tabs{display:flex;border-bottom:1px solid var(--border);}
+.tab{
+  flex:1;padding:16px;text-align:center;
+  font-size:13px;font-weight:600;letter-spacing:.5px;
+  color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;
+  font-family:var(--body);
+}
+.tab.active{color:var(--text);border-bottom-color:var(--green);}
+
+/* ── FORM ── */
+.form{padding:28px 24px;}
+.field{margin-bottom:16px;}
+.field label{
+  display:block;font-size:11px;
+  color:var(--muted);letter-spacing:1px;
+  margin-bottom:6px;font-weight:500;
+}
+.field input{
+  width:100%;padding:12px 14px;
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  border-radius:10px;
+  color:var(--text);font-family:var(--body);font-size:14px;
+  outline:none;transition:border-color .2s;
+  -webkit-appearance:none;
+}
+.field input:focus{border-color:var(--green);}
+.field input::placeholder{color:var(--muted2);}
+
+.btn{
+  width:100%;padding:14px;
+  background:var(--green);
+  border:none;border-radius:10px;
+  color:#0A0A0A;font-family:var(--display);
+  font-size:18px;letter-spacing:2px;
+  cursor:pointer;transition:opacity .15s;
+  margin-top:8px;
+}
+.btn:active{opacity:.8;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+.btn-secondary{
+  width:100%;padding:12px;
+  background:none;border:1px solid var(--border2);
+  border-radius:10px;color:var(--muted);
+  font-family:var(--body);font-size:13px;
+  cursor:pointer;margin-top:10px;
+  transition:border-color .2s,color .2s;
+}
+.btn-secondary:hover{border-color:var(--border2);color:var(--text);}
+
+/* ── ERROR / SUCCESS ── */
+.msg{
+  padding:10px 14px;border-radius:8px;
+  font-size:13px;margin-bottom:16px;display:none;
+}
+.msg.error{background:rgba(224,82,82,.1);border:1px solid rgba(224,82,82,.3);color:#E05252;}
+.msg.success{background:var(--green-dim);border:1px solid var(--green-border);color:var(--green);}
+.msg.show{display:block;}
+
+/* ── DIVIDER ── */
+.divider{
+  display:flex;align-items:center;gap:12px;
+  margin:20px 0;color:var(--muted2);font-size:12px;
+}
+.divider::before,.divider::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+
+/* ── FOOTER ── */
+.footer{
+  margin-top:24px;text-align:center;
+  font-size:12px;color:var(--muted);
+}
+.footer a{color:var(--green);text-decoration:none;}
+
+/* ── LOADING SPINNER ── */
+.spinner{
+  display:inline-block;width:16px;height:16px;
+  border:2px solid rgba(0,0,0,.2);
+  border-top-color:#0A0A0A;
+  border-radius:50%;
+  animation:spin .6s linear infinite;
+  vertical-align:middle;margin-right:6px;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── PANEL SUCCESS ── */
+#panel-success{display:none;padding:32px 24px;text-align:center;}
+.success-icon{font-size:48px;margin-bottom:16px;}
+.success-title{font-family:var(--display);font-size:28px;letter-spacing:2px;margin-bottom:8px;}
+.success-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+</style>
+</head>
+<body>
+
+<div class="screen">
+  <div class="logo">PICALE<span>.</span></div>
+  <div class="logo-sub">PADEL · REPLAY · COMUNIDAD</div>
+
+  <div class="card">
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" id="tab-login" onclick="showTab('login')">Entrar</button>
+      <button class="tab" id="tab-register" onclick="showTab('register')">Registrarse</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="panel-login" class="form">
+      <div class="msg error" id="login-error"></div>
+      <div class="field">
+        <label>CORREO</label>
+        <input type="email" id="login-email" placeholder="tu@correo.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label>CONTRASEÑA</label>
+        <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn" id="btn-login" onclick="doLogin()">ENTRAR</button>
+      <button class="btn-secondary" onclick="showTab('register')">¿No tienes cuenta? Regístrate</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="panel-register" class="form" style="display:none;">
+      <div class="msg error" id="register-error"></div>
+      <div class="field">
+        <label>NOMBRE</label>
+        <input type="text" id="reg-name" placeholder="Tu nombre" autocomplete="name">
+      </div>
+      <div class="field">
+        <label>CORREO</label>
+        <input type="email" id="reg-email" placeholder="tu@correo.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label>CONTRASEÑA</label>
+        <input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label>USUARIO <span style="color:var(--muted2);font-weight:400;">(opcional)</span></label>
+        <input type="text" id="reg-username" placeholder="@tupicale" autocomplete="username">
+      </div>
+      <button class="btn" id="btn-register" onclick="doRegister()">CREAR CUENTA</button>
+      <button class="btn-secondary" onclick="showTab('login')">¿Ya tienes cuenta? Entra</button>
+    </div>
+
+    <!-- SUCCESS -->
+    <div id="panel-success">
+      <div class="success-icon">🎾</div>
+      <div class="success-title">¡BIENVENIDO!</div>
+      <div class="success-sub" id="success-name">Listo para ver tus clips</div>
+      <button class="btn" onclick="goBack()">CONTINUAR</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    Al registrarte aceptas los <a href="#">términos de uso</a> de PICALE
+  </div>
+</div>
+
+<script>
+var CLOUD = 'https://api.picalereplay.com';
+
+// ── REDIRECT IF ALREADY LOGGED IN ──
+var existingToken = localStorage.getItem('picale_token');
+if (existingToken) {
+  var redirect = new URLSearchParams(window.location.search).get('redirect') || 'clubs.html';
+  window.location.href = redirect;
+}
+
+function showTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  document.getElementById('panel-login').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('panel-register').style.display = tab === 'register' ? 'block' : 'none';
+  clearErrors();
+}
+
+function clearErrors() {
+  document.querySelectorAll('.msg').forEach(function(m) { m.classList.remove('show'); m.textContent = ''; });
+}
+
+function showError(id, msg) {
+  var el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function setLoading(btnId, loading) {
+  var btn = document.getElementById(btnId);
+  if (loading) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>CARGANDO...';
+  } else {
+    btn.disabled = false;
+  }
+}
+
+function onSuccess(data) {
+  // Save token and user info
+  localStorage.setItem('picale_token', data.access_token);
+  localStorage.setItem('picale_user', JSON.stringify({
+    id: data.user_id,
+    name: data.name,
+    username: data.username,
+    photo_url: data.photo_url,
+  }));
+
+  // Show success panel
+  document.getElementById('panel-login').style.display = 'none';
+  document.getElementById('panel-register').style.display = 'none';
+  document.getElementById('panel-success').style.display = 'block';
+  document.querySelector('.tabs').style.display = 'none';
+  var name = data.name || data.username || 'jugador';
+  document.getElementById('success-name').textContent = '¡Hola ' + name + '! Listo para ver tus clips';
+}
+
+function goBack() {
+  var redirect = new URLSearchParams(window.location.search).get('redirect') || 'clubs.html';
+  window.location.href = redirect;
+}
+
+// ── LOGIN ──
+function doLogin() {
+  var email = document.getElementById('login-email').value.trim();
+  var pass = document.getElementById('login-pass').value;
+  clearErrors();
+
+  if (!email || !pass) { showError('login-error', 'Completa todos los campos'); return; }
+
+  setLoading('btn-login', true);
+
+  var body = new URLSearchParams();
+  body.append('username', email);
+  body.append('password', pass);
+
+  fetch(CLOUD + '/api/v1/auth/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: body.toString()
+  })
+  .then(function(r) {
+    if (!r.ok) return r.json().then(function(d) { throw new Error(d.detail || 'Error'); });
+    return r.json();
+  })
+  .then(function(data) {
+    onSuccess(data);
+  })
+  .catch(function(e) {
+    showError('login-error', e.message === 'Credenciales incorrectas' ? 'Correo o contraseña incorrectos' : e.message);
+    document.getElementById('btn-login').disabled = false;
+    document.getElementById('btn-login').textContent = 'ENTRAR';
+  });
+}
+
+// ── REGISTER ──
+function doRegister() {
+  var name = document.getElementById('reg-name').value.trim();
+  var email = document.getElementById('reg-email').value.trim();
+  var pass = document.getElementById('reg-pass').value;
+  var username = document.getElementById('reg-username').value.trim().replace('@', '');
+  clearErrors();
+
+  if (!name || !email || !pass) { showError('register-error', 'Completa los campos obligatorios'); return; }
+  if (pass.length < 6) { showError('register-error', 'La contraseña debe tener al menos 6 caracteres'); return; }
+
+  setLoading('btn-register', true);
+
+  fetch(CLOUD + '/api/v1/auth/register', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({email: email, password: pass, name: name, username: username || null})
+  })
+  .then(function(r) {
+    if (!r.ok) return r.json().then(function(d) { throw new Error(d.detail || 'Error'); });
+    return r.json();
+  })
+  .then(function(data) {
+    onSuccess(data);
+  })
+  .catch(function(e) {
+    showError('register-error', e.message === 'Email ya registrado' ? 'Este correo ya tiene cuenta' : e.message);
+    document.getElementById('btn-register').disabled = false;
+    document.getElementById('btn-register').textContent = 'CREAR CUENTA';
+  });
+}
+
+// ── ENTER KEY ──
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    var loginVisible = document.getElementById('panel-login').style.display !== 'none';
+    if (loginVisible) doLogin();
+    else doRegister();
+  }
+});
+</script>
+</body>
+</html>

@@ -188,6 +188,59 @@ html,body{
   animation:spin .8s linear infinite;
 }
 
+.auth-btn{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);
+  border-radius:20px;padding:6px 12px;
+  font-size:12px;color:var(--text);cursor:pointer;
+  text-decoration:none;pointer-events:all;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.auth-avatar{
+  width:24px;height:24px;border-radius:50%;
+  background:rgba(94,232,122,.15);border:1px solid rgba(94,232,122,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:var(--green);
+  overflow:hidden;flex-shrink:0;
+}
+.auth-avatar img{width:100%;height:100%;object-fit:cover;}
+.comments-panel{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#111;border-top:1px solid rgba(255,255,255,.1);
+  border-radius:20px 20px 0 0;
+  z-index:500;padding:16px;
+  max-height:60vh;display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .3s;
+}
+.comments-panel.open{transform:translateY(0);}
+.slide-players{
+  position:absolute;
+  bottom:calc(var(--safe-bottom) + 80px);
+  left:16px;
+  display:flex;gap:6px;flex-wrap:wrap;
+  max-width:60%;
+  pointer-events:all;
+}
+.player-tag{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(0,0,0,.6);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:20px;padding:4px 10px 4px 4px;
+  cursor:pointer;backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  transition:border-color .2s;
+}
+.player-tag:active{border-color:rgba(94,232,122,.4);}
+.player-tag-avatar{
+  width:22px;height:22px;border-radius:50%;
+  background:rgba(94,232,122,.2);
+  border:1px solid rgba(94,232,122,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:#5EE87A;
+  overflow:hidden;flex-shrink:0;
+}
+.player-tag-avatar img{width:100%;height:100%;object-fit:cover;}
+.player-tag-name{font-size:11px;font-weight:600;color:#F0EDE6;}
 /* ── TOAST ── */
 #toast{
   position:fixed;bottom:calc(var(--safe-bottom) + 20px);
@@ -201,6 +254,7 @@ html,body{
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
+<script src="picale.js"></script>
 </head>
 <body>
 
@@ -211,7 +265,7 @@ html,body{
     Clubes
   </a>
   <div class="tb-logo">PICALE<span>.</span></div>
-  <div style="width:60px;"></div>
+  <div id="auth-btn-container" style="pointer-events:all;"></div>
 </div>
 
 <!-- DOTS COUNTER -->
@@ -229,6 +283,19 @@ html,body{
 
 <!-- TOAST -->
 <div id="toast"></div>
+
+<!-- COMMENTS PANEL -->
+<div id="comments-panel" class="comments-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-shrink:0;">
+    <div style="font-family:var(--display);font-size:18px;letter-spacing:1px;">COMENTARIOS</div>
+    <button onclick="closeComments()" style="background:none;border:none;color:rgba(240,237,230,.5);font-size:24px;cursor:pointer;line-height:1;">×</button>
+  </div>
+  <div id="comments-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;margin-bottom:12px;"></div>
+  <div style="display:flex;gap:8px;flex-shrink:0;">
+    <input id="comment-input" placeholder="Escribe un comentario..." style="flex:1;padding:10px 14px;background:#1c1c1c;border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#F0EDE6;font-family:var(--body);font-size:14px;outline:none;">
+    <button onclick="submitComment()" style="padding:10px 16px;background:#5EE87A;border:none;border-radius:10px;color:#0A0A0A;font-family:var(--display);font-size:14px;cursor:pointer;letter-spacing:1px;">OK</button>
+  </div>
+</div>
 
 <script>
 var CLOUD = 'https://api.picalereplay.com';
@@ -319,6 +386,9 @@ function buildFeed() {
     +   '<div class="slide-meta">' + [date, size].filter(Boolean).join(' · ') + '</div>'
     + '</div>'
     + '<div class="slide-actions">'
+    +   '<div class="action-btn" id="like-'+i+'" title="Me gusta" style="flex-direction:column;font-size:20px;gap:2px;"><span id="like-icon-'+i+'">♡</span><span style="font-size:9px;" id="like-count-'+i+'">0</span></div>'
+    +   '<div class="action-btn" id="cm-'+i+'" title="Comentar" style="font-size:18px;">💬</div>'
+    +   '<div class="action-btn" id="claim-'+i+'" title="Yo estoy aquí" style="font-size:18px;">🎾</div>'
     +   '<div class="action-btn" id="dl-'+i+'" title="Descargar">&#8595;</div>'
     +   '<div class="action-btn" id="sh-'+i+'" title="Compartir">&#8679;</div>'
     + '</div>'
@@ -340,6 +410,29 @@ function buildFeed() {
       var pf = document.getElementById('pf-'+i);
       if (pf && v.duration) pf.style.width = (v.currentTime/v.duration*100)+'%';
     });
+
+    // Like
+    (function(clipId, idx) {
+      loadLikes(clipId, idx);
+      document.getElementById('like-'+idx).addEventListener('click', function() {
+        requireAuth(function() { toggleLike(clipId, idx); }, 'like');
+      });
+    })(c.id, i);
+
+    // Comment
+    (function(clipId, idx) {
+      document.getElementById('cm-'+idx).addEventListener('click', function() {
+        requireAuth(function() { openComments(clipId, idx); }, 'comment');
+      });
+    })(c.id, i);
+
+    // Claim
+    (function(clipId, idx) {
+      document.getElementById('claim-'+idx).addEventListener('click', function() {
+        requireAuth(function() { claimClip(clipId, idx); }, 'claim');
+      });
+      loadPlayers(clipId, idx);
+    })(c.id, i);
 
     // Download
     document.getElementById('dl-'+i).addEventListener('click', function() {
@@ -433,13 +526,160 @@ function shareClip(url, timeLabel, clubName) {
 }
 
 // ── TOAST ──
-function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 2500);
+function showToast(msg) { PICALE.showToast(msg); }
+
+// ── AUTH ──
+var currentUser = null;
+var commentsClipId = null;
+
+function initAuth() {
+  currentUser = PICALE.getUser();
+  PICALE.renderAuthBtn("auth-btn-container","feed.html");
 }
 
+
+
+function requireAuth(callback, action) {
+  if (currentUser) { callback(); return; }
+  PICALE.showToast('Entra para ' + (action === 'like' ? 'dar like' : action === 'comment' ? 'comentar' : 'reclamar clips'));
+  setTimeout(function() { window.location.href = 'auth.html?redirect=feed.html'; }, 1500);
+}
+
+function getToken() { return PICALE.getToken(); }
+
+// ── LIKES ──
+function loadLikes(clipId, idx) {
+  var headers = {};
+  if (getToken()) headers['Authorization'] = 'Bearer ' + getToken();
+  fetch(CLOUD + '/api/v1/social/clips/' + clipId + '/likes', {headers: headers})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var countEl = document.getElementById('like-count-' + idx);
+      var iconEl = document.getElementById('like-icon-' + idx);
+      var btn = document.getElementById('like-' + idx);
+      if (countEl) countEl.textContent = d.total_likes || 0;
+      if (iconEl) iconEl.textContent = d.user_liked ? '♥' : '♡';
+      if (btn) btn.style.color = d.user_liked ? '#E05252' : '';
+    }).catch(function(){});
+}
+
+function toggleLike(clipId, idx) {
+  fetch(CLOUD + '/api/v1/social/clips/' + clipId + '/like', {
+    method: 'POST',
+    headers: {'Authorization': 'Bearer ' + getToken()}
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    var countEl = document.getElementById('like-count-' + idx);
+    var iconEl = document.getElementById('like-icon-' + idx);
+    var btn = document.getElementById('like-' + idx);
+    if (countEl) countEl.textContent = d.total_likes || 0;
+    if (iconEl) iconEl.textContent = d.liked ? '♥' : '♡';
+    if (btn) btn.style.color = d.liked ? '#E05252' : '';
+  }).catch(function(){});
+}
+
+// ── PLAYERS / TAGS ──
+function loadPlayers(clipId, idx) {
+  fetch(CLOUD + '/api/v1/social/clips/' + clipId + '/claims')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var players = d.players || [];
+      var container = document.getElementById('players-' + idx);
+      if (!container || !players.length) return;
+      container.innerHTML = players.slice(0, 4).map(function(p) {
+        var name = p.name || p.username || 'Jugador';
+        var photoHtml = p.photo_url
+          ? '<img src="' + p.photo_url + '" alt="">'
+          : name[0].toUpperCase();
+        var username = p.username || '';
+        return '<div class="player-tag" data-username="' + username + '" data-id="' + p.id + '" onclick="onPlayerTagClick(this)">'
+          + '<div class="player-tag-avatar">' + photoHtml + '</div>'
+          + '<span class="player-tag-name">' + name + '</span>'
+          + '</div>';
+      }).join('');
+    }).catch(function(){});
+}
+
+function onPlayerTagClick(el) {
+  var username = el.getAttribute('data-username');
+  var userId = el.getAttribute('data-id');
+  if (currentUser) {
+    if (username) window.location.href = 'perfil.html?u=' + username;
+    else if (userId) window.location.href = 'perfil.html?id=' + userId;
+  } else {
+    showToast('Entra para ver el perfil del jugador');
+    setTimeout(function() { window.location.href = 'auth.html?redirect=feed.html'; }, 1500);
+  }
+}
+
+// ── CLAIM ──
+function claimClip(clipId, idx) {
+  fetch(CLOUD + '/api/v1/social/clips/' + clipId + '/claim', {
+    method: 'POST',
+    headers: {'Authorization': 'Bearer ' + getToken()}
+  })
+  .then(function(r) { return r.json(); })
+  .then(function() {
+    var btn = document.getElementById('claim-' + idx);
+    if (btn) { btn.style.background = 'rgba(94,232,122,.2)'; }
+    showToast('🎾 Clip guardado en tu perfil');
+    loadPlayers(clipId, idx);
+  })
+  .catch(function() { showToast('Ya reclamaste este clip'); });
+}
+
+// ── COMMENTS ──
+function openComments(clipId, idx) {
+  commentsClipId = clipId;
+  document.getElementById('comments-panel').classList.add('open');
+  loadComments(clipId);
+}
+
+function closeComments() {
+  document.getElementById('comments-panel').classList.remove('open');
+  commentsClipId = null;
+}
+
+function loadComments(clipId) {
+  var list = document.getElementById('comments-list');
+  list.innerHTML = '<div style="color:rgba(240,237,230,.4);font-size:13px;">Cargando...</div>';
+  fetch(CLOUD + '/api/v1/social/clips/' + clipId + '/comments')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var comments = d.comments || [];
+      if (!comments.length) {
+        list.innerHTML = '<div style="color:rgba(240,237,230,.4);font-size:13px;">Sin comentarios. ¡Sé el primero!</div>';
+        return;
+      }
+      list.innerHTML = comments.map(function(c) {
+        var name = c.user.name || c.user.username || 'Jugador';
+        var t = new Date(c.created_at * 1000).toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+        return '<div style="display:flex;gap:10px;">'
+          + '<div style="width:32px;height:32px;border-radius:50%;background:rgba(94,232,122,.15);border:1px solid rgba(94,232,122,.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#5EE87A;flex-shrink:0;">' + name[0].toUpperCase() + '</div>'
+          + '<div><div style="font-size:12px;font-weight:600;">' + name + ' <span style="color:rgba(240,237,230,.4);font-weight:400;">' + t + '</span></div>'
+          + '<div style="font-size:13px;margin-top:2px;">' + c.text + '</div></div></div>';
+      }).join('');
+    }).catch(function() { list.innerHTML = ''; });
+}
+
+function submitComment() {
+  var input = document.getElementById('comment-input');
+  var text = input ? input.value.trim() : '';
+  if (!text || !commentsClipId) return;
+  fetch(CLOUD + '/api/v1/social/clips/' + commentsClipId + '/comments', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken()},
+    body: JSON.stringify({text: text})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function() {
+    if (input) input.value = '';
+    loadComments(commentsClipId);
+  }).catch(function(){});
+}
+
+initAuth();
 init();
 </script>
 </body>
