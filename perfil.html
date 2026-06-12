@@ -433,7 +433,10 @@ function loadUserClips(userId) {
     });
 }
 
+var userClips = [];
+
 function renderClipsGrid(clips) {
+  userClips = clips;
   var grid = document.getElementById('clips-grid');
   if (!clips.length) {
     grid.innerHTML = '<div class="clip-empty">No has reclamado clips aún.<br><br><a href="feed.html" style="color:var(--green);text-decoration:none;">Ver el feed →</a></div>';
@@ -441,12 +444,35 @@ function renderClipsGrid(clips) {
   }
   grid.innerHTML = clips.map(function(c) {
     var time = c.created_at ? new Date(c.created_at * 1000).toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}) : '';
-    return '<div class="clip-thumb" onclick="playClip(\'' + c.url + '\',\'' + time + '\')">'
-      + '<video src="' + c.url + '" preload="metadata"></video>'
+    var unclaim = isOwnProfile
+      ? '<button data-id="' + c.id + '" onclick="unclaimClip(this)" style="position:absolute;top:6px;right:6px;z-index:2;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:14px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>'
+      : '';
+    return '<div class="clip-thumb" style="position:relative;">'
+      + '<div onclick="playClip(\'' + c.url + '\',\'' + time + '\')" style="position:absolute;inset:0;z-index:1;">'
+      + '<video src="' + c.url + '" preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>'
       + '<div class="clip-thumb-play">▶</div>'
       + '<div class="clip-thumb-time">' + time + '</div>'
+      + '</div>'
+      + unclaim
       + '</div>';
   }).join('');
+}
+
+function unclaimClip(btn) {
+  var clipId = btn.getAttribute('data-id');
+  if (!confirm('¿Quitar este clip de tu perfil?')) return;
+  fetch(PICALE.CLOUD + '/api/v1/social/clips/' + clipId + '/claim', {
+    method: 'DELETE',
+    headers: {'Authorization': 'Bearer ' + PICALE.getToken()}
+  })
+  .then(function(r) { return r.json(); })
+  .then(function() {
+    userClips = userClips.filter(function(c) { return c.id !== clipId; });
+    document.getElementById('stat-clips').textContent = userClips.length;
+    renderClipsGrid(userClips);
+    PICALE.showToast('Clip quitado de tu perfil');
+  })
+  .catch(function() { PICALE.showToast('Error al quitar clip'); });
 }
 
 // ── VIDEO MODAL ──
