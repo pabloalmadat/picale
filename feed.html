@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PICALE · Momentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0A0A0A;
+  --text:#F0EDE6;
+  --muted:rgba(240,237,230,.5);
+  --green:#5EE87A;
+  --green-dim:rgba(94,232,122,.15);
+  --overlay:rgba(0,0,0,.55);
+  --display:'Bebas Neue',sans-serif;
+  --body:'DM Sans',sans-serif;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{
+  height:100%;width:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--body);
+  overflow:hidden;
+  overscroll-behavior:none;
+}
+
+/* ── FEED CONTAINER ── */
+#feed{
+  position:fixed;inset:0;
+  overflow-y:scroll;
+  scroll-snap-type:y mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+#feed::-webkit-scrollbar{display:none;}
+
+/* ── CLIP SLIDE ── */
+.slide{
+  position:relative;
+  width:100%;height:100vh;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  background:#000;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.slide video{
+  width:100%;height:100%;
+  object-fit:cover;
+  display:block;
+}
+.slide-placeholder{
+  width:100%;height:100%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg);
+}
+
+/* ── TOP BAR ── */
+#topbar{
+  position:fixed;top:0;left:0;right:0;
+  padding:calc(var(--safe-top) + 12px) 16px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(to bottom, rgba(0,0,0,.7) 0%, transparent 100%);
+  z-index:100;
+  pointer-events:none;
+}
+.tb-logo{font-family:var(--display);font-size:22px;letter-spacing:2px;pointer-events:all;}
+.tb-logo span{color:var(--green);}
+.tb-back{
+  background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15);
+  border-radius:20px;padding:6px 12px;
+  font-size:12px;color:var(--muted);cursor:pointer;
+  text-decoration:none;pointer-events:all;
+  display:flex;align-items:center;gap:4px;
+}
+
+/* ── OVERLAY INFO ── */
+.slide-overlay{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:0 16px calc(var(--safe-bottom) + 80px) 16px;
+  background:linear-gradient(to top, rgba(0,0,0,.85) 0%, transparent 60%);
+  pointer-events:none;
+}
+.slide-club{
+  font-family:var(--display);
+  font-size:13px;letter-spacing:2px;
+  color:var(--green);margin-bottom:4px;
+}
+.slide-time{
+  font-family:var(--display);
+  font-size:32px;letter-spacing:1px;
+  line-height:1;margin-bottom:6px;
+}
+.slide-meta{
+  font-size:12px;color:var(--muted);
+}
+
+/* ── SIDE ACTIONS ── */
+.slide-actions{
+  position:absolute;
+  right:12px;
+  bottom:calc(var(--safe-bottom) + 90px);
+  display:flex;flex-direction:column;gap:16px;
+  align-items:center;
+}
+.action-btn{
+  width:44px;height:44px;
+  border-radius:50%;
+  background:rgba(0,0,0,.5);
+  border:1px solid rgba(255,255,255,.15);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:18px;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  transition:transform .15s,background .15s;
+  color:var(--text);
+}
+.action-btn:active{transform:scale(.9);background:rgba(255,255,255,.15);}
+.action-btn.loading{opacity:.5;pointer-events:none;}
+
+/* ── PLAY BUTTON ── */
+.play-btn{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:64px;height:64px;
+  border-radius:50%;
+  background:rgba(0,0,0,.5);
+  border:2px solid rgba(255,255,255,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;cursor:pointer;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  opacity:0;transition:opacity .2s;
+  pointer-events:none;
+}
+.slide.paused .play-btn{opacity:1;}
+
+/* ── PROGRESS BAR ── */
+.progress{
+  position:absolute;bottom:0;left:0;right:0;
+  height:3px;background:rgba(255,255,255,.15);
+}
+.progress-fill{
+  height:100%;background:var(--green);
+  width:0%;transition:none;
+}
+
+/* ── COUNTER ── */
+#counter{
+  position:fixed;top:50%;right:10px;
+  transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:4px;
+  z-index:50;pointer-events:none;
+}
+.dot{
+  width:4px;height:4px;border-radius:50%;
+  background:rgba(255,255,255,.25);transition:all .3s;
+}
+.dot.active{
+  height:16px;border-radius:2px;
+  background:var(--green);
+}
+
+/* ── LOADING / EMPTY ── */
+#loader{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--bg);z-index:200;
+  gap:16px;
+}
+.loader-logo{font-family:var(--display);font-size:48px;letter-spacing:4px;}
+.loader-logo span{color:var(--green);}
+.loader-sub{font-size:13px;color:var(--muted);letter-spacing:1px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{
+  width:24px;height:24px;
+  border:2px solid rgba(255,255,255,.1);
+  border-top-color:var(--green);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:calc(var(--safe-bottom) + 20px);
+  left:50%;transform:translateX(-50%) translateY(20px);
+  background:rgba(30,30,30,.95);border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;padding:8px 18px;
+  font-size:13px;color:var(--text);
+  opacity:0;transition:all .3s;z-index:300;
+  white-space:nowrap;
+  backdrop-filter:blur(12px);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <a href="clubs.html" class="tb-back">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2L4 6l4 4"/></svg>
+    Clubes
+  </a>
+  <div class="tb-logo">PICALE<span>.</span></div>
+  <div style="width:60px;"></div>
+</div>
+
+<!-- DOTS COUNTER -->
+<div id="counter"></div>
+
+<!-- FEED -->
+<div id="feed"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">PICALE<span>.</span></div>
+  <div class="spinner"></div>
+  <div class="loader-sub">Cargando momentos...</div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+var CLOUD = 'https://api.picalereplay.com';
+
+var CLUBS = {
+  duo: {
+    name: 'DUO Padel Park',
+    courts: [
+      {id:'6ee6d28e-75c3-4cf4-87d0-6d052fb81ab4', name:'Cancha 2'},
+      {id:'c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3', name:'Cancha 3'}
+    ]
+  }
+};
+
+var clips = [];
+var currentIdx = 0;
+var observers = [];
+
+// ── INIT ──
+function init() {
+  var params = new URLSearchParams(window.location.search);
+  var clubId = params.get('club') || 'duo';
+  var club = CLUBS[clubId] || CLUBS.duo;
+  loadClips(club);
+}
+
+function loadClips(club) {
+  Promise.all(club.courts.map(function(c) {
+    return fetch(CLOUD + '/api/v1/clips/?court_id=' + c.id + '&limit=30', {signal: AbortSignal.timeout(10000)})
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        return (d.clips || []).map(function(clip) {
+          clip._court = c.name;
+          clip._clubName = club.name;
+          return clip;
+        });
+      })
+      .catch(function() { return []; });
+  })).then(function(results) {
+    clips = results.flat().sort(function(a,b) { return (b.created_at||0)-(a.created_at||0); });
+    buildFeed();
+    hideLoader();
+  });
+}
+
+function hideLoader() {
+  var l = document.getElementById('loader');
+  l.style.opacity = '0';
+  l.style.transition = 'opacity .4s';
+  setTimeout(function() { l.style.display = 'none'; }, 400);
+}
+
+// ── BUILD FEED ──
+function buildFeed() {
+  var feed = document.getElementById('feed');
+  var counter = document.getElementById('counter');
+
+  if (!clips.length) {
+    feed.innerHTML = '<div class="slide"><div class="slide-placeholder"><div style="text-align:center;"><div style="font-family:var(--display);font-size:32px;color:var(--muted);">SIN CLIPS</div><div style="font-size:13px;color:var(--muted);margin-top:8px;">No hay momentos aún</div></div></div></div>';
+    return;
+  }
+
+  // Max 20 clips
+  var shown = clips.slice(0, 20);
+
+  counter.innerHTML = shown.map(function(_, i) {
+    return '<div class="dot' + (i===0?' active':'') + '" id="dot-'+i+'"></div>';
+  }).join('');
+
+  shown.forEach(function(c, i) {
+    var url = CLOUD + '/api/v1/clips/' + c.id + '/file';
+    var time = c.created_at ? new Date(c.created_at*1000).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '--:--';
+    var date = c.created_at ? new Date(c.created_at*1000).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) : '';
+    var size = c.size_mb ? c.size_mb.toFixed(1)+' MB' : '';
+
+    var slide = document.createElement('div');
+    slide.className = 'slide';
+    slide.dataset.idx = i;
+    slide.dataset.url = url;
+    slide.dataset.time = time;
+
+    slide.innerHTML =
+      '<video playsinline preload="none" loop></video>'
+    + '<div class="play-btn">&#9654;</div>'
+    + '<div class="slide-overlay">'
+    +   '<div class="slide-club">' + (c._court||'') + ' · ' + (c._clubName||'') + '</div>'
+    +   '<div class="slide-time">' + time + '</div>'
+    +   '<div class="slide-meta">' + [date, size].filter(Boolean).join(' · ') + '</div>'
+    + '</div>'
+    + '<div class="slide-actions">'
+    +   '<div class="action-btn" id="dl-'+i+'" title="Descargar">&#8595;</div>'
+    +   '<div class="action-btn" id="sh-'+i+'" title="Compartir">&#8679;</div>'
+    + '</div>'
+    + '<div class="progress"><div class="progress-fill" id="pf-'+i+'"></div></div>';
+
+    feed.appendChild(slide);
+
+    // Toggle play on tap
+    slide.addEventListener('click', function(e) {
+      if (e.target.closest('.action-btn')) return;
+      var v = slide.querySelector('video');
+      if (v.paused) { v.play(); slide.classList.remove('paused'); }
+      else { v.pause(); slide.classList.add('paused'); }
+    });
+
+    // Progress bar
+    var v = slide.querySelector('video');
+    v.addEventListener('timeupdate', function() {
+      var pf = document.getElementById('pf-'+i);
+      if (pf && v.duration) pf.style.width = (v.currentTime/v.duration*100)+'%';
+    });
+
+    // Download
+    document.getElementById('dl-'+i).addEventListener('click', function() {
+      downloadClip(url, time, i);
+    });
+
+    // Share
+    document.getElementById('sh-'+i).addEventListener('click', function() {
+      shareClip(url, time, c._clubName||'');
+    });
+  });
+
+  // Intersection observer for autoplay
+  var io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      var slide = entry.target;
+      var v = slide.querySelector('video');
+      var idx = parseInt(slide.dataset.idx);
+      if (entry.isIntersecting) {
+        currentIdx = idx;
+        updateCounter(idx);
+        if (!v.src) v.src = slide.dataset.url;
+        v.play().catch(function(){});
+        slide.classList.remove('paused');
+      } else {
+        v.pause();
+      }
+    });
+  }, {threshold: 0.6});
+
+  document.querySelectorAll('.slide').forEach(function(s) { io.observe(s); });
+}
+
+function updateCounter(idx) {
+  document.querySelectorAll('.dot').forEach(function(d, i) {
+    d.classList.toggle('active', i === idx);
+  });
+}
+
+// ── DOWNLOAD ──
+function downloadClip(url, timeLabel, idx) {
+  var btn = document.getElementById('dl-'+idx);
+  if (!btn) return;
+  btn.classList.add('loading');
+  btn.innerHTML = '...';
+  fetch(url)
+    .then(function(r) { return r.blob(); })
+    .then(function(blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'picale_' + timeLabel.replace(':','-') + '.mp4';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+      btn.innerHTML = '✓';
+      btn.classList.remove('loading');
+      setTimeout(function(){ btn.innerHTML = '&#8595;'; }, 2000);
+      showToast('Descargando...');
+    })
+    .catch(function() {
+      btn.innerHTML = '&#8595;';
+      btn.classList.remove('loading');
+      window.open(url, '_blank');
+    });
+}
+
+// ── SHARE ──
+function shareClip(url, timeLabel, clubName) {
+  var text = '🎾 ' + clubName + '\nVe tus clips y partidos en vivo en picalereplay.com';
+  if (navigator.share) {
+    fetch(url)
+      .then(function(r) { return r.blob(); })
+      .then(function(blob) {
+        var file = new File([blob], 'picale_' + timeLabel.replace(':','-') + '.mp4', {type:'video/mp4'});
+        if (navigator.canShare && navigator.canShare({files:[file]})) {
+          return navigator.share({files:[file], title:'Clip PICALE', text:text});
+        }
+        return navigator.share({title:'Clip PICALE', text:text, url:url});
+      })
+      .catch(function() {
+        navigator.share({title:'Clip PICALE', text:text, url:url}).catch(function(){});
+      });
+  } else {
+    navigator.clipboard.writeText(url).then(function() {
+      showToast('Link copiado');
+    }).catch(function() {
+      window.open(url, '_blank');
+    });
+  }
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2500);
+}
+
+init();
+</script>
+</body>
+</html>
