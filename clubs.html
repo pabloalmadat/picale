@@ -384,14 +384,15 @@ function shareClip(url, timeLabel) {
       .then(function(r) { return r.blob(); })
       .then(function(blob) {
         var file = new File([blob], filename, {type: 'video/mp4'});
+        var shareText = '🎾 Este clip es de DUO Padel Park Obregón\nVe tus clips y partidos en vivo en picalereplay.com';
         if (navigator.canShare && navigator.canShare({files: [file]})) {
-          navigator.share({files: [file], title: 'Clip PICALE ' + timeLabel});
+          navigator.share({files: [file], title: 'Clip PICALE ' + timeLabel, text: shareText});
         } else {
-          navigator.share({title: 'Clip PICALE', url: url});
+          navigator.share({title: 'Clip PICALE', text: shareText, url: url});
         }
       })
       .catch(function() {
-        navigator.share({title: 'Clip PICALE', url: url});
+        navigator.share({title: 'Clip PICALE', text: '🎾 Este clip es de DUO Padel Park Obregón\nVe tus clips y partidos en vivo en picalereplay.com', url: url});
       });
   } else {
     navigator.clipboard.writeText(url).then(function() {
