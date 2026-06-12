@@ -352,6 +352,56 @@ function _dateKey(ts) {
   return yr + '-' + mo + '-' + dy;
 }
 
+function downloadClip(url, timeLabel) {
+  var filename = 'clip_' + timeLabel.replace(':', '-') + '.mp4';
+  var btn = event.target;
+  btn.innerHTML = '...';
+  btn.disabled = true;
+  fetch(url)
+    .then(function(r) { return r.blob(); })
+    .then(function(blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+      btn.innerHTML = '&#10003;';
+      setTimeout(function(){ btn.innerHTML = '&#8595;'; btn.disabled = false; }, 2000);
+    })
+    .catch(function() {
+      btn.innerHTML = '&#8595;';
+      btn.disabled = false;
+      window.open(url, '_blank');
+    });
+}
+
+function shareClip(url, timeLabel) {
+  var filename = 'clip_' + timeLabel.replace(':', '-') + '.mp4';
+  if (navigator.share) {
+    fetch(url)
+      .then(function(r) { return r.blob(); })
+      .then(function(blob) {
+        var file = new File([blob], filename, {type: 'video/mp4'});
+        if (navigator.canShare && navigator.canShare({files: [file]})) {
+          navigator.share({files: [file], title: 'Clip PICALE ' + timeLabel});
+        } else {
+          navigator.share({title: 'Clip PICALE', url: url});
+        }
+      })
+      .catch(function() {
+        navigator.share({title: 'Clip PICALE', url: url});
+      });
+  } else {
+    navigator.clipboard.writeText(url).then(function() {
+      alert('Link copiado al portapapeles');
+    }).catch(function() {
+      window.open(url, '_blank');
+    });
+  }
+}
+
 function _renderClips(clips) {
   var grid = document.getElementById('clips-grid');
   var empty = document.getElementById('clips-empty');
@@ -378,13 +428,19 @@ function _renderClips(clips) {
     ver.className = 'clip-play';
     ver.textContent = 'Ver';
     ver.onclick = (function(u){ return function(){ playVideo(u, 'Clip'); }; })(url);
-    var dl = document.createElement('a');
-    dl.href = url;
-    dl.setAttribute('download', 'clip_' + timeLabel.replace(':','-') + '.mp4');
-    dl.style.cssText = 'padding:6px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:13px;color:var(--muted);text-decoration:none;display:flex;align-items:center;';
-    dl.innerHTML = '&#8595;';
+    var dlBtn = document.createElement('button');
+    dlBtn.style.cssText = 'padding:6px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;';
+    dlBtn.innerHTML = '&#8595;';
+    dlBtn.title = 'Descargar';
+    dlBtn.onclick = (function(u, t){ return function(){ downloadClip(u, t); }; })(url, timeLabel);
+    var shareBtn = document.createElement('button');
+    shareBtn.style.cssText = 'padding:6px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;';
+    shareBtn.innerHTML = '&#8679;';
+    shareBtn.title = 'Compartir';
+    shareBtn.onclick = (function(u, t){ return function(){ shareClip(u, t); }; })(url, timeLabel);
     btns.appendChild(ver);
-    btns.appendChild(dl);
+    btns.appendChild(dlBtn);
+    btns.appendChild(shareBtn);
     div.appendChild(inner);
     div.appendChild(btns);
     grid.appendChild(div);
