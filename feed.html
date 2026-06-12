@@ -124,6 +124,12 @@ html,body{
 }
 .action-btn:active{transform:scale(.9);background:rgba(255,255,255,.15);}
 .action-btn.loading{opacity:.5;pointer-events:none;}
+.slide-loading{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;opacity:1;transition:opacity .3s;
+}
+.slide-loading.hidden{opacity:0;}
 
 /* ── PLAY BUTTON ── */
 .play-btn{
@@ -277,7 +283,14 @@ html,body{
 <!-- LOADER -->
 <div id="loader">
   <div class="loader-logo">PICALE<span>.</span></div>
-  <div class="spinner"></div>
+  <div style="margin:8px 0 16px;">
+    <svg width="48" height="48" viewBox="0 0 48 48" style="animation:spin .9s linear infinite;">
+      <circle cx="24" cy="24" r="20" fill="#1a2e1a" stroke="rgba(94,232,122,.2)" stroke-width="2"/>
+      <ellipse cx="24" cy="24" rx="20" ry="7" fill="none" stroke="rgba(94,232,122,.35)" stroke-width="1.2"/>
+      <ellipse cx="24" cy="24" rx="7" ry="20" fill="none" stroke="rgba(94,232,122,.35)" stroke-width="1.2"/>
+      <circle cx="24" cy="24" r="20" fill="none" stroke="#5EE87A" stroke-width="2" stroke-dasharray="30 96" stroke-linecap="round"/>
+    </svg>
+  </div>
   <div class="loader-sub">Cargando momentos...</div>
 </div>
 
@@ -379,6 +392,7 @@ function buildFeed() {
 
     slide.innerHTML =
       '<video playsinline preload="none" loop></video>'
+    + '<div class="slide-loading" id="slide-load-'+i+'"><svg width="36" height="36" viewBox="0 0 48 48" style="animation:spin .9s linear infinite;"><circle cx="24" cy="24" r="20" fill="#1a2e1a" stroke="rgba(94,232,122,.15)" stroke-width="2"/><ellipse cx="24" cy="24" rx="20" ry="7" fill="none" stroke="rgba(94,232,122,.25)" stroke-width="1.2"/><ellipse cx="24" cy="24" rx="7" ry="20" fill="none" stroke="rgba(94,232,122,.25)" stroke-width="1.2"/><circle cx="24" cy="24" r="20" fill="none" stroke="#5EE87A" stroke-width="2" stroke-dasharray="30 96" stroke-linecap="round"/></svg></div>'
     + '<div class="play-btn">&#9654;</div>'
     + '<div class="slide-overlay">'
     +   '<div class="slide-club">' + (c._court||'') + ' · ' + (c._clubName||'') + '</div>'
@@ -454,7 +468,13 @@ function buildFeed() {
       if (entry.isIntersecting) {
         currentIdx = idx;
         updateCounter(idx);
-        if (!v.src) v.src = slide.dataset.url;
+        if (!v.src) {
+          v.src = slide.dataset.url;
+          v.addEventListener('playing', function() {
+            var sl = document.getElementById('slide-load-'+idx);
+            if (sl) sl.classList.add('hidden');
+          }, {once: true});
+        }
         v.play().catch(function(){});
         slide.classList.remove('paused');
       } else {
