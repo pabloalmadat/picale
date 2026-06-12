@@ -345,7 +345,11 @@ var _allClips = [];
 
 function _dateKey(ts) {
   var d = new Date(ts * 1000);
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  // Use local timezone
+  var yr = d.getFullYear();
+  var mo = String(d.getMonth()+1).padStart(2,'0');
+  var dy = String(d.getDate()).padStart(2,'0');
+  return yr + '-' + mo + '-' + dy;
 }
 
 function _renderClips(clips) {
@@ -357,15 +361,16 @@ function _renderClips(clips) {
   grid.innerHTML = '';
   clips.forEach(function(c) {
     var url = CLOUD + '/api/v1/clips/' + c.id + '/file';
-    var date = c.created_at ? new Date(c.created_at * 1000).toLocaleString('es-MX', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '';
+    var timeLabel = c.created_at ? new Date(c.created_at * 1000).toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}) : '--:--';
     var size = c.size_mb ? c.size_mb.toFixed(1) + ' MB' : '';
     var div = document.createElement('div');
     div.className = 'clip-card';
     var inner = document.createElement('div');
-    inner.style.cssText = 'display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;';
+    inner.style.cssText = 'display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;';
     inner.innerHTML = '<div class="clip-icon">&#9654;</div>'
-      + '<div class="clip-info"><div class="clip-name">' + (c.filename || 'Clip') + '</div>'
-      + '<div class="clip-meta">' + [date, size].filter(Boolean).join(' · ') + '</div></div>';
+      + '<div class="clip-info" style="min-width:0;">'
+      + '<div class="clip-name" style="font-size:15px;font-weight:600;">' + timeLabel + '</div>'
+      + '<div class="clip-meta">' + size + '</div></div>';
     inner.onclick = (function(u){ return function(){ playVideo(u, 'Clip'); }; })(url);
     var btns = document.createElement('div');
     btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
@@ -375,8 +380,8 @@ function _renderClips(clips) {
     ver.onclick = (function(u){ return function(){ playVideo(u, 'Clip'); }; })(url);
     var dl = document.createElement('a');
     dl.href = url;
-    dl.setAttribute('download', '');
-    dl.style.cssText = 'padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:13px;color:var(--muted);text-decoration:none;display:flex;align-items:center;';
+    dl.setAttribute('download', 'clip_' + timeLabel.replace(':','-') + '.mp4');
+    dl.style.cssText = 'padding:6px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:13px;color:var(--muted);text-decoration:none;display:flex;align-items:center;';
     dl.innerHTML = '&#8595;';
     btns.appendChild(ver);
     btns.appendChild(dl);
@@ -401,10 +406,13 @@ function _buildDayPills() {
   _allClips.forEach(function(c) { if (c.created_at) { var k = _dateKey(c.created_at); days[k] = (days[k]||0)+1; }});
   var sorted = Object.keys(days).sort().reverse();
   var now = new Date();
+  function localDateStr(d) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
   var labels = {};
-  labels[now.toISOString().slice(0,10)] = 'Hoy';
-  labels[new Date(now-86400000).toISOString().slice(0,10)] = 'Ayer';
-  labels[new Date(now-172800000).toISOString().slice(0,10)] = 'Anteayer';
+  labels[localDateStr(now)] = 'Hoy';
+  labels[localDateStr(new Date(now-86400000))] = 'Ayer';
+  labels[localDateStr(new Date(now-172800000))] = 'Anteayer';
   var pills = document.getElementById('clips-day-pills');
   var recent = sorted.slice(0, 3);
   pills.innerHTML = recent.map(function(d) {
