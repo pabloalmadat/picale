@@ -333,12 +333,9 @@ function openClub(id) {
     }).join('');
   }
 
+  stopHLS();
   activeCourt = cfg.defaultCourt;
-  // Let DOM update before selecting
-  setTimeout(function() {
-    selectCourt(cfg.defaultCourt);
-    selectSection('live');
-  }, 10);
+  selectSection('live');
 }
 
 function goBack() {
