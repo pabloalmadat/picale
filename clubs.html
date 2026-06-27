@@ -165,18 +165,15 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
       </div>
 
       <!-- CUATRO PADEL SUR -->
-      <div class="club-card coming-club">
+      <div class="club-card" onclick="openClub('cuatro')">
         <div class="club-img-placeholder" style="background:#000;position:relative;overflow:hidden;">
-          <img src="/assets/cuatro_padel.png" alt="Cuatro Pádel Sur" style="width:60%;height:auto;object-fit:contain;opacity:.85;" onerror="this.style.display='none';">
+          <img src="/assets/cuatro_padel.png" alt="Cuatro Pádel Sur" style="width:60%;height:auto;object-fit:contain;opacity:.9;" onerror="this.style.display='none';">
         </div>
         <div class="club-body">
-          <div class="coming-badge">PRÓXIMAMENTE</div>
-          <div class="club-name" style="color:var(--muted);">Cuatro Pádel Sur</div>
-          <div class="club-meta">Monterrey, Nuevo León</div>
-          <div class="club-courts" style="margin-top:8px;">
-            <div class="court-pill" style="opacity:.5;">
-              <span style="width:6px;height:6px;border-radius:50%;background:var(--muted2);display:inline-block;margin-right:4px;"></span>Próximamente
-            </div>
+          <div class="club-name">Cuatro Pádel Sur</div>
+          <div class="club-meta">Monterrey, Nuevo León · 1 cancha</div>
+          <div class="club-courts">
+            <div class="court-pill"><span class="live-dot"></span>Cancha 1</div>
           </div>
         </div>
       </div>
