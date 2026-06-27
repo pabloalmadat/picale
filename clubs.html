@@ -333,8 +333,12 @@ function openClub(id) {
     }).join('');
   }
 
-  selectCourt(cfg.defaultCourt);
-  selectSection('live');
+  activeCourt = cfg.defaultCourt;
+  // Let DOM update before selecting
+  setTimeout(function() {
+    selectCourt(cfg.defaultCourt);
+    selectSection('live');
+  }, 10);
 }
 
 function goBack() {
@@ -346,10 +350,13 @@ function goBack() {
 // ── COURT SELECT ──
 function selectCourt(id) {
   activeCourt = id;
-  Object.keys(COURTS).forEach(function(c) {
-    var el = document.getElementById('tab-'+c);
-    if(el) el.classList.toggle('active', c === id);
+  // Update active tab - works for both static and dynamic tabs
+  document.querySelectorAll('.court-tab').forEach(function(el) {
+    el.classList.remove('active');
   });
+  var activeTab = document.getElementById('tab-'+id);
+  if (activeTab) activeTab.classList.add('active');
+
   if (activeSection === 'live') loadLive();
   else if (activeSection === 'clips') loadClips();
   else if (activeSection === 'matches') loadMatches();
