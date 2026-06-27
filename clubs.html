@@ -203,13 +203,13 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3L6 8l4 5"/></svg>
       Clubes
     </button>
-    <div class="topbar-title">DUO PADEL PARK</div>
+    <div class="topbar-title" id="topbar-title">DUO PADEL PARK</div>
     <div id="auth-btn-container"></div>
   </div>
 
   <div class="club-scroll">
     <!-- Court selector -->
-    <div class="courts-tabs">
+    <div class="courts-tabs" id="courts-tabs-container">
       <div class="court-tab active" id="tab-c2" onclick="selectCourt('c2')">
         <div class="court-tab-name"><span class="live-dot"></span>Cancha 2</div>
         <div class="court-tab-sub">TOSSA</div>
@@ -291,6 +291,25 @@ const COURTS = {
     sub: 'RUBA',
     courtId: 'c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3',
     hls: CLOUD + '/hls/c3f9a17e2d8b5047/index.m3u8',
+  },
+  cuatro_c1: {
+    name: 'Cancha 1',
+    sub: 'MTY',
+    courtId: 'c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4',
+    hls: CLOUD + '/hls/c4f9a17e2d8b5048/index.m3u8',
+  }
+};
+
+var CLUBS_CONFIG = {
+  duo: {
+    name: 'DUO PADEL PARK',
+    courts: ['c2', 'c3'],
+    defaultCourt: 'c2',
+  },
+  cuatro: {
+    name: 'CUATRO PÁDEL SUR',
+    courts: ['cuatro_c1'],
+    defaultCourt: 'cuatro_c1',
   }
 };
 
@@ -300,9 +319,24 @@ var hlsInstance = null;
 
 // ── NAVIGATION ──
 function openClub(id) {
+  var cfg = CLUBS_CONFIG[id] || CLUBS_CONFIG.duo;
+  document.getElementById('topbar-title').textContent = cfg.name;
   document.getElementById('page-landing').classList.remove('active');
   document.getElementById('page-club').classList.add('active');
-  selectCourt('c2');
+
+  // Update court tabs based on club
+  var tabsEl = document.getElementById('courts-tabs-container');
+  if (tabsEl) {
+    tabsEl.innerHTML = cfg.courts.map(function(cId) {
+      var c = COURTS[cId];
+      return '<div class="court-tab" id="tab-' + cId + '" onclick="selectCourt('' + cId + '')">'
+        + '<div class="court-tab-name"><span class="live-dot"></span>' + c.name + '</div>'
+        + '<div class="court-tab-sub">' + c.sub + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  selectCourt(cfg.defaultCourt);
   selectSection('live');
 }
 
