@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>PÍCALE RIVALS</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="picale.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#08090a;--bg2:#0f1012;--bg3:#161719;--bg4:#1c1e20;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.12);
+  --text:#F0EDE6;--muted:rgba(240,237,230,.45);--muted2:rgba(240,237,230,.2);
+  --green:#5EE87A;--green-dim:rgba(94,232,122,.1);--green-border:rgba(94,232,122,.25);
+  --red:#E05252;--yellow:#E5C547;--blue:#5B9EE8;
+  --display:'Bebas Neue',sans-serif;--body:'DM Sans',sans-serif;--mono:'JetBrains Mono',monospace;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  padding:calc(var(--safe-top)+12px) 16px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(8,9,10,.92);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
+}
+.logo{font-family:var(--display);font-size:20px;letter-spacing:2px;text-decoration:none;color:var(--text);}
+.logo span{color:var(--green);}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+
+/* ── HERO ── */
+.hero{
+  padding:48px 16px 32px;text-align:center;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(94,232,122,.06) 0%,transparent 70%);
+  border-bottom:1px solid var(--border);
+}
+.hero-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--green);margin-bottom:12px;}
+.hero-title{font-family:var(--display);font-size:clamp(48px,10vw,80px);letter-spacing:4px;line-height:.9;margin-bottom:12px;}
+.hero-title span{color:var(--green);}
+.hero-sub{font-size:14px;color:var(--muted);max-width:400px;margin:0 auto;}
+
+/* ── TABS ── */
+.tabs-wrap{border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:52px;z-index:90;}
+.tabs{display:flex;overflow-x:auto;scrollbar-width:none;padding:0 8px;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{
+  padding:14px 16px;font-size:12px;font-family:var(--mono);letter-spacing:1.5px;
+  color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;
+  transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;
+  font-family:var(--body);font-weight:600;
+}
+.tab.active{color:var(--text);border-bottom-color:var(--green);}
+
+/* ── CONTENT ── */
+.content{max-width:800px;margin:0 auto;padding:20px 16px calc(var(--safe-bottom)+40px);}
+
+/* ── TOURNAMENT CARDS ── */
+.t-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;margin-bottom:12px;cursor:pointer;transition:border-color .2s;
+}
+.t-card:hover{border-color:var(--border2);}
+.t-card-header{padding:16px 20px;border-bottom:1px solid var(--border);}
+.t-card-name{font-family:var(--display);font-size:22px;letter-spacing:1px;margin-bottom:4px;}
+.t-card-meta{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.t-card-body{padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;}
+.t-info{display:flex;flex-direction:column;gap:3px;}
+.t-info-label{font-size:9px;color:var(--muted2);letter-spacing:1.5px;font-weight:600;}
+.t-info-value{font-size:13px;font-weight:600;}
+.t-card-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+
+/* ── STATUS BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px;}
+.badge-dot{width:6px;height:6px;border-radius:50%;}
+.badge-draft{background:var(--bg4);color:var(--muted);border:1px solid var(--border2);}
+.badge-open{background:rgba(91,158,232,.1);color:var(--blue);border:1px solid rgba(91,158,232,.3);}
+.badge-active{background:var(--green-dim);color:var(--green);border:1px solid var(--green-border);}
+.badge-active .badge-dot{background:var(--green);animation:pulse 2s infinite;}
+.badge-finished{background:var(--bg4);color:var(--muted);border:1px solid var(--border);}
+.badge-closed{background:rgba(224,82,82,.1);color:var(--red);border:1px solid rgba(224,82,82,.3);}
+.badge-picale{background:var(--green-dim);color:var(--green);border:1px solid var(--green-border);font-size:9px;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+/* ── DETAIL VIEW ── */
+#view-detail{display:none;}
+.back-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  color:var(--muted);font-size:13px;cursor:pointer;
+  margin-bottom:20px;background:none;border:none;padding:0;font-family:var(--body);
+}
+.back-btn:hover{color:var(--text);}
+.detail-header{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+  padding:24px;margin-bottom:16px;
+}
+.detail-name{font-family:var(--display);font-size:clamp(24px,6vw,40px);letter-spacing:2px;margin-bottom:8px;}
+.detail-meta{font-size:13px;color:var(--muted);margin-bottom:16px;}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:16px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
+.detail-stat{display:flex;flex-direction:column;gap:4px;}
+.detail-stat-label{font-size:9px;color:var(--muted2);letter-spacing:1.5px;}
+.detail-stat-value{font-family:var(--display);font-size:24px;letter-spacing:1px;color:var(--green);}
+
+/* ── TEAMS ── */
+.section-title{font-family:var(--display);font-size:18px;letter-spacing:1px;margin-bottom:12px;}
+.teams-list{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;}
+.team-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);}
+.team-row:last-child{border-bottom:none;}
+.team-pos{width:24px;height:24px;border-radius:6px;background:var(--bg4);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);font-family:var(--mono);flex-shrink:0;}
+.team-pos.gold{background:rgba(229,197,71,.15);border-color:rgba(229,197,71,.3);color:var(--yellow);}
+.team-pos.silver{background:rgba(200,200,200,.1);border-color:rgba(200,200,200,.2);color:#ccc;}
+.team-pos.bronze{background:rgba(205,127,50,.1);border-color:rgba(205,127,50,.2);color:#cd7f32;}
+.team-info{flex:1;min-width:0;}
+.team-name-main{font-size:13px;font-weight:600;}
+.team-players-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.team-record{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;flex-shrink:0;}
+.team-record span{color:var(--text);}
+
+/* ── BRACKET ── */
+.bracket-section{margin-bottom:16px;}
+.bracket-label{font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;font-weight:600;}
+.match-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  margin-bottom:8px;overflow:hidden;
+}
+.match-round-label{font-size:9px;color:var(--muted2);letter-spacing:1.5px;padding:6px 14px;background:var(--bg3);border-bottom:1px solid var(--border);}
+.match-teams{padding:10px 14px;}
+.match-team-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;}
+.match-team-name{font-size:13px;font-weight:500;}
+.match-team-name.winner{color:var(--green);font-weight:700;}
+.match-team-name.loser{color:var(--muted);}
+.match-score{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.match-divider{height:1px;background:var(--border);margin:4px 0;}
+.match-status-pending{font-size:10px;color:var(--muted2);text-align:center;padding:4px 0;}
+
+/* ── EMPTY / LOADING ── */
+.empty{padding:48px 20px;text-align:center;}
+.empty-icon{font-size:36px;opacity:.2;margin-bottom:12px;}
+.empty-text{font-size:14px;color:var(--muted);}
+.loading{padding:40px;text-align:center;color:var(--muted);font-size:13px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:24px;height:24px;border:2px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+
+/* ── FORMAT LABEL ── */
+.format-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;font-size:10px;color:var(--muted);font-family:var(--mono);}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a href="index.html" class="logo">PÍCALE<span>.</span></a>
+  <div class="topbar-right">
+    <div id="auth-btn-container"></div>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero" id="hero-section">
+  <div class="hero-eyebrow">ECOSISTEMA COMPETITIVO</div>
+  <div class="hero-title">PÍCALE<br><span>RIVALS</span></div>
+  <div class="hero-sub">Torneos semanales, rankings y tu historial deportivo — todo en un lugar</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" id="tab-upcoming" onclick="switchTab('upcoming')">Próximos</button>
+    <button class="tab" id="tab-active" onclick="switchTab('active')">En curso</button>
+    <button class="tab" id="tab-finished" onclick="switchTab('finished')">Finalizados</button>
+    <button class="tab" id="tab-all" onclick="switchTab('all')">Todos</button>
+  </div>
+</div>
+
+<!-- LIST VIEW -->
+<div class="content" id="view-list">
+  <div id="tournaments-container">
+    <div class="loading"><div class="spinner"></div>Cargando torneos...</div>
+  </div>
+</div>
+
+<!-- DETAIL VIEW -->
+<div class="content" id="view-detail">
+  <button class="back-btn" onclick="showList()">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2L5 7l4 5"/></svg>
+    Todos los torneos
+  </button>
+
+  <div class="detail-header" id="detail-header">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
+
+  <!-- SUB TABS -->
+  <div class="tabs-wrap" style="position:static;margin-bottom:16px;border-radius:10px;overflow:hidden;">
+    <div class="tabs">
+      <button class="tab active" id="dtab-info" onclick="switchDetailTab('info')">Info</button>
+      <button class="tab" id="dtab-teams" onclick="switchDetailTab('teams')">Parejas</button>
+      <button class="tab" id="dtab-bracket" onclick="switchDetailTab('bracket')">Bracket</button>
+    </div>
+  </div>
+
+  <!-- INFO TAB -->
+  <div id="dview-info">
+    <div id="detail-description" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:16px;font-size:14px;color:var(--muted);line-height:1.6;"></div>
+    <div id="detail-extra"></div>
+  </div>
+
+  <!-- TEAMS TAB -->
+  <div id="dview-teams" style="display:none;">
+    <div id="teams-container">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- BRACKET TAB -->
+  <div id="dview-bracket" style="display:none;">
+    <div id="bracket-container">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var CLOUD = PICALE.CLOUD;
+var allTournaments = [];
+var currentTab = 'upcoming';
+var currentDetailTab = 'info';
+var currentTournament = null;
+
+PICALE.renderAuthBtn('auth-btn-container', 'rivals.html');
+
+// ── LOAD ──────────────────────────────────────────────────────────────────────
+function loadTournaments() {
+  fetch(CLOUD + '/api/v1/rivals/')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      allTournaments = d.tournaments || [];
+      renderList();
+    })
+    .catch(function() {
+      document.getElementById('tournaments-container').innerHTML =
+        '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Error cargando torneos</div></div>';
+    });
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  ['upcoming','active','finished','all'].forEach(function(t) {
+    document.getElementById('tab-'+t).classList.toggle('active', t === tab);
+  });
+  renderList();
+}
+
+function filterTournaments(tab) {
+  if (tab === 'upcoming') return allTournaments.filter(function(t){return t.status==='open'||t.status==='draft';});
+  if (tab === 'active') return allTournaments.filter(function(t){return t.status==='active';});
+  if (tab === 'finished') return allTournaments.filter(function(t){return t.status==='finished';});
+  return allTournaments;
+}
+
+// ── RENDER LIST ───────────────────────────────────────────────────────────────
+function renderList() {
+  var filtered = filterTournaments(currentTab);
+  var el = document.getElementById('tournaments-container');
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🏆</div><div class="empty-text">No hay torneos en esta categoría aún</div></div>';
+    return;
+  }
+
+  el.innerHTML = filtered.map(function(t) {
+    var cat = t.category_type === 'suma' ? 'SUMA ' + t.suma_valor : (t.categoria || '—');
+    var fmt = {double_elimination:'Doble Elim.',single_elimination:'Elim. Simple',round_robin:'Round Robin',round_robin_playoffs:'RR + Playoffs'}[t.format] || t.format;
+    var dateStr = t.start_date ? new Date(t.start_date*1000).toLocaleDateString('es-MX',{weekday:'short',day:'2-digit',month:'short'}) : 'Por anunciar';
+    var spotsLeft = t.max_teams - t.teams_count;
+    var statusLabels = {draft:'BORRADOR',open:'INSCRIPCIONES ABIERTAS',closed:'INSCRIPCIONES CERRADAS',active:'EN CURSO',finished:'FINALIZADO'};
+
+    return '<div class="t-card" onclick="openTournament(\''+t.id+'\',\''+t.status+'\')">'
+      +'<div class="t-card-header">'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">'
+      +'<div class="t-card-name">'+t.name+'</div>'
+      +'<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">'
+      +'<span class="badge badge-'+t.status+'"><span class="badge-dot" style="background:currentColor;"></span>'+statusLabels[t.status]+'</span>'
+      +(t.has_picale?'<span class="badge badge-picale">📹 PÍCALE</span>':'')
+      +'</div></div>'
+      +'<div class="t-card-meta">'
+      +'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;"><path d="M6 1a4 4 0 1 0 0 8A4 4 0 0 0 6 1z"/><path d="M6 3v3l2 1"/></svg>'+dateStr
+      +' · '+(t.club_name||'—')+(t.club_city?' · '+t.club_city:'')
+      +'</div>'
+      +'</div>'
+      +'<div class="t-card-body">'
+      +'<div class="t-info"><div class="t-info-label">CATEGORÍA</div><div class="t-info-value">'+cat+'</div></div>'
+      +'<div class="t-info"><div class="t-info-label">FORMATO</div><div class="t-info-value" style="font-size:12px;">'+fmt+'</div></div>'
+      +'<div class="t-info"><div class="t-info-label">INSCRIPCIÓN</div><div class="t-info-value">'+(t.price>0?'$'+t.price+' MXN':'Gratis')+'</div></div>'
+      +'<div class="t-info"><div class="t-info-label">PAREJAS</div><div class="t-info-value">'+t.teams_count+'/'+t.max_teams+'</div></div>'
+      +'</div>'
+      +'<div class="t-card-footer">'
+      +(t.prize_info?'<span style="font-size:12px;color:var(--yellow);">🏆 '+t.prize_info+'</span>':'<span></span>')
+      +(t.status==='open'&&spotsLeft>0?'<span style="font-size:11px;color:var(--green);font-weight:600;">'+spotsLeft+' lugares disponibles →</span>':'<span style="font-size:12px;color:var(--muted);">Ver detalles →</span>')
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ── DETAIL ────────────────────────────────────────────────────────────────────
+function openTournament(id) {
+  document.getElementById('view-list').style.display = 'none';
+  document.getElementById('hero-section').style.display = 'none';
+  document.querySelector('.tabs-wrap').style.display = 'none';
+  document.getElementById('view-detail').style.display = 'block';
+  currentTournament = null;
+
+  document.getElementById('detail-header').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('teams-container').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('bracket-container').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+  switchDetailTab('info');
+
+  fetch(CLOUD + '/api/v1/rivals/' + id)
+    .then(function(r) { return r.json(); })
+    .then(function(t) {
+      currentTournament = t;
+      renderDetail(t);
+    })
+    .catch(function() {
+      document.getElementById('detail-header').innerHTML = '<div class="empty"><div class="empty-text">Error cargando torneo</div></div>';
+    });
+}
+
+function showList() {
+  document.getElementById('view-detail').style.display = 'none';
+  document.getElementById('view-list').style.display = 'block';
+  document.getElementById('hero-section').style.display = 'block';
+  document.querySelector('.tabs-wrap').style.display = 'block';
+}
+
+function switchDetailTab(tab) {
+  currentDetailTab = tab;
+  ['info','teams','bracket'].forEach(function(t) {
+    document.getElementById('dtab-'+t).classList.toggle('active', t === tab);
+    document.getElementById('dview-'+t).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+function renderDetail(t) {
+  var cat = t.category_type === 'suma' ? 'SUMA ' + t.suma_valor : (t.categoria || '—');
+  var fmt = {double_elimination:'Doble Eliminación',single_elimination:'Eliminación Simple',round_robin:'Round Robin',round_robin_playoffs:'Round Robin + Playoffs'}[t.format] || t.format;
+  var dateStr = t.start_date ? new Date(t.start_date*1000).toLocaleDateString('es-MX',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}) : 'Por anunciar';
+  var statusLabels = {draft:'BORRADOR',open:'INSCRIPCIONES ABIERTAS',closed:'INSCRIPCIONES CERRADAS',active:'EN CURSO',finished:'FINALIZADO'};
+
+  document.getElementById('detail-header').innerHTML =
+    '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px;">'
+    +'<div class="detail-name">'+t.name+'</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+    +'<span class="badge badge-'+t.status+'"><span class="badge-dot" style="background:currentColor;"></span>'+statusLabels[t.status]+'</span>'
+    +(t.has_picale?'<span class="badge badge-picale">📹 PÍCALE</span>':'')
+    +'</div></div>'
+    +'<div class="detail-meta">'+(t.club_name||'')+(t.club_city?' · '+t.club_city:'')+(dateStr?' · '+dateStr:'')+'</div>'
+    +'<div class="detail-grid">'
+    +'<div class="detail-stat"><div class="detail-stat-label">CATEGORÍA</div><div class="detail-stat-value" style="font-size:20px;">'+cat+'</div></div>'
+    +'<div class="detail-stat"><div class="detail-stat-label">FORMATO</div><div class="detail-stat-value" style="font-size:16px;">'+fmt+'</div></div>'
+    +'<div class="detail-stat"><div class="detail-stat-label">INSCRIPCIÓN</div><div class="detail-stat-value" style="font-size:20px;">'+(t.price>0?'$'+t.price:'Gratis')+'</div></div>'
+    +'<div class="detail-stat"><div class="detail-stat-label">PAREJAS</div><div class="detail-stat-value" style="font-size:20px;">'+t.teams_count+'/'+t.max_teams+'</div></div>'
+    +'</div>';
+
+  // Description
+  if (t.description) {
+    var descEl = document.getElementById('detail-description');
+    descEl.textContent = t.description;
+    descEl.style.display = 'block';
+  }
+
+  // Extra info
+  var extraHtml = '';
+  if (t.prize_info) {
+    extraHtml += '<div style="background:rgba(229,197,71,.08);border:1px solid rgba(229,197,71,.2);border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">'
+      +'<span style="font-size:24px;">🏆</span>'
+      +'<div><div style="font-size:10px;color:var(--yellow);letter-spacing:1.5px;margin-bottom:2px;">PREMIO</div>'
+      +'<div style="font-size:14px;font-weight:600;">'+t.prize_info+'</div></div></div>';
+  }
+  if (t.registration_close && t.status === 'open') {
+    var regClose = new Date(t.registration_close*1000);
+    extraHtml += '<div style="background:var(--green-dim);border:1px solid var(--green-border);border-radius:12px;padding:14px 16px;margin-bottom:12px;">'
+      +'<div style="font-size:10px;color:var(--green);letter-spacing:1.5px;margin-bottom:4px;">INSCRIPCIONES CIERRAN</div>'
+      +'<div style="font-size:14px;font-weight:600;">'+regClose.toLocaleDateString('es-MX',{weekday:'long',day:'2-digit',month:'long',hour:'2-digit',minute:'2-digit'})+'</div>'
+      +'<div style="font-size:12px;color:var(--muted);margin-top:4px;">Contacta a tu club para inscribirte</div>'
+      +'</div>';
+  }
+  document.getElementById('detail-extra').innerHTML = extraHtml;
+
+  // Teams
+  renderTeams(t.teams || []);
+
+  // Bracket
+  renderBracket(t.bracket || [], t);
+}
+
+function renderTeams(teams) {
+  var el = document.getElementById('teams-container');
+  if (!teams.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">No hay parejas inscritas aún</div></div>';
+    return;
+  }
+
+  // Sort by position or wins
+  var sorted = teams.slice().sort(function(a,b) {
+    if (a.final_position && b.final_position) return a.final_position - b.final_position;
+    if (a.wins !== b.wins) return b.wins - a.wins;
+    return (b.sets_won - b.sets_lost) - (a.sets_won - a.sets_lost);
+  });
+
+  el.innerHTML = '<div class="teams-list">'
+    + sorted.map(function(team, i) {
+      var p1 = team.player1 ? (team.player1.name || '@'+team.player1.username) : '—';
+      var p2 = team.player2 ? (team.player2.name || '@'+team.player2.username) : '—';
+      var pos = team.final_position || (i+1);
+      var posClass = pos===1?'gold':pos===2?'silver':pos===3?'bronze':'';
+      var cats = team.categoria_p1 && team.categoria_p2 ? team.categoria_p1+' + '+team.categoria_p2 : '';
+      var elim = team.eliminated ? ' · <span style="color:var(--red);font-size:10px;">Eliminada</span>' : '';
+      var inLosers = !team.eliminated && team.in_losers ? ' · <span style="color:var(--yellow);font-size:10px;">Bracket perdedores</span>' : '';
+
+      return '<div class="team-row">'
+        +'<div class="team-pos '+posClass+'">'+pos+'</div>'
+        +'<div class="team-info">'
+        +'<div class="team-name-main">'+(team.team_name||p1+' / '+p2)+'</div>'
+        +'<div class="team-players-sub">'+p1+' &amp; '+p2+(cats?' · '+cats:'')+elim+inLosers+'</div>'
+        +'</div>'
+        +'<div class="team-record"><span>'+team.wins+'</span>-<span>'+team.losses+'</span>'
+        +(team.wins+team.losses>0?'<br><span style="font-size:9px;">'+team.sets_won+'-'+team.sets_lost+' sets</span>':'')
+        +'</div>'
+        +'</div>';
+    }).join('')
+    + '</div>';
+}
+
+function renderBracket(bracket, t) {
+  var el = document.getElementById('bracket-container');
+  if (!bracket.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">El bracket se publicará cuando inicien las inscripciones</div></div>';
+    return;
+  }
+
+  var winners = bracket.filter(function(m){return m.bracket_side==='winners';});
+  var losers = bracket.filter(function(m){return m.bracket_side==='losers';});
+  var finals = bracket.filter(function(m){return m.bracket_side==='grand_final';});
+
+  var html = '';
+
+  function renderSide(matches, label) {
+    if (!matches.length) return '';
+    var byRound = {};
+    matches.forEach(function(m) {
+      if (!byRound[m.round_number]) byRound[m.round_number] = [];
+      byRound[m.round_number].push(m);
+    });
+    var s = '<div class="bracket-section"><div class="bracket-label">'+label+'</div>';
+    Object.keys(byRound).sort(function(a,b){return parseInt(a)-parseInt(b);}).forEach(function(r) {
+      var roundMatches = byRound[r];
+      var roundLabel = label==='GRAN FINAL' ? 'GRAN FINAL' : 'RONDA '+r;
+      s += '<div>';
+      roundMatches.forEach(function(m) {
+        if (m.status === 'bye') return;
+        var t1name = m.team1 ? (m.team1.team_name || 'Equipo') : 'Por definir';
+        var t2name = m.team2 ? (m.team2.team_name || 'Equipo') : 'Por definir';
+        var score = m.score ? m.score.map(function(s){return s.t1+'-'+s.t2;}).join(', ') : null;
+        s += '<div class="match-card">'
+          +'<div class="match-round-label">'+roundLabel+(m.court_id?' · '+m.court_id:'')+'</div>'
+          +'<div class="match-teams">'
+          +'<div class="match-team-row">'
+          +'<div class="match-team-name'+(m.winner_id===m.team1_id?' winner':m.winner_id&&m.winner_id!==m.team1_id?' loser':'')+'">'+t1name+'</div>'
+          +(score?'<div class="match-score">'+score+'</div>':'')
+          +'</div>'
+          +'<div class="match-divider"></div>'
+          +'<div class="match-team-row">'
+          +'<div class="match-team-name'+(m.winner_id===m.team2_id?' winner':m.winner_id&&m.winner_id!==m.team2_id?' loser':'')+'">'+t2name+'</div>'
+          +'</div>'
+          +(m.status==='pending'&&!m.team1_id?'<div class="match-status-pending">Esperando resultados anteriores</div>':'')
+          +'</div></div>';
+      });
+      s += '</div>';
+    });
+    return s + '</div>';
+  }
+
+  html += renderSide(winners, 'BRACKET GANADORES');
+  html += renderSide(losers, 'BRACKET PERDEDORES');
+  html += renderSide(finals, 'GRAN FINAL');
+
+  el.innerHTML = html || '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Sin partidos aún</div></div>';
+}
+
+loadTournaments();
+</script>
+</body>
+</html>

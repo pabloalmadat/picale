@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PÍCALE RIVALS · Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="picale.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#08090a;--bg2:#0f1012;--bg3:#161719;--bg4:#1c1e20;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.12);--border3:rgba(255,255,255,.2);
+  --text:#F0EDE6;--muted:rgba(240,237,230,.45);--muted2:rgba(240,237,230,.2);
+  --green:#5EE87A;--green-dim:rgba(94,232,122,.1);--green-border:rgba(94,232,122,.25);
+  --red:#E05252;--red-dim:rgba(224,82,82,.1);
+  --yellow:#E5C547;--yellow-dim:rgba(229,197,71,.1);
+  --blue:#5B9EE8;--blue-dim:rgba(91,158,232,.1);
+  --display:'Bebas Neue',sans-serif;
+  --body:'DM Sans',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;}
+
+/* ── LAYOUT ── */
+.app{display:flex;min-height:100vh;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:240px;flex-shrink:0;
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.sidebar-logo{
+  padding:24px 20px 20px;
+  border-bottom:1px solid var(--border);
+}
+.logo-main{font-family:var(--display);font-size:22px;letter-spacing:2px;}
+.logo-main span{color:var(--green);}
+.logo-sub{font-size:10px;color:var(--muted);letter-spacing:3px;margin-top:2px;}
+.sidebar-nav{padding:12px 8px;flex:1;}
+.nav-section{font-size:9px;color:var(--muted2);letter-spacing:2px;padding:8px 12px 4px;margin-top:8px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:8px;cursor:pointer;
+  font-size:13px;font-weight:500;color:var(--muted);
+  transition:all .15s;text-decoration:none;
+  border:1px solid transparent;
+}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:var(--green-dim);border-color:var(--green-border);color:var(--green);}
+.nav-icon{width:16px;height:16px;opacity:.7;flex-shrink:0;}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border);}
+.user-pill{
+  display:flex;align-items:center;gap:10px;
+  padding:10px;background:var(--bg3);border-radius:10px;
+  border:1px solid var(--border);
+}
+.user-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--green-dim);border:1px solid var(--green-border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:var(--green);flex-shrink:0;
+}
+.user-name{font-size:12px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.logout-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px;}
+
+/* ── MAIN ── */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{
+  padding:16px 24px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg);position:sticky;top:0;z-index:50;
+}
+.page-title{font-family:var(--display);font-size:22px;letter-spacing:1px;}
+.content{padding:24px;flex:1;}
+
+/* ── CARDS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
+.stat-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:16px;
+}
+.stat-label{font-size:10px;color:var(--muted);letter-spacing:1.5px;margin-bottom:6px;}
+.stat-value{font-family:var(--display);font-size:32px;letter-spacing:1px;}
+.stat-value.green{color:var(--green);}
+.stat-value.yellow{color:var(--yellow);}
+.stat-value.blue{color:var(--blue);}
+
+/* ── TABLE ── */
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.section-title{font-family:var(--display);font-size:18px;letter-spacing:1px;}
+.btn{
+  padding:9px 18px;border-radius:8px;font-family:var(--body);font-size:13px;
+  font-weight:600;cursor:pointer;transition:all .15s;border:none;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn-primary{background:var(--green);color:#000;}
+.btn-primary:hover{opacity:.9;}
+.btn-secondary{background:var(--bg3);border:1px solid var(--border2);color:var(--text);}
+.btn-secondary:hover{border-color:var(--border3);}
+.btn-danger{background:var(--red-dim);border:1px solid rgba(224,82,82,.3);color:var(--red);}
+.btn-sm{padding:6px 12px;font-size:12px;}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-body{padding:0;}
+
+.table{width:100%;border-collapse:collapse;}
+.table th{
+  padding:10px 16px;text-align:left;
+  font-size:10px;color:var(--muted);letter-spacing:1.5px;font-weight:600;
+  border-bottom:1px solid var(--border);background:var(--bg3);
+}
+.table td{
+  padding:12px 16px;font-size:13px;
+  border-bottom:1px solid var(--border);
+}
+.table tr:last-child td{border-bottom:none;}
+.table tr:hover td{background:var(--bg3);}
+
+/* ── STATUS BADGES ── */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;
+  font-family:var(--mono);letter-spacing:.5px;
+}
+.badge-draft{background:var(--bg4);color:var(--muted);border:1px solid var(--border2);}
+.badge-open{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(91,158,232,.3);}
+.badge-active{background:var(--green-dim);color:var(--green);border:1px solid var(--green-border);}
+.badge-finished{background:var(--bg4);color:var(--muted);border:1px solid var(--border);}
+.badge-closed{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,82,82,.3);}
+.badge-picale{background:var(--green-dim);color:var(--green);border:1px solid var(--green-border);padding:2px 8px;font-size:10px;}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  z-index:500;display:none;align-items:flex-start;justify-content:center;
+  padding:24px;overflow-y:auto;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  width:100%;max-width:640px;
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:16px;overflow:hidden;
+  margin:auto;
+}
+.modal-header{
+  padding:20px 24px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-title{font-family:var(--display);font-size:20px;letter-spacing:1px;}
+.modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;}
+.modal-body{padding:24px;display:flex;flex-direction:column;gap:16px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+
+/* ── FORM ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-grid.full{grid-template-columns:1fr;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field label{font-size:10px;color:var(--muted);letter-spacing:1.5px;font-weight:600;}
+.field input,.field select,.field textarea{
+  padding:10px 14px;background:var(--bg3);
+  border:1px solid var(--border2);border-radius:8px;
+  color:var(--text);font-family:var(--body);font-size:13px;
+  outline:none;transition:border-color .15s;-webkit-appearance:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green);}
+.field textarea{min-height:80px;resize:none;}
+.field select option{background:var(--bg3);}
+.field-hint{font-size:11px;color:var(--muted2);}
+
+.form-section{
+  border-top:1px solid var(--border);padding-top:16px;margin-top:4px;
+}
+.form-section-title{font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:12px;}
+
+/* ── TEAMS LIST ── */
+.team-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 20px;border-bottom:1px solid var(--border);
+}
+.team-row:last-child{border-bottom:none;}
+.team-seed{
+  width:28px;height:28px;border-radius:6px;
+  background:var(--bg4);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--muted);font-family:var(--mono);flex-shrink:0;
+}
+.team-players{flex:1;}
+.team-name{font-size:13px;font-weight:600;}
+.team-cats{font-size:11px;color:var(--muted);margin-top:2px;}
+.team-actions{display:flex;gap:6px;}
+
+/* ── BRACKET PREVIEW ── */
+.bracket-info{
+  padding:16px 20px;background:var(--green-dim);
+  border:1px solid var(--green-border);border-radius:10px;
+  font-size:13px;color:var(--green);
+  display:flex;align-items:center;gap:10px;
+}
+
+/* ── EMPTY ── */
+.empty{padding:48px;text-align:center;color:var(--muted);}
+.empty-icon{font-size:32px;opacity:.25;margin-bottom:10px;}
+.empty-text{font-size:14px;}
+
+/* ── LOADING ── */
+.loading{padding:40px;text-align:center;color:var(--muted);font-size:13px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px;}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:rgba(20,22,24,.95);border:1px solid var(--border2);
+  border-radius:20px;padding:8px 20px;font-size:13px;color:var(--text);
+  opacity:0;transition:all .3s;z-index:9999;white-space:nowrap;
+  backdrop-filter:blur(12px);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .form-grid{grid-template-columns:1fr;}
+  .content{padding:16px;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-main">PÍCALE<span>.</span></div>
+      <div class="logo-sub">RIVALS ADMIN</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">TORNEOS</div>
+      <a class="nav-item active" onclick="showView('tournaments')" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l1.5 3 3.5.5-2.5 2.5.5 3.5L8 10l-3 1.5.5-3.5L3 5.5 6.5 5z"/></svg>
+        Torneos
+      </a>
+      <a class="nav-item" onclick="showView('create')" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg>
+        Nuevo torneo
+      </a>
+      <div class="nav-section">SISTEMA</div>
+      <a class="nav-item" href="rivals.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h12M8 2l6 6-6 6"/></svg>
+        Ver página pública
+      </a>
+      <a class="nav-item" href="clubs.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+        Volver a Pícale
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar" id="sidebar-avatar">P</div>
+        <div class="user-name" id="sidebar-name">Cargando...</div>
+        <button class="logout-btn" onclick="PICALE.logout()" title="Cerrar sesión">⇥</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="page-title" id="page-title">TORNEOS</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="showView('create')">+ Nuevo torneo</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- VIEW: TOURNAMENTS LIST -->
+      <div id="view-tournaments">
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card"><div class="stat-label">TOTAL TORNEOS</div><div class="stat-value green" id="stat-total">—</div></div>
+          <div class="stat-card"><div class="stat-label">EN CURSO</div><div class="stat-value yellow" id="stat-active">—</div></div>
+          <div class="stat-card"><div class="stat-label">INSCRIPCIONES ABIERTAS</div><div class="stat-value blue" id="stat-open">—</div></div>
+          <div class="stat-card"><div class="stat-label">FINALIZADOS</div><div class="stat-value" id="stat-finished">—</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="section-title">Todos los torneos</div>
+            <button class="btn btn-secondary btn-sm" onclick="loadTournaments()">↻ Actualizar</button>
+          </div>
+          <div class="card-body">
+            <div id="tournaments-list">
+              <div class="loading"><div class="spinner"></div>Cargando torneos...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: CREATE/EDIT TOURNAMENT -->
+      <div id="view-create" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <div class="section-title" id="form-title">NUEVO TORNEO</div>
+          </div>
+          <div class="card-body" style="padding:24px;">
+            <div class="form-grid">
+              <div class="field" style="grid-column:1/-1;">
+                <label>NOMBRE DEL TORNEO</label>
+                <input type="text" id="f-name" placeholder="Ej: Pícale Rivals #1 — Semana 28">
+              </div>
+              <div class="field" style="grid-column:1/-1;">
+                <label>DESCRIPCIÓN</label>
+                <textarea id="f-description" placeholder="Info adicional, premios, reglas..."></textarea>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-section-title">SEDE</div>
+              <div class="form-grid">
+                <div class="field">
+                  <label>CLUB</label>
+                  <select id="f-club">
+                    <option value="">Selecciona un club...</option>
+                    <option value="cuatro-padel-sur-mty">Cuatro Pádel Sur — Monterrey</option>
+                    <option value="duo-padel-obregon">DUO Padel Park — Obregón</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>¿TIENE CÁMARAS PÍCALE?</label>
+                  <select id="f-has-picale">
+                    <option value="true">Sí — distintivo Pícale ✓</option>
+                    <option value="false">No</option>
+                  </select>
+                </div>
+                <div class="field" style="grid-column:1/-1;">
+                  <label>CANCHAS DISPONIBLES (separadas por coma)</label>
+                  <input type="text" id="f-courts" placeholder="Cancha 1, Cancha 2">
+                  <div class="field-hint">Las canchas donde se jugará el torneo</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-section-title">CATEGORÍA</div>
+              <div class="form-grid">
+                <div class="field">
+                  <label>TIPO DE CATEGORÍA</label>
+                  <select id="f-category-type" onchange="onCategoryTypeChange()">
+                    <option value="fixed">Categoría fija</option>
+                    <option value="suma">SUMA de categorías</option>
+                  </select>
+                </div>
+                <div class="field" id="field-categoria">
+                  <label>CATEGORÍA</label>
+                  <select id="f-categoria">
+                    <option value="">Selecciona...</option>
+                    <option>Open</option>
+                    <option>Primera</option>
+                    <option>Segunda</option>
+                    <option>Tercera</option>
+                    <option>Cuarta</option>
+                    <option>Quinta</option>
+                    <option>Sexta</option>
+                    <option>Femenil Open</option>
+                    <option>Femenil Primera</option>
+                    <option>Femenil Segunda</option>
+                    <option>Femenil Tercera</option>
+                    <option>Femenil Cuarta</option>
+                    <option>Femenil Quinta</option>
+                    <option>Femenil Sexta</option>
+                  </select>
+                </div>
+                <div class="field" id="field-suma" style="display:none;">
+                  <label>VALOR DE SUMA</label>
+                  <select id="f-suma-valor">
+                    <option value="">Selecciona...</option>
+                  </select>
+                  <div class="field-hint" id="suma-hint"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-section-title">FORMATO</div>
+              <div class="form-grid">
+                <div class="field">
+                  <label>FORMATO</label>
+                  <select id="f-format">
+                    <option value="double_elimination">Doble eliminación ⭐</option>
+                    <option value="single_elimination">Eliminación simple</option>
+                    <option value="round_robin">Round Robin (todos vs todos)</option>
+                    <option value="round_robin_playoffs">Round Robin + Playoffs</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>MÁX. PAREJAS</label>
+                  <select id="f-max-teams">
+                    <option value="8">8 parejas</option>
+                    <option value="16" selected>16 parejas</option>
+                    <option value="24">24 parejas</option>
+                    <option value="32">32 parejas</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-section-title">INSCRIPCIÓN Y PREMIOS</div>
+              <div class="form-grid">
+                <div class="field">
+                  <label>PRECIO POR PAREJA (MXN)</label>
+                  <input type="number" id="f-price" placeholder="350" min="0">
+                </div>
+                <div class="field">
+                  <label>PREMIO / INFO</label>
+                  <input type="text" id="f-prize" placeholder="Ej: $2,000 al ganador + trofeo">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-section-title">FECHAS</div>
+              <div class="form-grid">
+                <div class="field">
+                  <label>INICIO DE INSCRIPCIONES</label>
+                  <input type="datetime-local" id="f-reg-open">
+                </div>
+                <div class="field">
+                  <label>CIERRE DE INSCRIPCIONES</label>
+                  <input type="datetime-local" id="f-reg-close">
+                </div>
+                <div class="field">
+                  <label>FECHA DEL TORNEO</label>
+                  <input type="datetime-local" id="f-start">
+                </div>
+                <div class="field">
+                  <label>FIN ESTIMADO</label>
+                  <input type="datetime-local" id="f-end">
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:24px;">
+              <button class="btn btn-primary" onclick="saveTournament()" id="btn-save">CREAR TORNEO</button>
+              <button class="btn btn-secondary" onclick="showView('tournaments')">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: TOURNAMENT DETAIL -->
+      <div id="view-detail" style="display:none;">
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;" id="detail-actions"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="detail-grid">
+          <!-- Info card -->
+          <div class="card" style="grid-column:1/-1;">
+            <div class="card-header">
+              <div>
+                <div class="section-title" id="detail-name">—</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px;" id="detail-meta">—</div>
+              </div>
+              <div id="detail-badges"></div>
+            </div>
+            <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;" id="detail-info"></div>
+          </div>
+
+          <!-- Teams -->
+          <div class="card">
+            <div class="card-header">
+              <div class="section-title">PAREJAS <span id="teams-count" style="font-size:14px;color:var(--muted);"></span></div>
+              <button class="btn btn-secondary btn-sm" onclick="openAddTeamModal()">+ Agregar</button>
+            </div>
+            <div id="teams-list">
+              <div class="loading"><div class="spinner"></div></div>
+            </div>
+          </div>
+
+          <!-- Bracket -->
+          <div class="card">
+            <div class="card-header">
+              <div class="section-title">BRACKET</div>
+              <button class="btn btn-secondary btn-sm" onclick="generateBracket()" id="btn-bracket">Generar bracket</button>
+            </div>
+            <div id="bracket-preview" style="padding:16px;">
+              <div class="empty"><div class="empty-icon">🏆</div><div class="empty-text">El bracket se generará cuando cierres las inscripciones</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ADD TEAM MODAL -->
+<div class="modal-overlay" id="modal-add-team">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">AGREGAR PAREJA</div>
+      <button class="modal-close" onclick="closeModal('modal-add-team')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="bracket-info">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5v.5"/></svg>
+        Los jugadores deben tener cuenta en Pícale. Búscalos por su @usuario.
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>@USUARIO JUGADOR 1</label>
+          <input type="text" id="add-p1" placeholder="pabloalmada">
+        </div>
+        <div class="field">
+          <label>@USUARIO JUGADOR 2</label>
+          <input type="text" id="add-p2" placeholder="carlosechegaray">
+        </div>
+        <div class="field">
+          <label>NOMBRE DE PAREJA (opcional)</label>
+          <input type="text" id="add-team-name" placeholder="Los Cracks">
+        </div>
+        <div class="field">
+          <label>CABEZA DE SERIE (opcional)</label>
+          <input type="number" id="add-seed" placeholder="1" min="1">
+        </div>
+        <div class="field" id="field-add-cat1" style="display:none;">
+          <label>CATEGORÍA JUGADOR 1</label>
+          <select id="add-cat1">
+            <option value="">Selecciona...</option>
+            <option>Open</option><option>Primera</option><option>Segunda</option>
+            <option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option>
+          </select>
+        </div>
+        <div class="field" id="field-add-cat2" style="display:none;">
+          <label>CATEGORÍA JUGADOR 2</label>
+          <select id="add-cat2">
+            <option value="">Selecciona...</option>
+            <option>Open</option><option>Primera</option><option>Segunda</option>
+            <option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-team')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addTeam()">Agregar pareja</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCORE MODAL -->
+<div class="modal-overlay" id="modal-score">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">CAPTURAR RESULTADO</div>
+      <button class="modal-close" onclick="closeModal('modal-score')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="score-match-info" style="font-size:13px;color:var(--muted);margin-bottom:8px;"></div>
+      <div id="score-sets"></div>
+      <button class="btn btn-secondary btn-sm" onclick="addSet()" style="margin-top:8px;">+ Agregar set</button>
+      <div class="field" style="margin-top:16px;">
+        <label>GANADOR</label>
+        <select id="score-winner">
+          <option value="">Selecciona el ganador...</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-score')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveScore()">Guardar resultado</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+var CLOUD = PICALE.CLOUD;
+var currentView = 'tournaments';
+var currentTournament = null;
+var editingId = null;
+var scoringMatch = null;
+var sets = [];
+var sumaOptions = {};
+
+// ── AUTH CHECK ──────────────────────────────────────────────────────────────
+function initAdmin() {
+  var user = PICALE.getUser();
+  if (!user) { window.location.href = 'auth.html?redirect=rivals-admin.html'; return; }
+  document.getElementById('sidebar-name').textContent = user.name || user.username || user.email;
+  document.getElementById('sidebar-avatar').textContent = (user.name || user.username || 'A')[0].toUpperCase();
+  loadTournaments();
+  loadSumaOptions();
+}
+
+// ── NAVIGATION ──────────────────────────────────────────────────────────────
+function showView(view) {
+  ['tournaments','create','detail'].forEach(function(v) {
+    document.getElementById('view-'+v).style.display = v === view ? 'block' : 'none';
+  });
+  document.querySelectorAll('.nav-item').forEach(function(el) { el.classList.remove('active'); });
+  currentView = view;
+  var titles = {tournaments:'TORNEOS', create: editingId ? 'EDITAR TORNEO' : 'NUEVO TORNEO', detail:'TORNEO'};
+  document.getElementById('page-title').textContent = titles[view] || view.toUpperCase();
+  document.getElementById('form-title').textContent = editingId ? 'EDITAR TORNEO' : 'NUEVO TORNEO';
+  document.getElementById('btn-save').textContent = editingId ? 'GUARDAR CAMBIOS' : 'CREAR TORNEO';
+}
+
+// ── SUMA OPTIONS ─────────────────────────────────────────────────────────────
+function loadSumaOptions() {
+  fetch(CLOUD + '/api/v1/rivals/public/suma-options')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      sumaOptions = d;
+      var sel = document.getElementById('f-suma-valor');
+      sel.innerHTML = '<option value="">Selecciona...</option>';
+      Object.keys(d).sort(function(a,b){return parseInt(a)-parseInt(b);}).forEach(function(k) {
+        var opt = document.createElement('option');
+        opt.value = k;
+        opt.textContent = 'Suma ' + k + ' (' + d[k].length + ' combinaciones)';
+        sel.appendChild(opt);
+      });
+    }).catch(function(){});
+}
+
+function onCategoryTypeChange() {
+  var type = document.getElementById('f-category-type').value;
+  document.getElementById('field-categoria').style.display = type === 'fixed' ? 'block' : 'none';
+  document.getElementById('field-suma').style.display = type === 'suma' ? 'block' : 'none';
+}
+
+document.getElementById('f-suma-valor').addEventListener('change', function() {
+  var val = this.value;
+  var hint = document.getElementById('suma-hint');
+  if (val && sumaOptions[val]) {
+    var combos = sumaOptions[val].map(function(c) { return c.p1 + ' + ' + c.p2; }).join(', ');
+    hint.textContent = 'Combinaciones válidas: ' + combos;
+  } else {
+    hint.textContent = '';
+  }
+});
+
+// ── LOAD TOURNAMENTS ──────────────────────────────────────────────────────────
+function loadTournaments() {
+  fetch(CLOUD + '/api/v1/rivals/')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var tournaments = d.tournaments || [];
+      updateStats(tournaments);
+      renderTournamentList(tournaments);
+    })
+    .catch(function() { showToast('Error cargando torneos'); });
+}
+
+function updateStats(tournaments) {
+  document.getElementById('stat-total').textContent = tournaments.length;
+  document.getElementById('stat-active').textContent = tournaments.filter(function(t){return t.status==='active';}).length;
+  document.getElementById('stat-open').textContent = tournaments.filter(function(t){return t.status==='open';}).length;
+  document.getElementById('stat-finished').textContent = tournaments.filter(function(t){return t.status==='finished';}).length;
+}
+
+function renderTournamentList(tournaments) {
+  var el = document.getElementById('tournaments-list');
+  if (!tournaments.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🏆</div><div class="empty-text">No hay torneos aún. Crea el primero.</div></div>';
+    return;
+  }
+  el.innerHTML = '<table class="table"><thead><tr><th>TORNEO</th><th>CLUB</th><th>CATEGORÍA</th><th>FORMATO</th><th>PAREJAS</th><th>ESTADO</th><th></th></tr></thead><tbody>'
+    + tournaments.map(function(t) {
+      var cat = t.category_type === 'suma' ? 'Suma ' + t.suma_valor : (t.categoria || '—');
+      var fmt = {double_elimination:'Doble elim.',single_elimination:'Elim. simple',round_robin:'Round Robin',round_robin_playoffs:'RR + Playoffs'}[t.format] || t.format;
+      var date = t.start_date ? new Date(t.start_date*1000).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) : '—';
+      return '<tr onclick="loadTournamentDetail(\''+t.id+'\')" style="cursor:pointer;">'
+        +'<td><div style="font-weight:600;">' + t.name + '</div><div style="font-size:11px;color:var(--muted);">' + date + '</div></td>'
+        +'<td style="font-size:12px;">' + (t.club_name||'—') + (t.has_picale?'<br><span class="badge badge-picale">PÍCALE ✓</span>':'') + '</td>'
+        +'<td><span style="font-size:12px;">' + cat + '</span></td>'
+        +'<td style="font-size:12px;color:var(--muted);">' + fmt + '</td>'
+        +'<td style="font-family:var(--mono);font-size:13px;">' + t.teams_count + '/' + t.max_teams + '</td>'
+        +'<td><span class="badge badge-'+t.status+'">' + t.status.toUpperCase() + '</span></td>'
+        +'<td><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editTournament(\''+t.id+'\')">✏️</button></td>'
+        +'</tr>';
+    }).join('')
+    + '</tbody></table>';
+}
+
+// ── TOURNAMENT DETAIL ─────────────────────────────────────────────────────────
+function loadTournamentDetail(id) {
+  currentTournament = null;
+  showView('detail');
+  document.getElementById('teams-list').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('bracket-preview').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+  fetch(CLOUD + '/api/v1/rivals/' + id, {headers:{Authorization:'Bearer '+PICALE.getToken()}})
+    .then(function(r) { return r.json(); })
+    .then(function(t) {
+      currentTournament = t;
+      renderDetail(t);
+    })
+    .catch(function() { showToast('Error cargando torneo'); });
+}
+
+function renderDetail(t) {
+  document.getElementById('detail-name').textContent = t.name;
+  var date = t.start_date ? new Date(t.start_date*1000).toLocaleDateString('es-MX',{weekday:'long',day:'2-digit',month:'long'}) : '—';
+  document.getElementById('detail-meta').textContent = (t.club_name||'') + (t.club_city?' · '+t.club_city:'') + ' · ' + date;
+
+  var badgesEl = document.getElementById('detail-badges');
+  badgesEl.innerHTML = '<span class="badge badge-'+t.status+'" style="margin-right:6px;">'+t.status.toUpperCase()+'</span>'
+    + (t.has_picale ? '<span class="badge badge-picale">PÍCALE ✓</span>' : '');
+
+  var cat = t.category_type === 'suma' ? 'Suma ' + t.suma_valor : (t.categoria || '—');
+  var fmt = {double_elimination:'Doble eliminación',single_elimination:'Eliminación simple',round_robin:'Round Robin',round_robin_playoffs:'Round Robin + Playoffs'}[t.format] || t.format;
+  document.getElementById('detail-info').innerHTML = [
+    {label:'CATEGORÍA',value:cat},
+    {label:'FORMATO',value:fmt},
+    {label:'PRECIO',value:t.price > 0 ? '$'+t.price+' MXN' : 'Gratuito'},
+    {label:'PREMIO',value:t.prize_info||'—'},
+    {label:'MÁX. PAREJAS',value:t.max_teams},
+    {label:'INSCRITAS',value:(t.teams||[]).length+'/'+t.max_teams},
+  ].map(function(s){
+    return '<div><div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:4px;">'+s.label+'</div><div style="font-size:14px;font-weight:600;">'+s.value+'</div></div>';
+  }).join('');
+
+  // Actions
+  var actions = '<button class="btn btn-secondary" onclick="editTournament(\''+t.id+'\')">✏️ Editar</button>';
+  if (t.status === 'draft') actions += '<button class="btn btn-secondary" onclick="changeStatus(\'open\')">📢 Abrir inscripciones</button>';
+  if (t.status === 'open') actions += '<button class="btn btn-secondary" onclick="changeStatus(\'closed\')">🔒 Cerrar inscripciones</button>';
+  if (t.status === 'closed' || t.status === 'open') actions += '<button class="btn btn-primary" onclick="generateBracket()">⚡ Generar bracket</button>';
+  if (t.status === 'active') actions += '<button class="btn btn-secondary" onclick="changeStatus(\'finished\')">✅ Finalizar</button>';
+  document.getElementById('detail-actions').innerHTML = actions;
+
+  // Teams
+  renderTeams(t.teams || []);
+
+  // Bracket
+  renderBracket(t.bracket || [], t);
+}
+
+function renderTeams(teams) {
+  var el = document.getElementById('teams-list');
+  document.getElementById('teams-count').textContent = '(' + teams.length + ')';
+  if (!teams.length) {
+    el.innerHTML = '<div class="empty" style="padding:24px;"><div class="empty-text">Sin parejas inscritas</div></div>';
+    return;
+  }
+  el.innerHTML = teams.map(function(team, i) {
+    var p1 = team.player1 ? (team.player1.name || '@'+team.player1.username) : '—';
+    var p2 = team.player2 ? (team.player2.name || '@'+team.player2.username) : '—';
+    var cats = team.categoria_p1 && team.categoria_p2 ? team.categoria_p1+' + '+team.categoria_p2 : '';
+    return '<div class="team-row">'
+      +'<div class="team-seed">'+(team.seed||i+1)+'</div>'
+      +'<div class="team-players">'
+      +'<div class="team-name">'+(team.team_name||p1+' / '+p2)+'</div>'
+      +'<div class="team-cats">'+p1+' &amp; '+p2+(cats?' · '+cats:'')+'</div>'
+      +'</div>'
+      +'<div class="team-actions">'
+      +'<button class="btn btn-danger btn-sm" onclick="removeTeam(\''+team.id+'\')">✕</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function renderBracket(bracket, t) {
+  var el = document.getElementById('bracket-preview');
+  if (!bracket.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🏆</div><div class="empty-text">Sin bracket generado</div></div>';
+    return;
+  }
+
+  var winners = bracket.filter(function(m){return m.bracket_side==='winners';});
+  var losers = bracket.filter(function(m){return m.bracket_side==='losers';});
+  var finals = bracket.filter(function(m){return m.bracket_side==='grand_final';});
+
+  var html = '<div style="padding:16px;">';
+
+  if (winners.length) {
+    html += '<div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">BRACKET GANADORES</div>';
+    html += renderBracketTable(winners);
+  }
+  if (losers.length) {
+    html += '<div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin:16px 0 10px;">BRACKET PERDEDORES</div>';
+    html += renderBracketTable(losers);
+  }
+  if (finals.length) {
+    html += '<div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin:16px 0 10px;">GRAN FINAL</div>';
+    html += renderBracketTable(finals);
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function renderBracketTable(matches) {
+  return '<div style="display:flex;flex-direction:column;gap:6px;">'
+    + matches.map(function(m) {
+      var t1 = m.team1 ? (m.team1.team_name || 'Equipo') : 'Por definir';
+      var t2 = m.team2 ? (m.team2.team_name || 'Equipo') : 'Por definir';
+      var score = m.score ? m.score.map(function(s){return s.t1+'-'+s.t2;}).join(', ') : '';
+      var statusColor = {pending:'var(--muted)',in_progress:'var(--yellow)',finished:'var(--green)',bye:'var(--muted2)'}[m.status];
+      var canScore = m.status === 'pending' && m.team1_id && m.team2_id;
+      return '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;">'
+        +'<div style="font-size:10px;color:var(--muted);font-family:var(--mono);width:20px;">R'+m.round_number+'</div>'
+        +'<div style="flex:1;">'
+        +'<div style="font-size:12px;font-weight:'+(m.winner_id===m.team1_id?'700':'400')+';color:'+(m.winner_id===m.team1_id?'var(--green)':'var(--text)')+';">' + t1 + '</div>'
+        +'<div style="font-size:11px;color:var(--muted);margin:2px 0;">vs</div>'
+        +'<div style="font-size:12px;font-weight:'+(m.winner_id===m.team2_id?'700':'400')+';color:'+(m.winner_id===m.team2_id?'var(--green)':'var(--text)')+';">' + t2 + '</div>'
+        +'</div>'
+        +(score?'<div style="font-family:var(--mono);font-size:11px;color:var(--muted);">'+score+'</div>':'')
+        +'<div style="width:8px;height:8px;border-radius:50%;background:'+statusColor+';flex-shrink:0;"></div>'
+        +(canScore?'<button class="btn btn-secondary btn-sm" onclick="openScoreModal('+JSON.stringify(m)+')">Score</button>':'')
+        +'</div>';
+    }).join('')
+    + '</div>';
+}
+
+// ── SAVE TOURNAMENT ───────────────────────────────────────────────────────────
+function saveTournament() {
+  var body = {
+    name: document.getElementById('f-name').value.trim(),
+    description: document.getElementById('f-description').value.trim() || null,
+    club_id: document.getElementById('f-club').value,
+    has_picale: document.getElementById('f-has-picale').value === 'true',
+    category_type: document.getElementById('f-category-type').value,
+    categoria: document.getElementById('f-categoria').value || null,
+    suma_valor: parseInt(document.getElementById('f-suma-valor').value) || null,
+    format: document.getElementById('f-format').value,
+    price: parseFloat(document.getElementById('f-price').value) || 0,
+    max_teams: parseInt(document.getElementById('f-max-teams').value),
+    prize_info: document.getElementById('f-prize').value || null,
+    registration_open: document.getElementById('f-reg-open').value ? new Date(document.getElementById('f-reg-open').value).toISOString() : null,
+    registration_close: document.getElementById('f-reg-close').value ? new Date(document.getElementById('f-reg-close').value).toISOString() : null,
+    start_date: document.getElementById('f-start').value ? new Date(document.getElementById('f-start').value).toISOString() : null,
+    end_date: document.getElementById('f-end').value ? new Date(document.getElementById('f-end').value).toISOString() : null,
+  };
+
+  if (!body.name) { showToast('El nombre es obligatorio'); return; }
+  if (!body.club_id) { showToast('Selecciona un club'); return; }
+
+  var url = editingId ? CLOUD+'/api/v1/rivals/'+editingId : CLOUD+'/api/v1/rivals/';
+  var method = editingId ? 'PUT' : 'POST';
+
+  document.getElementById('btn-save').disabled = true;
+  fetch(url, {
+    method: method,
+    headers: {'Content-Type':'application/json','Authorization':'Bearer '+PICALE.getToken()},
+    body: JSON.stringify(body)
+  })
+  .then(function(r) {
+    if (!r.ok) return r.json().then(function(d){throw new Error(d.detail||'Error');});
+    return r.json();
+  })
+  .then(function(t) {
+    showToast(editingId ? 'Torneo actualizado ✓' : 'Torneo creado ✓');
+    editingId = null;
+    resetForm();
+    loadTournaments();
+    loadTournamentDetail(t.id);
+  })
+  .catch(function(e) { showToast('Error: '+e.message); })
+  .finally(function() { document.getElementById('btn-save').disabled = false; });
+}
+
+function resetForm() {
+  ['f-name','f-description','f-club','f-courts','f-price','f-prize','f-reg-open','f-reg-close','f-start','f-end'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-category-type').value = 'fixed';
+  document.getElementById('f-format').value = 'double_elimination';
+  document.getElementById('f-max-teams').value = '16';
+  document.getElementById('f-has-picale').value = 'true';
+  onCategoryTypeChange();
+}
+
+function editTournament(id) {
+  editingId = id;
+  fetch(CLOUD+'/api/v1/rivals/'+id)
+    .then(function(r){return r.json();})
+    .then(function(t) {
+      document.getElementById('f-name').value = t.name || '';
+      document.getElementById('f-description').value = t.description || '';
+      document.getElementById('f-club').value = t.club_id || '';
+      document.getElementById('f-has-picale').value = t.has_picale ? 'true' : 'false';
+      document.getElementById('f-category-type').value = t.category_type || 'fixed';
+      document.getElementById('f-categoria').value = t.categoria || '';
+      document.getElementById('f-suma-valor').value = t.suma_valor || '';
+      document.getElementById('f-format').value = t.format || 'double_elimination';
+      document.getElementById('f-max-teams').value = t.max_teams || 16;
+      document.getElementById('f-price').value = t.price || '';
+      document.getElementById('f-prize').value = t.prize_info || '';
+      if (t.start_date) document.getElementById('f-start').value = new Date(t.start_date*1000).toISOString().slice(0,16);
+      if (t.end_date) document.getElementById('f-end').value = new Date(t.end_date*1000).toISOString().slice(0,16);
+      if (t.registration_open) document.getElementById('f-reg-open').value = new Date(t.registration_open*1000).toISOString().slice(0,16);
+      if (t.registration_close) document.getElementById('f-reg-close').value = new Date(t.registration_close*1000).toISOString().slice(0,16);
+      onCategoryTypeChange();
+      showView('create');
+    });
+}
+
+// ── STATUS CHANGE ─────────────────────────────────────────────────────────────
+function changeStatus(newStatus) {
+  if (!currentTournament) return;
+  fetch(CLOUD+'/api/v1/rivals/'+currentTournament.id, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+PICALE.getToken()},
+    body: JSON.stringify({status: newStatus})
+  })
+  .then(function(r){return r.json();})
+  .then(function() { showToast('Estado actualizado ✓'); loadTournamentDetail(currentTournament.id); })
+  .catch(function(e){showToast('Error: '+e.message);});
+}
+
+// ── ADD TEAM ──────────────────────────────────────────────────────────────────
+function openAddTeamModal() {
+  if (!currentTournament) return;
+  var isSuma = currentTournament.category_type === 'suma';
+  document.getElementById('field-add-cat1').style.display = isSuma ? 'block' : 'none';
+  document.getElementById('field-add-cat2').style.display = isSuma ? 'block' : 'none';
+  document.getElementById('modal-add-team').classList.add('open');
+}
+
+function addTeam() {
+  if (!currentTournament) return;
+  var body = {
+    player1_username: document.getElementById('add-p1').value.trim().replace('@',''),
+    player2_username: document.getElementById('add-p2').value.trim().replace('@',''),
+    team_name: document.getElementById('add-team-name').value.trim() || null,
+    seed: parseInt(document.getElementById('add-seed').value) || null,
+    categoria_p1: document.getElementById('add-cat1').value || null,
+    categoria_p2: document.getElementById('add-cat2').value || null,
+  };
+  if (!body.player1_username || !body.player2_username) { showToast('Ingresa ambos usuarios'); return; }
+
+  fetch(CLOUD+'/api/v1/rivals/'+currentTournament.id+'/teams', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+PICALE.getToken()},
+    body: JSON.stringify(body)
+  })
+  .then(function(r){if(!r.ok)return r.json().then(function(d){throw new Error(d.detail||'Error');});return r.json();})
+  .then(function() {
+    showToast('Pareja agregada ✓');
+    closeModal('modal-add-team');
+    ['add-p1','add-p2','add-team-name','add-seed'].forEach(function(id){document.getElementById(id).value='';});
+    loadTournamentDetail(currentTournament.id);
+  })
+  .catch(function(e){showToast('Error: '+e.message);});
+}
+
+function removeTeam(teamId) {
+  if (!currentTournament) return;
+  if (!confirm('¿Quitar esta pareja del torneo?')) return;
+  fetch(CLOUD+'/api/v1/rivals/'+currentTournament.id+'/teams/'+teamId, {
+    method:'DELETE',
+    headers:{'Authorization':'Bearer '+PICALE.getToken()}
+  })
+  .then(function() { showToast('Pareja eliminada'); loadTournamentDetail(currentTournament.id); })
+  .catch(function(){showToast('Error');});
+}
+
+// ── BRACKET ───────────────────────────────────────────────────────────────────
+function generateBracket() {
+  if (!currentTournament) return;
+  if (!confirm('¿Generar el bracket? Esto reemplazará cualquier bracket existente.')) return;
+  fetch(CLOUD+'/api/v1/rivals/'+currentTournament.id+'/generate-bracket', {
+    method:'POST',
+    headers:{'Authorization':'Bearer '+PICALE.getToken()}
+  })
+  .then(function(r){if(!r.ok)return r.json().then(function(d){throw new Error(d.detail||'Error');});return r.json();})
+  .then(function(d) { showToast('Bracket generado: '+d.generated+' partidos ✓'); loadTournamentDetail(currentTournament.id); })
+  .catch(function(e){showToast('Error: '+e.message);});
+}
+
+// ── SCORE ─────────────────────────────────────────────────────────────────────
+function openScoreModal(match) {
+  scoringMatch = match;
+  sets = [{t1:0,t2:0}];
+  renderSets();
+  var t1name = match.team1 ? match.team1.team_name : 'Equipo 1';
+  var t2name = match.team2 ? match.team2.team_name : 'Equipo 2';
+  document.getElementById('score-match-info').textContent = t1name + ' vs ' + t2name;
+  var sel = document.getElementById('score-winner');
+  sel.innerHTML = '<option value="">Selecciona el ganador...</option>'
+    + '<option value="'+match.team1_id+'">'+t1name+'</option>'
+    + '<option value="'+match.team2_id+'">'+t2name+'</option>';
+  document.getElementById('modal-score').classList.add('open');
+}
+
+function renderSets() {
+  document.getElementById('score-sets').innerHTML = sets.map(function(s,i) {
+    return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+      +'<span style="font-size:11px;color:var(--muted);width:40px;">SET '+(i+1)+'</span>'
+      +'<input type="number" value="'+s.t1+'" min="0" max="7" style="width:60px;padding:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);text-align:center;" onchange="sets['+i+'].t1=parseInt(this.value)||0">'
+      +'<span style="color:var(--muted);">—</span>'
+      +'<input type="number" value="'+s.t2+'" min="0" max="7" style="width:60px;padding:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);text-align:center;" onchange="sets['+i+'].t2=parseInt(this.value)||0">'
+      +(i>0?'<button onclick="sets.splice('+i+',1);renderSets();" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>':'')
+      +'</div>';
+  }).join('');
+}
+
+function addSet() { sets.push({t1:0,t2:0}); renderSets(); }
+
+function saveScore() {
+  if (!scoringMatch) return;
+  var winnerId = document.getElementById('score-winner').value;
+  if (!winnerId) { showToast('Selecciona el ganador'); return; }
+  fetch(CLOUD+'/api/v1/rivals/'+currentTournament.id+'/matches/'+scoringMatch.id+'/result', {
+    method:'PUT',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+PICALE.getToken()},
+    body: JSON.stringify({winner_id:winnerId, score:sets})
+  })
+  .then(function(r){if(!r.ok)return r.json().then(function(d){throw new Error(d.detail||'Error');});return r.json();})
+  .then(function() { showToast('Resultado guardado ✓'); closeModal('modal-score'); loadTournamentDetail(currentTournament.id); })
+  .catch(function(e){showToast('Error: '+e.message);});
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){ t.classList.remove('show'); }, 2500);
+}
+
+initAdmin();
+</script>
+</body>
+</html>
