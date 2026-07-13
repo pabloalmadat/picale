@@ -2,423 +2,518 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PICALE — Padel · Video · Instantáneo</title>
-<meta name="description" content="Tu club, en video. Replay instantáneo, streaming en vivo y clips automáticos para clubes de pádel.">
-<meta property="og:title" content="PICALE — Padel · Video · Instantáneo">
-<meta property="og:url" content="https://picalereplay.com">
-<link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>PÍCALE · Replay en vivo para clubes de pádel</title>
+<meta name="description" content="La plataforma de replay en vivo, clips y torneos para clubes de pádel en México. Instala Pícale en tu club.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script src="picale.js" defer></script>
 <style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 :root{
-  --carbon:#1F1F1F;
-  --ivory:#F5F2EC;
-  --ivory2:#EDE9E1;
-  --sage:#A7B0A4;
-  --sage-light:rgba(167,176,164,.15);
-  --sage-border:rgba(167,176,164,.25);
-  --stone:#D8D2CA;
-  --stone2:rgba(216,210,202,.5);
-  --muted:rgba(31,31,31,.45);
-  --muted2:rgba(31,31,31,.28);
-  --wire:rgba(31,31,31,.08);
-  --wire2:rgba(31,31,31,.14);
-  --f:Montserrat,sans-serif;
-  --fb:Inter,sans-serif;
+  --bg:#08090a;--bg2:#0f1012;--bg3:#161719;--bg4:#1c1e20;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --text:#F0EDE6;--muted:rgba(240,237,230,.5);--muted2:rgba(240,237,230,.25);
+  --green:#5EE87A;--green-dim:rgba(94,232,122,.1);--green-border:rgba(94,232,122,.25);
+  --display:'Bebas Neue',sans-serif;--body:'DM Sans',sans-serif;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+  --max:1100px;
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-html{scroll-behavior:smooth;overflow-x:hidden;}
-body{font-family:var(--fb);background:var(--ivory);color:var(--carbon);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;}
 
-/* ══ NAV ══ */
-nav{position:fixed;top:0;left:0;right:0;z-index:500;padding:20px 56px;display:flex;align-items:center;justify-content:space-between;transition:all .4s;}
-nav.solid{background:rgba(245,242,236,.94);backdrop-filter:blur(20px);border-bottom:1px solid var(--wire2);}
-.nav-logo{display:flex;flex-direction:column;align-items:flex-start;text-decoration:none;gap:1px;}
-.nav-logotype{display:flex;align-items:flex-end;gap:0;}
-/* SVG logo inline — la i con el círculo-cámara como punto */
-.nav-logo-svg{height:28px;width:auto;}
-.nav-tagline{font-family:var(--f);font-size:8px;font-weight:500;letter-spacing:3px;color:var(--sage);text-transform:uppercase;}
-.nav-links{display:flex;gap:36px;}
-.nav-links a{font-family:var(--f);font-size:12px;font-weight:500;letter-spacing:.5px;color:var(--muted);text-decoration:none;transition:color .2s;}
-.nav-links a:hover{color:var(--carbon);}
-.nav-cta{padding:11px 24px;background:var(--carbon);color:var(--ivory);font-family:var(--f);font-size:12px;font-weight:600;letter-spacing:.5px;border-radius:6px;text-decoration:none;transition:all .2s;}
-.nav-cta:hover{background:#333;transform:translateY(-1px);}
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  padding:calc(var(--safe-top)+14px) 24px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(8,9,10,.85);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  transition:background .3s;
+}
+.nav-logo{font-family:var(--display);font-size:22px;letter-spacing:2px;text-decoration:none;color:var(--text);}
+.nav-logo span{color:var(--green);}
+.nav-links{display:flex;align-items:center;gap:24px;}
+.nav-links a{font-size:13px;color:var(--muted);text-decoration:none;transition:color .2s;font-weight:500;}
+.nav-links a:hover{color:var(--text);}
+.nav-cta{
+  padding:8px 20px;background:var(--green);color:#000 !important;
+  border-radius:8px;font-weight:700 !important;font-size:13px !important;
+  transition:opacity .2s !important;
+}
+.nav-cta:hover{opacity:.9;}
+.nav-auth{display:flex;align-items:center;gap:10px;}
+@media(max-width:600px){.nav-links{display:none;}.nav-auth{gap:8px;}}
 
-/* ══ HERO ══ */
-.hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 56px 100px;text-align:center;position:relative;overflow:hidden;}
-/* Subtle court grid background */
-.hero-bg{position:absolute;inset:0;overflow:hidden;}
-.hero-bg-court{position:absolute;top:55%;left:50%;transform:translate(-50%,-50%) perspective(600px) rotateX(55deg) scale(2.4);width:100%;opacity:.06;}
-.hero-bg-grad{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 35%,rgba(167,176,164,.12) 0%,transparent 70%);}
-/* Animated ring */
-.hero-ring{position:absolute;top:18%;left:50%;transform:translateX(-50%);width:600px;height:600px;border-radius:50%;border:1px solid rgba(167,176,164,.12);animation:ringExpand 8s ease-in-out infinite;}
-.hero-ring2{position:absolute;top:18%;left:50%;transform:translateX(-50%);width:900px;height:900px;border-radius:50%;border:1px solid rgba(167,176,164,.07);animation:ringExpand 8s 2s ease-in-out infinite;}
-@keyframes ringExpand{0%,100%{transform:translateX(-50%) scale(1);opacity:.8}50%{transform:translateX(-50%) scale(1.05);opacity:.4}}
+/* ── HERO ── */
+.hero{
+  min-height:100svh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:120px 24px 80px;text-align:center;
+  position:relative;overflow:hidden;
+}
+.hero-glow{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:800px;height:500px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(94,232,122,.12) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 0%,black 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:5px 14px;background:var(--green-dim);border:1px solid var(--green-border);
+  border-radius:20px;font-size:11px;font-weight:600;color:var(--green);
+  letter-spacing:1.5px;margin-bottom:24px;
+}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.hero-title{
+  font-family:var(--display);
+  font-size:clamp(56px,12vw,108px);
+  letter-spacing:4px;line-height:.9;
+  margin-bottom:24px;
+}
+.hero-title span{color:var(--green);}
+.hero-sub{
+  font-size:clamp(16px,2.5vw,20px);
+  color:var(--muted);max-width:560px;
+  line-height:1.6;margin-bottom:40px;
+}
+.hero-sub b{color:var(--text);font-weight:600;}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:56px;}
+.btn-hero{
+  padding:14px 32px;border-radius:10px;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .2s;text-decoration:none;border:none;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn-hero-primary{background:var(--green);color:#000;}
+.btn-hero-primary:hover{opacity:.9;transform:translateY(-1px);}
+.btn-hero-secondary{background:var(--bg2);border:1px solid var(--border2);color:var(--text);}
+.btn-hero-secondary:hover{border-color:var(--border2);background:var(--bg3);}
+.hero-clubs{
+  display:flex;align-items:center;gap:12px;
+  font-size:12px;color:var(--muted);
+}
+.club-avatars{display:flex;}
+.club-av{
+  width:28px;height:28px;border-radius:50%;border:2px solid var(--bg);
+  background:var(--bg3);margin-left:-8px;
+  display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--green);
+}
+.club-av:first-child{margin-left:0;}
 
-.hero-content{position:relative;z-index:2;max-width:860px;}
-/* Big logo in hero */
-.hero-logo{margin-bottom:52px;opacity:0;animation:fadeUp .8s .3s forwards;}
-.hero-logo svg{height:72px;width:auto;}
+/* ── SECTION BASE ── */
+section{padding:80px 24px;}
+.section-inner{max-width:var(--max);margin:0 auto;}
+.section-eyebrow{font-size:11px;color:var(--green);letter-spacing:2px;font-weight:600;margin-bottom:12px;}
+.section-title{font-family:var(--display);font-size:clamp(32px,6vw,56px);letter-spacing:2px;line-height:1;margin-bottom:16px;}
+.section-sub{font-size:16px;color:var(--muted);max-width:540px;line-height:1.6;}
 
-.hero-eyebrow{font-family:var(--f);font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--sage);margin-bottom:24px;opacity:0;animation:fadeUp .8s .5s forwards;}
-.hero-h{font-family:var(--f);font-size:clamp(40px,7vw,80px);font-weight:800;line-height:1.05;letter-spacing:-1.5px;margin-bottom:24px;opacity:0;animation:fadeUp .9s .7s forwards;}
-.hero-h .sage{color:var(--sage);}
-.hero-sub{font-size:clamp(15px,1.8vw,19px);color:var(--muted);line-height:1.75;max-width:560px;margin:0 auto 52px;font-weight:300;opacity:0;animation:fadeUp .8s .9s forwards;}
-.hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;opacity:0;animation:fadeUp .8s 1.1s forwards;}
-.btn-primary{padding:15px 36px;background:var(--carbon);color:var(--ivory);font-family:var(--f);font-size:13px;font-weight:700;letter-spacing:.5px;border-radius:7px;text-decoration:none;display:inline-flex;align-items:center;gap:9px;transition:all .2s;}
-.btn-primary:hover{background:#2d2d2d;transform:translateY(-2px);box-shadow:0 12px 40px rgba(31,31,31,.2);}
-.btn-ghost{padding:15px 36px;background:transparent;color:var(--carbon);border:1.5px solid var(--wire2);font-family:var(--f);font-size:13px;font-weight:600;letter-spacing:.5px;border-radius:7px;text-decoration:none;transition:all .2s;}
-.btn-ghost:hover{border-color:rgba(31,31,31,.3);background:rgba(31,31,31,.04);}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+/* ── FEATURES GRID ── */
+.features{background:var(--bg);}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:48px;}
+.feature-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+  padding:24px;transition:border-color .2s;
+}
+.feature-card:hover{border-color:var(--border2);}
+.feature-icon{font-size:28px;margin-bottom:16px;}
+.feature-title{font-size:16px;font-weight:700;margin-bottom:8px;}
+.feature-desc{font-size:13px;color:var(--muted);line-height:1.6;}
+.feature-tag{
+  display:inline-block;margin-top:12px;
+  padding:3px 10px;background:var(--green-dim);border:1px solid var(--green-border);
+  border-radius:20px;font-size:10px;color:var(--green);font-weight:600;letter-spacing:1px;
+}
 
-/* ══ STATS BAR ══ */
-.stats{display:flex;justify-content:center;background:var(--carbon);border-top:none;}
-.stat{flex:1;max-width:260px;padding:36px 40px;border-right:1px solid rgba(255,255,255,.08);text-align:center;}
-.stat:last-child{border-right:none;}
-.stat-num{font-family:var(--f);font-size:38px;font-weight:800;color:var(--ivory);line-height:1;margin-bottom:6px;}
-.stat-num .accent{color:var(--sage);}
-.stat-label{font-size:11px;color:rgba(245,242,236,.4);letter-spacing:1px;font-weight:400;}
+/* ── RIVALS SECTION ── */
+.rivals-section{
+  background:linear-gradient(135deg,var(--bg2) 0%,var(--bg) 100%);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+}
+.rivals-inner{
+  max-width:var(--max);margin:0 auto;
+  display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;
+}
+.rivals-features{display:flex;flex-direction:column;gap:16px;margin-top:32px;}
+.rivals-feat{display:flex;gap:14px;align-items:flex-start;}
+.rivals-feat-icon{
+  width:36px;height:36px;border-radius:8px;
+  background:var(--green-dim);border:1px solid var(--green-border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;margin-top:2px;
+}
+.rivals-feat-text{font-size:13px;color:var(--muted);line-height:1.5;}
+.rivals-feat-text b{color:var(--text);display:block;font-weight:600;margin-bottom:3px;}
+.rivals-visual{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:20px;
+  padding:24px;
+}
+.bracket-demo{display:flex;flex-direction:column;gap:8px;}
+.bracket-round-label{font-size:9px;color:var(--muted2);letter-spacing:2px;margin-bottom:4px;font-weight:600;}
+.bracket-match{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;
+}
+.bracket-team{display:flex;justify-content:space-between;align-items:center;padding:3px 0;}
+.bracket-team-name{font-size:12px;font-weight:500;}
+.bracket-team-name.w{color:var(--green);font-weight:700;}
+.bracket-team-score{font-size:11px;color:var(--muted);font-family:monospace;}
+.bracket-divider{height:1px;background:var(--border);margin:4px 0;}
 
-/* ══ PARA CLUBES ══ */
-.section{padding:130px 0;}
-.section.alt{background:var(--ivory2);}
-.container{max-width:1200px;margin:0 auto;padding:0 56px;}
-.section-label{font-family:var(--f);font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--sage);margin-bottom:18px;}
-.section-h{font-family:var(--f);font-size:clamp(32px,5vw,58px);font-weight:800;line-height:1.05;letter-spacing:-1px;margin-bottom:16px;}
-.section-sub{font-size:16px;color:var(--muted);line-height:1.8;max-width:520px;font-weight:300;}
+/* ── CLUBS SECTION ── */
+.clubs-section{background:var(--bg);}
+.clubs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:48px;}
+.club-feature{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;
+}
+.club-feature-num{
+  font-family:var(--display);font-size:40px;color:var(--green);
+  margin-bottom:12px;letter-spacing:2px;
+}
+.club-feature-title{font-size:17px;font-weight:700;margin-bottom:8px;}
+.club-feature-desc{font-size:13px;color:var(--muted);line-height:1.6;}
+.club-cta-box{
+  margin-top:48px;
+  background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);
+  border:1px solid var(--border2);border-radius:20px;
+  padding:40px;display:flex;align-items:center;justify-content:space-between;gap:24px;
+  flex-wrap:wrap;
+}
+.club-cta-text{max-width:480px;}
+.club-cta-title{font-family:var(--display);font-size:clamp(24px,4vw,36px);letter-spacing:2px;margin-bottom:8px;}
+.club-cta-sub{font-size:14px;color:var(--muted);line-height:1.5;}
+.club-cta-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.btn-cta{
+  padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;
+  cursor:pointer;text-decoration:none;border:none;transition:all .2s;
+}
+.btn-cta-primary{background:var(--green);color:#000;}
+.btn-cta-primary:hover{opacity:.9;}
+.btn-cta-secondary{background:var(--bg4);border:1px solid var(--border2);color:var(--text);}
+.btn-cta-secondary:hover{border-color:var(--border3,rgba(255,255,255,.2));}
 
-/* Feature cards — para clubes */
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:64px;}
-.card{padding:36px 32px;background:var(--ivory);border:1px solid var(--wire2);border-radius:14px;transition:all .3s;position:relative;overflow:hidden;}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--sage);opacity:0;transition:opacity .3s;}
-.card:hover{transform:translateY(-4px);box-shadow:0 20px 60px rgba(31,31,31,.08);}
-.card:hover::before{opacity:1;}
-.card-icon{width:44px;height:44px;border-radius:10px;background:var(--sage-light);border:1px solid var(--sage-border);display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
-.card-icon svg{width:20px;height:20px;}
-.card-title{font-family:var(--f);font-size:17px;font-weight:700;margin-bottom:10px;}
-.card-desc{font-size:14px;color:var(--muted);line-height:1.75;font-weight:300;}
+/* ── STATS BAR ── */
+.stats-bar{
+  background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:32px 24px;
+}
+.stats-inner{
+  max-width:var(--max);margin:0 auto;
+  display:flex;align-items:center;justify-content:center;
+  gap:0;flex-wrap:wrap;
+}
+.stat-item{
+  padding:8px 40px;text-align:center;
+  border-right:1px solid var(--border);
+}
+.stat-item:last-child{border-right:none;}
+.stat-num{font-family:var(--display);font-size:36px;letter-spacing:2px;color:var(--green);}
+.stat-lbl{font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
 
-/* ══ PARA JUGADORES ══ */
-.player-layout{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
-.player-steps{display:flex;flex-direction:column;margin-top:40px;}
-.pstep{display:flex;gap:20px;padding:22px 0;border-bottom:1px solid var(--wire);}
-.pstep:first-child{padding-top:0;}
-.pstep:last-child{border-bottom:none;}
-.pstep-num{font-family:var(--f);font-size:12px;font-weight:700;color:var(--sage);min-width:24px;margin-top:2px;}
-.pstep-title{font-family:var(--f);font-size:15px;font-weight:700;margin-bottom:5px;}
-.pstep-desc{font-size:13px;color:var(--muted);line-height:1.7;font-weight:300;}
+/* ── SIGN UP CTA ── */
+.signup-section{
+  padding:80px 24px;
+  background:radial-gradient(ellipse 80% 60% at 50% 100%,rgba(94,232,122,.08) 0%,transparent 70%);
+  text-align:center;
+  border-top:1px solid var(--border);
+}
+.signup-inner{max-width:540px;margin:0 auto;}
+.signup-title{font-family:var(--display);font-size:clamp(36px,8vw,64px);letter-spacing:3px;line-height:.95;margin-bottom:16px;}
+.signup-title span{color:var(--green);}
+.signup-sub{font-size:15px;color:var(--muted);line-height:1.6;margin-bottom:32px;}
+.signup-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
 
-/* Phone mockup — light version */
-.phone-wrap{display:flex;justify-content:center;align-items:center;}
-.phone{width:260px;background:var(--carbon);border-radius:38px;padding:12px;box-shadow:0 40px 80px rgba(31,31,31,.25),0 0 0 1px rgba(31,31,31,.15);}
-.phone-inner{background:#0D0D0D;border-radius:28px;overflow:hidden;aspect-ratio:9/19;}
-.phone-screen{display:flex;flex-direction:column;height:100%;}
-.ph-top{padding:12px 14px 8px;display:flex;align-items:center;justify-content:space-between;}
-.ph-brand{font-family:var(--f);font-size:13px;font-weight:800;letter-spacing:2px;color:var(--ivory);}
-.ph-live{display:flex;align-items:center;gap:5px;padding:3px 8px;background:rgba(255,80,80,.15);border-radius:3px;}
-.ph-live-dot{width:5px;height:5px;border-radius:50%;background:#FF5050;animation:lp 1.2s infinite;}
-@keyframes lp{0%,100%{opacity:1}50%{opacity:.3}}
-.ph-live-txt{font-family:var(--f);font-size:8px;font-weight:600;color:#FF5050;letter-spacing:1px;}
-.ph-court{flex:1;background:#0a0a0a;display:flex;align-items:center;justify-content:center;position:relative;}
-.ph-court-lines{width:72%;height:62%;border:1px solid rgba(255,255,255,.09);position:relative;}
-.ph-court-lines::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(255,255,255,.09);}
-.ph-court-lines::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.09);}
-.ph-bottom{padding:10px 12px 14px;background:rgba(0,0,0,.5);display:flex;gap:6px;align-items:center;}
-.ph-replay{flex:1;padding:10px;background:var(--sage);color:var(--ivory);border-radius:8px;font-family:var(--f);font-size:12px;font-weight:700;letter-spacing:.5px;text-align:center;}
-.ph-pills{display:flex;gap:5px;}
-.ph-pill{padding:10px 8px;background:rgba(255,255,255,.07);border-radius:7px;font-size:9px;color:rgba(245,242,236,.4);font-family:var(--f);font-weight:600;}
-.ph-clips{background:rgba(20,20,20,.9);padding:10px 12px;}
-.ph-clips-hdr{font-size:8px;letter-spacing:2px;color:rgba(245,242,236,.3);font-family:var(--f);font-weight:600;margin-bottom:8px;}
-.ph-clip{display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);}
-.ph-clip:last-child{border-bottom:none;}
-.ph-clip-thumb{width:40px;height:26px;background:rgba(255,255,255,.05);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.ph-clip-name{font-size:8px;color:rgba(245,242,236,.55);font-family:var(--f);}
-.ph-clip-size{font-size:7px;color:rgba(245,242,236,.3);margin-top:1px;font-family:var(--f);}
+/* ── FOOTER ── */
+footer{
+  border-top:1px solid var(--border);padding:32px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:16px;max-width:100%;
+}
+.footer-logo{font-family:var(--display);font-size:18px;letter-spacing:2px;}
+.footer-logo span{color:var(--green);}
+.footer-links{display:flex;gap:20px;flex-wrap:wrap;}
+.footer-links a{font-size:12px;color:var(--muted);text-decoration:none;transition:color .2s;}
+.footer-links a:hover{color:var(--text);}
+.footer-copy{font-size:11px;color:var(--muted2);}
 
-/* ══ HOW IT WORKS ══ */
-.how-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--wire);border:1px solid var(--wire);border-radius:14px;overflow:hidden;margin-top:64px;}
-.how-step{background:var(--ivory);padding:36px 28px;position:relative;}
-.how-step.alt-bg{background:var(--ivory2);}
-.how-step-num{font-family:var(--f);font-size:10px;font-weight:700;letter-spacing:2px;color:var(--sage);margin-bottom:24px;}
-.how-step-title{font-family:var(--f);font-size:18px;font-weight:700;margin-bottom:10px;}
-.how-step-desc{font-size:13px;color:var(--muted);line-height:1.75;font-weight:300;}
-
-/* ══ CTA ══ */
-.cta-section{padding:160px 0;background:var(--carbon);text-align:center;position:relative;overflow:hidden;}
-.cta-section::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(167,176,164,.08) 0%,transparent 65%);pointer-events:none;}
-.cta-logo{margin:0 auto 48px;opacity:.15;}
-.cta-logo svg{height:80px;}
-.cta-h{font-family:var(--f);font-size:clamp(36px,6vw,68px);font-weight:800;color:var(--ivory);line-height:1.05;letter-spacing:-1px;margin-bottom:20px;}
-.cta-sub{font-size:17px;color:rgba(245,242,236,.45);max-width:460px;margin:0 auto 48px;line-height:1.75;font-weight:300;}
-.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:24px;}
-.btn-ivory{padding:15px 36px;background:var(--ivory);color:var(--carbon);font-family:var(--f);font-size:13px;font-weight:700;border-radius:7px;text-decoration:none;display:inline-flex;align-items:center;gap:9px;transition:all .2s;}
-.btn-ivory:hover{background:var(--stone);transform:translateY(-2px);}
-.btn-ghost-light{padding:15px 36px;background:transparent;color:rgba(245,242,236,.6);border:1.5px solid rgba(245,242,236,.2);font-family:var(--f);font-size:13px;font-weight:500;border-radius:7px;text-decoration:none;transition:all .2s;}
-.btn-ghost-light:hover{border-color:rgba(245,242,236,.4);color:var(--ivory);}
-.cta-note{font-size:12px;color:rgba(245,242,236,.3);letter-spacing:1px;font-family:var(--f);}
-
-/* ══ FOOTER ══ */
-footer{background:var(--carbon);border-top:1px solid rgba(255,255,255,.06);padding:48px 56px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;}
-.footer-left{display:flex;align-items:center;gap:16px;}
-.footer-name{font-family:var(--f);font-size:14px;font-weight:800;letter-spacing:3px;color:var(--ivory);}
-.footer-copy{font-size:12px;color:rgba(245,242,236,.3);}
-.footer-links{display:flex;gap:28px;}
-.footer-links a{font-size:12px;color:rgba(245,242,236,.3);text-decoration:none;font-family:var(--f);font-weight:500;transition:color .2s;letter-spacing:.5px;}
-.footer-links a:hover{color:rgba(245,242,236,.7);}
-
-/* ══ SCROLL REVEAL ══ */
-.r{opacity:0;transform:translateY(32px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1);}
-.r.on{opacity:1;transform:none;}
-.r-d1{transition-delay:.1s;}.r-d2{transition-delay:.2s;}.r-d3{transition-delay:.3s;}.r-d4{transition-delay:.4s;}
-
-/* ══ RESPONSIVE ══ */
-@media(max-width:900px){
-  nav{padding:16px 20px;}
-  .nav-links{display:none;}
-  .hero{padding:100px 20px 80px;}
-  .container{padding:0 20px;}
-  .section{padding:80px 0;}
-  .cards{grid-template-columns:1fr;}
-  .player-layout{grid-template-columns:1fr;gap:48px;}
-  .phone-wrap{order:-1;}
-  .how-grid{grid-template-columns:1fr 1fr;}
-  .cta-section{padding:100px 20px;}
-  .stats{flex-wrap:wrap;}
-  .stat{flex:1 1 50%;border-right:none;border-bottom:1px solid rgba(255,255,255,.08);}
-  footer{padding:36px 20px;flex-direction:column;align-items:flex-start;}
+@media(max-width:768px){
+  .rivals-inner{grid-template-columns:1fr;}
+  .rivals-visual{display:none;}
+  .stat-item{padding:12px 20px;border-right:none;border-bottom:1px solid var(--border);}
+  .stat-item:last-child{border-bottom:none;}
+  .club-cta-box{text-align:center;}
+  .club-cta-actions{justify-content:center;}
+  section{padding:56px 16px;}
+  footer{justify-content:center;text-align:center;}
 }
 </style>
-<script src="picale.js"></script>
 </head>
 <body>
 
 <!-- NAV -->
 <nav id="nav">
-  <a href="/" class="nav-logo">
-    <!-- PICALE logo SVG — la i con el círculo-cámara -->
-    <svg class="nav-logo-svg" viewBox="0 0 160 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Letra P -->
-      <path d="M0 4h6v28H0V4zm0 0h10c4.4 0 8 3.6 8 8s-3.6 8-8 8H0" stroke="#1F1F1F" stroke-width="0" fill="none"/>
-      <text font-family="Montserrat,sans-serif" font-weight="700" font-size="28" fill="#1F1F1F" letter-spacing="3">
-        <tspan x="0" y="28">P</tspan>
-        <tspan dy="0" dx="-1">&#x130;</tspan>
-        <tspan dy="0">CALE</tspan>
-      </text>
-      <!-- Círculo-cámara sobre la i (ajustar posición según font rendering) -->
-    </svg>
-    <span style="font-family:var(--f);font-size:8px;font-weight:600;letter-spacing:3px;color:var(--sage);text-transform:uppercase;margin-top:1px;">Padel · Video · Instantáneo</span>
-  </a>
+  <a href="/" class="nav-logo">PÍCALE<span>.</span></a>
   <div class="nav-links">
-    <a href="#clubes">Para clubes</a>
-    <a href="#jugadores">Para jugadores</a>
-    <a href="#como-funciona">Cómo funciona</a>
+    <a href="#features">Funciones</a>
+    <a href="rivals.html">Rivals</a>
+    <a href="clubs.html">Clubes</a>
+    <a href="#para-clubes">Para clubes</a>
   </div>
-  <a href="clubs.html" class="nav-cta">Acceder →</a>
-  <div id="auth-btn-container"></div>
+  <div class="nav-auth">
+    <div id="auth-btn-container"></div>
+    <a href="clubs.html" class="nav-cta btn-hero" style="padding:8px 18px;font-size:13px;">Entrar →</a>
+  </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-bg">
-    <svg class="hero-bg-court" viewBox="0 0 800 400" fill="none" stroke="rgba(167,176,164,1)" stroke-width="1.5">
-      <rect x="50" y="50" width="700" height="300" stroke-width="2"/>
-      <line x1="400" y1="50" x2="400" y2="350"/>
-      <line x1="50" y1="200" x2="750" y2="200"/>
-      <rect x="50" y="120" width="160" height="160"/>
-      <rect x="590" y="120" width="160" height="160"/>
-      <circle cx="400" cy="200" r="40"/>
-    </svg>
-    <div class="hero-bg-grad"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-grid"></div>
+
+  <div class="hero-eyebrow">
+    <div class="hero-dot"></div>
+    2 clubes activos en México
   </div>
-  <div class="hero-ring"></div>
-  <div class="hero-ring2"></div>
 
-  <div class="hero-content">
-    <!-- Logo grande en hero -->
-    <div class="hero-logo">
-      <svg viewBox="0 0 320 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="height:72px;width:auto;">
-        <!-- PICALE wordmark con la i especial -->
-        <!-- P -->
-        <text font-family="Montserrat,sans-serif" font-weight="800" font-size="64" fill="#1F1F1F" letter-spacing="4">
-          <tspan x="0" y="60">P</tspan>
-        </text>
-        <!-- I con cámara como punto - stem -->
-        <rect x="74" y="28" width="9" height="36" fill="#1F1F1F"/>
-        <!-- Círculo externo del punto-cámara -->
-        <circle cx="78" cy="14" r="11" stroke="#1F1F1F" stroke-width="2.5" fill="none"/>
-        <!-- Punto verde salvia interior -->
-        <circle cx="78" cy="14" r="6" fill="#A7B0A4"/>
-        <!-- CALE -->
-        <text font-family="Montserrat,sans-serif" font-weight="800" font-size="64" fill="#1F1F1F" letter-spacing="4">
-          <tspan x="90" y="60">CALE</tspan>
-        </text>
-      </svg>
-    </div>
+  <h1 class="hero-title">
+    EL PÁDEL<br>QUE <span>RECORDARÁS</span>
+  </h1>
 
-    <div class="hero-eyebrow">Padel · Video · Instantáneo</div>
-    <h1 class="hero-h">
-      Captura cada punto.<br>
-      <span class="sage">Revive cada momento.</span>
-    </h1>
-    <p class="hero-sub">Replay instantáneo, streaming en vivo y clips automáticos para tu club de pádel. Sin complicaciones. Sin apps extra.</p>
-    <div class="hero-actions">
-      <a href="#contacto" class="btn-primary">
-        Solicitar demo
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3 7.5h9M8 4l4 3.5-4 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-      <a href="#como-funciona" class="btn-ghost">Ver cómo funciona</a>
+  <p class="hero-sub">
+    <b>Replay en vivo, clips instantáneos y torneos competitivos</b> — todo en una plataforma diseñada para clubs y jugadores de pádel.
+  </p>
+
+  <div class="hero-actions">
+    <a href="clubs.html" class="btn-hero btn-hero-primary">Ver en vivo →</a>
+    <a href="auth.html" class="btn-hero btn-hero-secondary">Crear cuenta gratis</a>
+  </div>
+
+  <div class="hero-clubs">
+    <div class="club-avatars">
+      <div class="club-av">D</div>
+      <div class="club-av">C</div>
     </div>
+    DUO Padel Park · Cuatro Pádel Sur — ya transmiten en vivo
   </div>
 </section>
 
 <!-- STATS -->
-<div class="stats">
-  <div class="stat r"><div class="stat-num">&lt;<span class="accent">3</span>s</div><div class="stat-label">Al replay</div></div>
-  <div class="stat r r-d1"><div class="stat-num"><span class="accent">∞</span></div><div class="stat-label">Clips guardados</div></div>
-  <div class="stat r r-d2"><div class="stat-num"><span class="accent">0</span></div><div class="stat-label">Apps necesarias</div></div>
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item"><div class="stat-num">2</div><div class="stat-lbl">CLUBES ACTIVOS</div></div>
+    <div class="stat-item"><div class="stat-num" id="stat-clips">—</div><div class="stat-lbl">CLIPS GENERADOS</div></div>
+    <div class="stat-item"><div class="stat-num" id="stat-users">7+</div><div class="stat-lbl">JUGADORES REGISTRADOS</div></div>
+    <div class="stat-item"><div class="stat-num">24/7</div><div class="stat-lbl">EN VIVO</div></div>
+  </div>
 </div>
 
-<!-- PARA CLUBES -->
-<section class="section" id="clubes">
-  <div class="container">
-    <div class="r"><div class="section-label">Para clubes</div></div>
-    <h2 class="section-h r r-d1">Dale a tu club<br>la experiencia que merece.</h2>
-    <p class="section-sub r r-d2">El pádel es emoción. PICALE captura esa emoción y la convierte en contenido que tus jugadores van a querer compartir.</p>
-    <div class="cards">
-      <div class="card r">
-        <div class="card-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#A7B0A4" stroke-width="1.5" stroke-linecap="round"><path d="M10 1l2.5 7h7l-5.7 4.1 2.2 6.9L10 14.8l-6 4.2 2.2-6.9L.5 8h7z"/></svg></div>
-        <div class="card-title">Tu club se diferencia</div>
-        <div class="card-desc">Sé el primer club en tu ciudad con replay instantáneo y streaming en vivo. Los jugadores lo recuerdan — y lo recomiendan.</div>
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-inner">
+    <div class="section-eyebrow">PARA JUGADORES</div>
+    <h2 class="section-title">TODO LO QUE<br>NECESITAS</h2>
+    <p class="section-sub">Desde ver tus jugadas en el momento hasta construir tu historial deportivo completo.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📺</div>
+        <div class="feature-title">Transmisión en vivo</div>
+        <div class="feature-desc">Ve tu cancha en tiempo real desde cualquier dispositivo. Perfecta para compartir con familia y amigos.</div>
+        <div class="feature-tag">EN VIVO</div>
       </div>
-      <div class="card r r-d1">
-        <div class="card-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#A7B0A4" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="4" width="18" height="12" rx="2"/><path d="M7 4v12M13 4v12"/></svg></div>
-        <div class="card-title">Contenido listo para redes</div>
-        <div class="card-desc">Cada replay que generan tus jugadores es un clip con tu marca que viaja por WhatsApp e Instagram. Marketing gratuito.</div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Replay instantáneo</div>
+        <div class="feature-desc">Con un solo botón, genera el clip de los últimos 30 segundos. Ideal para analizar puntos clave al instante.</div>
+        <div class="feature-tag">CLIP EN SEGUNDOS</div>
       </div>
-      <div class="card r r-d2">
-        <div class="card-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#A7B0A4" stroke-width="1.5" stroke-linecap="round"><path d="M10 1C5 1 1 5 1 10s4 9 9 9 9-4 9-9-4-9-9-9z"/><path d="M10 6v4l3 3"/></svg></div>
-        <div class="card-title">Mayor engagement</div>
-        <div class="card-desc">Los jugadores que viven la experiencia de PICALE regresan más. Video = conexión emocional con el club.</div>
+      <div class="feature-card">
+        <div class="feature-icon">🎬</div>
+        <div class="feature-title">Feed de momentos</div>
+        <div class="feature-desc">Un feed estilo Reels con los mejores clips de tu club. Da like, comenta y comparte tus mejores jugadas.</div>
+        <div class="feature-tag">SOCIAL</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎾</div>
+        <div class="feature-title">Perfil de jugador</div>
+        <div class="feature-desc">Reclama tus clips, construye tu historial y comparte tu perfil con otros jugadores.</div>
+        <div class="feature-tag">NUEVO</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏆</div>
+        <div class="feature-title">Pícale Rivals</div>
+        <div class="feature-desc">Torneos semanales con brackets en vivo, rankings por categoría y resultados en tiempo real.</div>
+        <div class="feature-tag">PRÓXIMAMENTE</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">↓</div>
+        <div class="feature-title">Descarga y comparte</div>
+        <div class="feature-desc">Descarga tus clips directamente a tu celular o compártelos en WhatsApp, Instagram y TikTok.</div>
+        <div class="feature-tag">GRATIS</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- PARA JUGADORES -->
-<section class="section alt" id="jugadores">
-  <div class="container">
-    <div class="player-layout">
-      <div>
-        <div class="r"><div class="section-label">Para jugadores</div></div>
-        <h2 class="section-h r r-d1">Tu mejor punto,<br>en <span style="color:var(--sage)">tu celular.</span></h2>
-        <p class="section-sub r r-d2">Sin instalar nada. Sin pedirle nada a nadie. Solo juegas — y el sistema hace el resto.</p>
-        <div class="player-steps">
-          <div class="pstep r r-d1"><span class="pstep-num">01</span><div><div class="pstep-title">Presionas el botón</div><div class="pstep-desc">El replay aparece en pantalla en menos de 3 segundos. Antes de que termine la celebración.</div></div></div>
-          <div class="pstep r r-d2"><span class="pstep-num">02</span><div><div class="pstep-title">El clip queda guardado</div><div class="pstep-desc">Automáticamente. Sin hacer nada extra. Todos tus replays en un solo lugar.</div></div></div>
-          <div class="pstep r r-d3"><span class="pstep-num">03</span><div><div class="pstep-title">Comparte en 1 tap</div><div class="pstep-desc">WhatsApp, Instagram, TikTok. Tu highlight en redes antes de salir de la cancha.</div></div></div>
-          <div class="pstep r r-d4"><span class="pstep-num">04</span><div><div class="pstep-title">Revive el partido completo</div><div class="pstep-desc">Cada punto, cada set, cada momento. El partido grabado y disponible cuando quieras.</div></div></div>
+<!-- RIVALS SECTION -->
+<section class="rivals-section" id="rivals">
+  <div class="rivals-inner">
+    <div>
+      <div class="section-eyebrow">PÍCALE RIVALS</div>
+      <h2 class="section-title">EL PÁDEL<br><span style="color:var(--green);">COMPETITIVO</span><br>QUE MERECES</h2>
+      <p class="section-sub" style="margin-top:12px;">No solo torneos — una carrera deportiva completa dentro de Pícale.</p>
+
+      <div class="rivals-features">
+        <div class="rivals-feat">
+          <div class="rivals-feat-icon">📊</div>
+          <div class="rivals-feat-text"><b>Brackets en vivo</b>Doble eliminación, Round Robin y más — sigue cada partido en tiempo real.</div>
+        </div>
+        <div class="rivals-feat">
+          <div class="rivals-feat-icon">📈</div>
+          <div class="rivals-feat-text"><b>Rankings por categoría</b>Open, Primera, Segunda… hasta Sexta. Sube de categoría cuando lo merezcas.</div>
+        </div>
+        <div class="rivals-feat">
+          <div class="rivals-feat-icon">⚡</div>
+          <div class="rivals-feat-text"><b>Suma de categorías</b>Torneos mixtos donde las categorías de los jugadores deben sumar un valor específico.</div>
+        </div>
+        <div class="rivals-feat">
+          <div class="rivals-feat-icon">🎥</div>
+          <div class="rivals-feat-text"><b>Con replay incluido</b>Torneos en clubes con cámaras Pícale — tus mejores jugadas del torneo, guardadas automáticamente.</div>
         </div>
       </div>
-      <div class="phone-wrap r r-d2">
-        <div class="phone">
-          <div class="phone-inner">
-            <div class="phone-screen">
-              <div class="ph-top">
-                <div class="ph-brand">PICALE</div>
-                <div class="ph-live"><div class="ph-live-dot"></div><span class="ph-live-txt">EN VIVO</span></div>
-              </div>
-              <div class="ph-court"><div class="ph-court-lines"></div></div>
-              <div class="ph-bottom">
-                <div class="ph-replay">⏮ REPLAY</div>
-                <div class="ph-pills"><div class="ph-pill">10s</div><div class="ph-pill">20s</div><div class="ph-pill">30s</div></div>
-              </div>
-              <div class="ph-clips">
-                <div class="ph-clips-hdr">MIS CLIPS · 3</div>
-                <div class="ph-clip"><div class="ph-clip-thumb"><svg viewBox="0 0 10 10" fill="#A7B0A4"><path d="M2 1.5l6.5 3.5L2 8.5V1.5z"/></svg></div><div><div class="ph-clip-name">replay_143201.mp4</div><div class="ph-clip-size">5.8 MB · 20s</div></div></div>
-                <div class="ph-clip"><div class="ph-clip-thumb"><svg viewBox="0 0 10 10" fill="rgba(167,176,164,.5)"><path d="M2 1.5l6.5 3.5L2 8.5V1.5z"/></svg></div><div><div class="ph-clip-name">replay_141822.mp4</div><div class="ph-clip-size">3.2 MB · 10s</div></div></div>
-              </div>
-            </div>
-          </div>
+
+      <a href="rivals.html" class="btn-cta btn-cta-primary" style="margin-top:28px;display:inline-flex;">Ver torneos →</a>
+    </div>
+
+    <div class="rivals-visual">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:16px;font-weight:600;">BRACKET EN VIVO</div>
+      <div class="bracket-demo">
+        <div class="bracket-round-label">SEMIFINAL</div>
+        <div class="bracket-match">
+          <div class="bracket-team"><span class="bracket-team-name w">Almada / Prado</span><span class="bracket-team-score">6-4, 6-3</span></div>
+          <div class="bracket-divider"></div>
+          <div class="bracket-team"><span class="bracket-team-name" style="color:var(--muted);">López / Sáenz</span></div>
+        </div>
+        <div class="bracket-match">
+          <div class="bracket-team"><span class="bracket-team-name">Echegaray / Valtierra</span></div>
+          <div class="bracket-divider"></div>
+          <div class="bracket-team"><span class="bracket-team-name">Zazueta / Bottarelli</span></div>
+          <div style="font-size:10px;color:var(--muted2);text-align:center;padding-top:6px;">En espera de resultado anterior</div>
+        </div>
+        <div class="bracket-round-label" style="margin-top:12px;">GRAN FINAL</div>
+        <div class="bracket-match" style="border-color:rgba(94,232,122,.2);">
+          <div class="bracket-team"><span class="bracket-team-name w">Almada / Prado</span></div>
+          <div class="bracket-divider"></div>
+          <div class="bracket-team"><span class="bracket-team-name" style="color:var(--muted2);">Por definir</span></div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- CÓMO FUNCIONA -->
-<section class="section" id="como-funciona">
-  <div class="container">
-    <div class="r"><div class="section-label">Cómo funciona</div></div>
-    <h2 class="section-h r r-d1">Simple para el jugador.<br>Poderoso por dentro.</h2>
-    <div class="how-grid">
-      <div class="how-step r">
-        <div class="how-step-num">01</div>
-        <div class="how-step-title">Se instala en el club</div>
-        <div class="how-step-desc">Una cámara y un pequeño servidor en la cancha. Funciona en la red del club, sin depender del internet.</div>
+<!-- FOR CLUBS -->
+<section class="clubs-section" id="para-clubes">
+  <div class="section-inner">
+    <div class="section-eyebrow">PARA CLUBES</div>
+    <h2 class="section-title">INSTALA PÍCALE<br>EN TU CLUB</h2>
+    <p class="section-sub">Sin complicaciones técnicas. Nosotros instalamos todo y tú solo disfrutas los beneficios.</p>
+
+    <div class="clubs-grid">
+      <div class="club-feature">
+        <div class="club-feature-num">01</div>
+        <div class="club-feature-title">Instalación completa</div>
+        <div class="club-feature-desc">Instalamos las cámaras, el mini PC y configuramos todo el sistema en tus canchas. Sin conocimientos técnicos requeridos.</div>
       </div>
-      <div class="how-step alt-bg r r-d1">
-        <div class="how-step-num">02</div>
-        <div class="how-step-title">Graba en tiempo real</div>
-        <div class="how-step-desc">El sistema graba continuamente en segundo plano. Siempre listo para generar el replay al instante.</div>
+      <div class="club-feature">
+        <div class="club-feature-num">02</div>
+        <div class="club-feature-title">Transmisión 24/7</div>
+        <div class="club-feature-desc">Tus canchas en vivo todo el día. Los jugadores y sus familias pueden ver los partidos desde cualquier lugar.</div>
       </div>
-      <div class="how-step alt-bg r r-d2">
-        <div class="how-step-num">03</div>
-        <div class="how-step-title">Un botón, el replay</div>
-        <div class="how-step-desc">El jugador presiona el botón en pantalla o físico. El clip aparece en menos de 3 segundos. Así de simple.</div>
+      <div class="club-feature">
+        <div class="club-feature-num">03</div>
+        <div class="club-feature-title">Clips automáticos</div>
+        <div class="club-feature-desc">Con la botonera física, los jugadores generan sus propios replays sin necesitar a nadie del club.</div>
       </div>
-      <div class="how-step r r-d3">
-        <div class="how-step-num">04</div>
-        <div class="how-step-title">El clip es tuyo</div>
-        <div class="how-step-desc">Se guarda automáticamente. El jugador lo descarga y lo comparte desde su celular cuando quiera.</div>
+      <div class="club-feature">
+        <div class="club-feature-num">04</div>
+        <div class="club-feature-title">Distintivo Pícale</div>
+        <div class="club-feature-desc">Tu club aparece destacado en la plataforma con el sello Pícale — diferénciate de otros clubes.</div>
+      </div>
+      <div class="club-feature">
+        <div class="club-feature-num">05</div>
+        <div class="club-feature-title">Torneos con Rivals</div>
+        <div class="club-feature-desc">Organiza torneos semanales en tu club con brackets automáticos, resultados en vivo e integración con los replays.</div>
+      </div>
+      <div class="club-feature">
+        <div class="club-feature-num">06</div>
+        <div class="club-feature-title">Pantalla para tu TV</div>
+        <div class="club-feature-desc">Pon la transmisión de tus canchas en la pantalla de tu recepción o bar. Tus jugadores van a adorarlo.</div>
+      </div>
+    </div>
+
+    <div class="club-cta-box">
+      <div class="club-cta-text">
+        <div class="club-cta-title">¿QUIERES PÍCALE<br>EN TU CLUB?</div>
+        <div class="club-cta-sub">Contáctanos y te explicamos cómo funciona la instalación, los costos y todo lo que necesitas saber.</div>
+      </div>
+      <div class="club-cta-actions">
+        <a href="mailto:hola@picalereplay.com" class="btn-cta btn-cta-primary">Quiero Pícale en mi club</a>
+        <a href="clubs.html" class="btn-cta btn-cta-secondary">Ver clubes activos</a>
       </div>
     </div>
   </div>
 </section>
 
-<!-- CTA -->
-<section class="cta-section" id="contacto">
-  <div style="position:relative;z-index:2;">
-    <div class="cta-logo">
-      <svg viewBox="0 0 320 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="height:80px;width:auto;">
-        <text font-family="Montserrat,sans-serif" font-weight="800" font-size="64" fill="rgba(245,242,236,.15)" letter-spacing="4"><tspan x="0" y="60">P</tspan></text>
-        <rect x="74" y="28" width="9" height="36" fill="rgba(245,242,236,.15)"/>
-        <circle cx="78" cy="14" r="11" stroke="rgba(245,242,236,.15)" stroke-width="2.5" fill="none"/>
-        <circle cx="78" cy="14" r="6" fill="rgba(167,176,164,.3)"/>
-        <text font-family="Montserrat,sans-serif" font-weight="800" font-size="64" fill="rgba(245,242,236,.15)" letter-spacing="4"><tspan x="90" y="60">CALE</tspan></text>
-      </svg>
+<!-- SIGN UP CTA -->
+<section class="signup-section">
+  <div class="signup-inner">
+    <h2 class="signup-title">TU HISTORIAL<br><span>EMPIEZA HOY</span></h2>
+    <p class="signup-sub">Crea tu cuenta gratis, reclama tus clips, inscríbete a torneos y empieza a construir tu carrera en el pádel.</p>
+    <div class="signup-actions">
+      <a href="auth.html" class="btn-hero btn-hero-primary">Crear cuenta gratis →</a>
+      <a href="clubs.html" class="btn-hero btn-hero-secondary">Ver en vivo</a>
     </div>
-    <h2 class="cta-h r">¿Listo para llevar<br>tu club al siguiente nivel?</h2>
-    <p class="cta-sub r r-d1">Agenda una demo y te mostramos PICALE funcionando en vivo. Sin compromisos.</p>
-    <div class="cta-actions r r-d2">
-      <a href="mailto:hola@picalereplay.com?subject=Demo PICALE" class="btn-ivory">
-        Solicitar demo
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3 7.5h9M8 4l4 3.5-4 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-      <a href="torneo.html" class="btn-ghost-light">Ver dashboard</a>
-    </div>
-    <div class="cta-note r r-d3">Sin contratos · Sin permanencia</div>
   </div>
 </section>
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-left">
-    <span class="footer-name">PICALE</span>
-    <span class="footer-copy">© 2026 · picalereplay.com</span>
-  </div>
+  <div class="footer-logo">PÍCALE<span>.</span></div>
   <div class="footer-links">
-    <a href="torneo.html">Dashboard</a>
+    <a href="clubs.html">Clubes</a>
+    <a href="rivals.html">Rivals</a>
+    <a href="feed.html">Momentos</a>
+    <a href="auth.html">Crear cuenta</a>
     <a href="mailto:hola@picalereplay.com">Contacto</a>
   </div>
+  <div class="footer-copy">© 2026 Pícale Replay · México</div>
 </footer>
 
 <script>
-const nav=document.getElementById('nav');
-window.addEventListener('scroll',()=>nav.classList.toggle('solid',scrollY>60),{passive:true});
-const ro=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('on');});},{threshold:.1,rootMargin:'0px 0px -40px 0px'});
-document.querySelectorAll('.r').forEach(el=>ro.observe(el));
+// Auth button
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.PICALE) {
+    PICALE.renderAuthBtn('auth-btn-container', 'index.html');
+  }
+});
+
+// Sticky nav shadow
+window.addEventListener('scroll', function() {
+  var nav = document.getElementById('nav');
+  if (window.scrollY > 20) {
+    nav.style.background = 'rgba(8,9,10,.97)';
+  } else {
+    nav.style.background = 'rgba(8,9,10,.85)';
+  }
+});
 </script>
-<script>if(window.PICALE){PICALE.renderAuthBtn("auth-btn-container","index.html");}</script>
 </body>
 </html>
