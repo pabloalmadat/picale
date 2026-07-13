@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PÍCALE · Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#08090a;--bg2:#0f1012;--bg3:#161719;--bg4:#1c1e20;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.12);--border3:rgba(255,255,255,.2);
+  --text:#F0EDE6;--muted:rgba(240,237,230,.45);--muted2:rgba(240,237,230,.2);
+  --green:#5EE87A;--green-dim:rgba(94,232,122,.1);--green-border:rgba(94,232,122,.25);
+  --red:#E05252;--red-dim:rgba(224,82,82,.1);
+  --yellow:#E5C547;--blue:#5B9EE8;
+  --display:'Bebas Neue',sans-serif;--body:'DM Sans',sans-serif;--mono:'JetBrains Mono',monospace;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;}
+
+/* ── LOGIN ── */
+#login-screen{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;z-index:1000;
+}
+.login-card{
+  width:100%;max-width:360px;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:20px;
+  padding:32px;
+}
+.login-logo{font-family:var(--display);font-size:28px;letter-spacing:3px;margin-bottom:4px;}
+.login-logo span{color:var(--green);}
+.login-sub{font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:28px;}
+.login-field{margin-bottom:14px;}
+.login-label{font-size:10px;color:var(--muted);letter-spacing:1.5px;display:block;margin-bottom:6px;font-weight:600;}
+.login-input{
+  width:100%;padding:11px 14px;
+  background:var(--bg3);border:1px solid var(--border2);border-radius:8px;
+  color:var(--text);font-family:var(--body);font-size:14px;outline:none;
+  transition:border-color .15s;-webkit-appearance:none;
+}
+.login-input:focus{border-color:var(--green);}
+.login-btn{
+  width:100%;padding:13px;background:var(--green);border:none;border-radius:8px;
+  color:#000;font-family:var(--display);font-size:18px;letter-spacing:2px;
+  cursor:pointer;margin-top:8px;transition:opacity .15s;
+}
+.login-btn:hover{opacity:.9;}
+.login-error{
+  font-size:12px;color:var(--red);text-align:center;
+  margin-top:10px;display:none;
+}
+
+/* ── APP ── */
+#app{display:none;min-height:100vh;}
+.layout{display:flex;min-height:100vh;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:220px;flex-shrink:0;background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;
+}
+.sb-logo{padding:20px;border-bottom:1px solid var(--border);}
+.sb-logo-main{font-family:var(--display);font-size:20px;letter-spacing:2px;}
+.sb-logo-main span{color:var(--green);}
+.sb-logo-sub{font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:2px;}
+.sb-nav{padding:8px;flex:1;}
+.sb-section{font-size:9px;color:var(--muted2);letter-spacing:2px;padding:8px 10px 4px;margin-top:6px;}
+.sb-item{
+  display:flex;align-items:center;gap:9px;
+  padding:9px 10px;border-radius:7px;cursor:pointer;
+  font-size:13px;font-weight:500;color:var(--muted);
+  transition:all .15s;text-decoration:none;border:1px solid transparent;
+}
+.sb-item:hover{background:var(--bg3);color:var(--text);}
+.sb-item.active{background:var(--green-dim);border-color:var(--green-border);color:var(--green);}
+.sb-footer{padding:14px;border-top:1px solid var(--border);}
+.sb-user{
+  display:flex;align-items:center;gap:8px;
+  padding:8px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);
+}
+.sb-avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--green-dim);border:1px solid var(--green-border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--green);flex-shrink:0;
+}
+.sb-name{font-size:12px;font-weight:600;flex:1;}
+.sb-logout{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:2px;}
+
+/* ── MAIN ── */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{
+  padding:14px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg);position:sticky;top:0;z-index:50;
+}
+.page-title{font-family:var(--display);font-size:20px;letter-spacing:1px;}
+.content{padding:20px;flex:1;}
+
+/* ── VIEWS ── */
+.view{display:none;}
+.view.active{display:block;}
+
+/* ── STAT CARDS ── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.stat-card-label{font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-bottom:5px;}
+.stat-card-value{font-family:var(--display);font-size:28px;letter-spacing:1px;}
+.stat-card-value.g{color:var(--green);}
+.stat-card-value.y{color:var(--yellow);}
+.stat-card-value.b{color:var(--blue);}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px;}
+.card-head{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-title{font-family:var(--display);font-size:16px;letter-spacing:1px;}
+
+/* ── BUTTONS ── */
+.btn{
+  padding:8px 16px;border-radius:7px;font-family:var(--body);font-size:13px;
+  font-weight:600;cursor:pointer;transition:all .15s;border:none;
+  display:inline-flex;align-items:center;gap:6px;text-decoration:none;
+}
+.btn-primary{background:var(--green);color:#000;}
+.btn-primary:hover{opacity:.9;}
+.btn-secondary{background:var(--bg3);border:1px solid var(--border2);color:var(--text);}
+.btn-secondary:hover{border-color:var(--border3);}
+.btn-danger{background:var(--red-dim);border:1px solid rgba(224,82,82,.3);color:var(--red);}
+.btn-sm{padding:5px 11px;font-size:12px;}
+
+/* ── TABLE ── */
+.table{width:100%;border-collapse:collapse;}
+.table th{padding:9px 14px;text-align:left;font-size:9px;color:var(--muted);letter-spacing:1.5px;font-weight:600;border-bottom:1px solid var(--border);background:var(--bg3);}
+.table td{padding:11px 14px;font-size:13px;border-bottom:1px solid var(--border);}
+.table tr:last-child td{border-bottom:none;}
+.table tr:hover td{background:rgba(255,255,255,.02);cursor:pointer;}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px;}
+.badge-draft{background:var(--bg4);color:var(--muted);border:1px solid var(--border2);}
+.badge-open{background:rgba(91,158,232,.1);color:var(--blue);border:1px solid rgba(91,158,232,.3);}
+.badge-active{background:var(--green-dim);color:var(--green);border:1px solid var(--green-border);}
+.badge-finished{background:var(--bg4);color:var(--muted);border:1px solid var(--border);}
+.badge-closed{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,82,82,.3);}
+
+/* ── FORM ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:9px;color:var(--muted);letter-spacing:1.5px;font-weight:600;}
+.field input,.field select,.field textarea{
+  padding:9px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;
+  color:var(--text);font-family:var(--body);font-size:13px;outline:none;
+  transition:border-color .15s;-webkit-appearance:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green);}
+.field textarea{min-height:72px;resize:none;}
+.field select option{background:var(--bg3);}
+.field-hint{font-size:10px;color:var(--muted2);}
+.form-section{border-top:1px solid var(--border);padding-top:14px;margin-top:4px;}
+.form-section-title{font-size:9px;color:var(--muted2);letter-spacing:2px;margin-bottom:10px;}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);
+  z-index:500;display:none;align-items:flex-start;justify-content:center;
+  padding:20px;overflow-y:auto;backdrop-filter:blur(4px);
+}
+.modal-overlay.open{display:flex;}
+.modal{width:100%;max-width:620px;background:var(--bg2);border:1px solid var(--border2);border-radius:14px;overflow:hidden;margin:auto;}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:var(--display);font-size:18px;letter-spacing:1px;}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;}
+.modal-body{padding:20px;display:flex;flex-direction:column;gap:14px;}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+
+/* ── TEAMS ── */
+.team-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);}
+.team-row:last-child{border-bottom:none;}
+.team-seed{width:24px;height:24px;border-radius:5px;background:var(--bg4);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);font-family:var(--mono);flex-shrink:0;}
+.team-info{flex:1;min-width:0;}
+.team-name{font-size:13px;font-weight:600;}
+.team-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+
+/* ── BRACKET ── */
+.match-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;overflow:hidden;}
+.match-round{font-size:9px;color:var(--muted2);letter-spacing:1.5px;padding:5px 12px;background:var(--bg4);border-bottom:1px solid var(--border);}
+.match-body{padding:8px 12px;}
+.match-team{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;}
+.match-team.w{color:var(--green);font-weight:700;}
+.match-team.l{color:var(--muted);}
+.match-divider{height:1px;background:var(--border);margin:3px 0;}
+
+/* ── SCORE SETS ── */
+.set-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.set-label{font-size:10px;color:var(--muted);width:36px;}
+.set-input{width:52px;padding:5px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);text-align:center;font-size:13px;outline:none;}
+.set-input:focus{border-color:var(--green);}
+
+/* ── EMPTY / LOADING ── */
+.empty{padding:36px;text-align:center;color:var(--muted);font-size:13px;}
+.loading-row{padding:28px;text-align:center;color:var(--muted);font-size:13px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 8px;}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);
+  background:rgba(18,20,22,.97);border:1px solid var(--border2);
+  border-radius:20px;padding:7px 18px;font-size:13px;color:var(--text);
+  opacity:0;transition:all .25s;z-index:9999;white-space:nowrap;
+  backdrop-filter:blur(12px);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media(max-width:680px){
+  .sidebar{display:none;}
+  .form-grid{grid-template-columns:1fr;}
+  .content{padding:14px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">PÍCALE<span>.</span></div>
+    <div class="login-sub">PANEL DE ADMINISTRACIÓN</div>
+    <div class="login-field">
+      <label class="login-label">USUARIO</label>
+      <input class="login-input" type="text" id="l-user" placeholder="Admin" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label class="login-label">CONTRASEÑA</label>
+      <input class="login-input" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" onclick="doLogin()">ENTRAR</button>
+    <div class="login-error" id="login-error">Usuario o contraseña incorrectos</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-logo">
+        <div class="sb-logo-main">PÍCALE<span>.</span></div>
+        <div class="sb-logo-sub">ADMIN PANEL</div>
+      </div>
+      <nav class="sb-nav">
+        <div class="sb-section">TORNEOS</div>
+        <a class="sb-item active" onclick="nav('tournaments')" href="#">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1.5l1.3 2.7 3 .4-2.2 2.1.5 3L7 8.3 4.4 9.7l.5-3L2.7 4.6l3-.4z"/></svg>
+          Torneos
+        </a>
+        <a class="sb-item" onclick="nav('create')" href="#">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 2v10M2 7h10"/></svg>
+          Nuevo torneo
+        </a>
+        <div class="sb-section">LINKS</div>
+        <a class="sb-item" href="rivals.html" target="_blank">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7h10M8 3l4 4-4 4"/></svg>
+          Ver Rivals público
+        </a>
+        <a class="sb-item" href="rivals-admin.html" target="_blank">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="10" height="10" rx="2"/><path d="M5 7h4M7 5v4"/></svg>
+          Panel completo
+        </a>
+        <a class="sb-item" href="clubs.html" target="_blank">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M7 4.5v3l1.5 1.5"/></svg>
+          Ver clubes
+        </a>
+      </nav>
+      <div class="sb-footer">
+        <div class="sb-user">
+          <div class="sb-avatar">A</div>
+          <div class="sb-name">Admin</div>
+          <button class="sb-logout" onclick="logout()" title="Salir">⇥</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar">
+        <div class="page-title" id="page-title">TORNEOS</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="nav('create')">+ Nuevo</button>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- VIEW: LIST -->
+        <div class="view active" id="view-tournaments">
+          <div class="stats-row" id="stats-row">
+            <div class="stat-card"><div class="stat-card-label">TOTAL</div><div class="stat-card-value g" id="s-total">—</div></div>
+            <div class="stat-card"><div class="stat-card-label">EN CURSO</div><div class="stat-card-value y" id="s-active">—</div></div>
+            <div class="stat-card"><div class="stat-card-label">ABIERTOS</div><div class="stat-card-value b" id="s-open">—</div></div>
+            <div class="stat-card"><div class="stat-card-label">FINALIZADOS</div><div class="stat-card-value" id="s-finished">—</div></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">TODOS LOS TORNEOS</div>
+              <button class="btn btn-secondary btn-sm" onclick="loadTournaments()">↻</button>
+            </div>
+            <div id="t-list"><div class="loading-row"><div class="spinner"></div>Cargando...</div></div>
+          </div>
+        </div>
+
+        <!-- VIEW: CREATE/EDIT -->
+        <div class="view" id="view-create">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title" id="form-title">NUEVO TORNEO</div>
+              <button class="btn btn-secondary btn-sm" onclick="nav('tournaments')">← Volver</button>
+            </div>
+            <div style="padding:20px;">
+              <div class="form-grid">
+                <div class="field" style="grid-column:1/-1;">
+                  <label>NOMBRE</label>
+                  <input type="text" id="f-name" placeholder="Pícale Rivals #1 — Semana 28">
+                </div>
+                <div class="field" style="grid-column:1/-1;">
+                  <label>DESCRIPCIÓN</label>
+                  <textarea id="f-desc" placeholder="Reglas, premios, info adicional..."></textarea>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title">SEDE</div>
+                <div class="form-grid">
+                  <div class="field">
+                    <label>CLUB</label>
+                    <select id="f-club">
+                      <option value="">Selecciona...</option>
+                      <option value="cuatro-padel-sur-mty">Cuatro Pádel Sur — MTY</option>
+                      <option value="duo-padel-obregon">DUO Padel Park — OBR</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>CÁMARAS PÍCALE</label>
+                    <select id="f-picale">
+                      <option value="true">Sí ✓</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title">CATEGORÍA</div>
+                <div class="form-grid">
+                  <div class="field">
+                    <label>TIPO</label>
+                    <select id="f-cattype" onchange="onCatChange()">
+                      <option value="fixed">Categoría fija</option>
+                      <option value="suma">SUMA de categorías</option>
+                    </select>
+                  </div>
+                  <div class="field" id="f-cat-wrap">
+                    <label>CATEGORÍA</label>
+                    <select id="f-cat">
+                      <option value="">Selecciona...</option>
+                      <option>Open</option><option>Primera</option><option>Segunda</option>
+                      <option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option>
+                      <option>Femenil Open</option><option>Femenil Primera</option><option>Femenil Segunda</option>
+                      <option>Femenil Tercera</option><option>Femenil Cuarta</option><option>Femenil Quinta</option><option>Femenil Sexta</option>
+                    </select>
+                  </div>
+                  <div class="field" id="f-suma-wrap" style="display:none;">
+                    <label>VALOR SUMA</label>
+                    <select id="f-suma">
+                      <option value="">Selecciona...</option>
+                      <option value="2">Suma 2</option><option value="3">Suma 3</option><option value="4">Suma 4</option>
+                      <option value="5">Suma 5</option><option value="6">Suma 6</option><option value="7">Suma 7</option>
+                      <option value="8">Suma 8</option><option value="9">Suma 9</option><option value="10">Suma 10</option>
+                      <option value="11">Suma 11</option><option value="12">Suma 12</option><option value="13">Suma 13</option>
+                      <option value="14">Suma 14</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title">FORMATO E INSCRIPCIÓN</div>
+                <div class="form-grid">
+                  <div class="field">
+                    <label>FORMATO</label>
+                    <select id="f-format">
+                      <option value="double_elimination">Doble eliminación ⭐</option>
+                      <option value="single_elimination">Eliminación simple</option>
+                      <option value="round_robin">Round Robin</option>
+                      <option value="round_robin_playoffs">Round Robin + Playoffs</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>MÁX. PAREJAS</label>
+                    <select id="f-maxteams">
+                      <option value="8">8</option><option value="16" selected>16</option>
+                      <option value="24">24</option><option value="32">32</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>PRECIO POR PAREJA (MXN)</label>
+                    <input type="number" id="f-price" placeholder="350" min="0">
+                  </div>
+                  <div class="field">
+                    <label>PREMIO</label>
+                    <input type="text" id="f-prize" placeholder="$2,000 + trofeo">
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title">FECHAS</div>
+                <div class="form-grid">
+                  <div class="field"><label>INICIO INSCRIPCIONES</label><input type="datetime-local" id="f-regopen"></div>
+                  <div class="field"><label>CIERRE INSCRIPCIONES</label><input type="datetime-local" id="f-regclose"></div>
+                  <div class="field"><label>FECHA TORNEO</label><input type="datetime-local" id="f-start"></div>
+                  <div class="field"><label>FIN ESTIMADO</label><input type="datetime-local" id="f-end"></div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:8px;margin-top:20px;">
+                <button class="btn btn-primary" onclick="saveTournament()" id="btn-save">CREAR TORNEO</button>
+                <button class="btn btn-secondary" onclick="nav('tournaments')">Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: DETAIL -->
+        <div class="view" id="view-detail">
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;" id="detail-actions"></div>
+
+          <div class="card" style="margin-bottom:14px;">
+            <div class="card-head">
+              <div>
+                <div class="card-title" id="d-name">—</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:3px;" id="d-meta">—</div>
+              </div>
+              <div id="d-badge"></div>
+            </div>
+            <div style="padding:14px 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px;" id="d-info"></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" id="d-grid">
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title">PAREJAS <span id="d-teams-count" style="font-size:13px;color:var(--muted);"></span></div>
+                <button class="btn btn-secondary btn-sm" onclick="openAddTeam()">+ Agregar</button>
+              </div>
+              <div id="d-teams"><div class="loading-row"><div class="spinner"></div></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title">BRACKET</div>
+                <button class="btn btn-secondary btn-sm" onclick="genBracket()">⚡ Generar</button>
+              </div>
+              <div id="d-bracket" style="padding:12px;"><div class="empty">Sin bracket</div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD TEAM -->
+<div class="modal-overlay" id="m-addteam">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">AGREGAR PAREJA</div><button class="modal-close" onclick="closeModal('m-addteam')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><label>@USUARIO JUGADOR 1</label><input type="text" id="at-p1" placeholder="pabloalmada"></div>
+        <div class="field"><label>@USUARIO JUGADOR 2</label><input type="text" id="at-p2" placeholder="carlosechegaray"></div>
+        <div class="field"><label>NOMBRE PAREJA (opcional)</label><input type="text" id="at-name"></div>
+        <div class="field"><label>CABEZA DE SERIE</label><input type="number" id="at-seed" min="1"></div>
+        <div class="field" id="at-cat1-wrap" style="display:none;"><label>CATEGORÍA J1</label><select id="at-cat1"><option value="">...</option><option>Open</option><option>Primera</option><option>Segunda</option><option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option></select></div>
+        <div class="field" id="at-cat2-wrap" style="display:none;"><label>CATEGORÍA J2</label><select id="at-cat2"><option value="">...</option><option>Open</option><option>Primera</option><option>Segunda</option><option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('m-addteam')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addTeam()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SCORE -->
+<div class="modal-overlay" id="m-score">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">RESULTADO</div><button class="modal-close" onclick="closeModal('m-score')">×</button></div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;" id="sm-info"></div>
+      <div id="sm-sets"></div>
+      <button class="btn btn-secondary btn-sm" onclick="addSet()" style="margin-top:8px;">+ Set</button>
+      <div class="field" style="margin-top:14px;">
+        <label>GANADOR</label>
+        <select id="sm-winner"><option value="">Selecciona...</option></select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('m-score')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveScore()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+var CLOUD = 'https://api.picalereplay.com';
+var ADMIN_USER = 'Admin';
+var ADMIN_PASS = 'Yaquis2002.';
+var SESSION_KEY = 'picale_admin_session';
+
+var currentT = null;
+var editId = null;
+var scoringM = null;
+var sets = [];
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function doLogin() {
+  var u = document.getElementById('l-user').value.trim();
+  var p = document.getElementById('l-pass').value;
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadTournaments();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+});
+
+// Check session
+if (sessionStorage.getItem(SESSION_KEY)) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadTournaments();
+}
+
+// ── PICALE TOKEN (admin user from DB) ────────────────────────────────────────
+var adminToken = null;
+
+function getAdminToken() {
+  if (adminToken) return Promise.resolve(adminToken);
+  var body = new URLSearchParams();
+  body.append('username', 'pablo.almadat@tcncontrol.com');
+  body.append('password', 'Yaquis2002.');
+  return fetch(CLOUD + '/api/v1/auth/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: body.toString()
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) { adminToken = d.access_token; return adminToken; })
+  .catch(function() { return null; });
+}
+
+function authHeaders() {
+  return adminToken ? {'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json'} : {'Content-Type': 'application/json'};
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function nav(view) {
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+  document.querySelectorAll('.sb-item').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('view-' + view).classList.add('active');
+  var titles = {tournaments:'TORNEOS', create: editId?'EDITAR TORNEO':'NUEVO TORNEO', detail:'DETALLE'};
+  document.getElementById('page-title').textContent = titles[view] || '';
+  document.getElementById('form-title').textContent = editId ? 'EDITAR TORNEO' : 'NUEVO TORNEO';
+  document.getElementById('btn-save').textContent = editId ? 'GUARDAR' : 'CREAR TORNEO';
+}
+
+function onCatChange() {
+  var t = document.getElementById('f-cattype').value;
+  document.getElementById('f-cat-wrap').style.display = t === 'fixed' ? 'block' : 'none';
+  document.getElementById('f-suma-wrap').style.display = t === 'suma' ? 'block' : 'none';
+}
+
+// ── LOAD TOURNAMENTS ──────────────────────────────────────────────────────────
+function loadTournaments() {
+  fetch(CLOUD + '/api/v1/rivals/')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var ts = d.tournaments || [];
+      document.getElementById('s-total').textContent = ts.length;
+      document.getElementById('s-active').textContent = ts.filter(function(t){return t.status==='active';}).length;
+      document.getElementById('s-open').textContent = ts.filter(function(t){return t.status==='open';}).length;
+      document.getElementById('s-finished').textContent = ts.filter(function(t){return t.status==='finished';}).length;
+
+      var el = document.getElementById('t-list');
+      if (!ts.length) { el.innerHTML = '<div class="empty">No hay torneos. Crea el primero.</div>'; return; }
+
+      var statusLabel = {draft:'BORRADOR',open:'ABIERTO',closed:'CERRADO',active:'EN CURSO',finished:'FINALIZADO'};
+      el.innerHTML = '<table class="table"><thead><tr><th>TORNEO</th><th>CLUB</th><th>CAT</th><th>PAREJAS</th><th>ESTADO</th><th></th></tr></thead><tbody>'
+        + ts.map(function(t) {
+          var cat = t.category_type==='suma'?'Suma '+t.suma_valor:(t.categoria||'—');
+          var date = t.start_date ? new Date(t.start_date*1000).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) : '—';
+          return '<tr onclick="openDetail(\''+t.id+'\')">'
+            +'<td><div style="font-weight:600;font-size:13px;">'+t.name+'</div><div style="font-size:11px;color:var(--muted);">'+date+'</div></td>'
+            +'<td style="font-size:12px;color:var(--muted);">'+(t.club_name||'—')+'</td>'
+            +'<td style="font-size:12px;">'+cat+'</td>'
+            +'<td style="font-family:var(--mono);font-size:12px;">'+t.teams_count+'/'+t.max_teams+'</td>'
+            +'<td><span class="badge badge-'+t.status+'">'+statusLabel[t.status]+'</span></td>'
+            +'<td><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editT(\''+t.id+'\')">✏️</button></td>'
+            +'</tr>';
+        }).join('')+'</tbody></table>';
+    });
+}
+
+// ── DETAIL ────────────────────────────────────────────────────────────────────
+function openDetail(id) {
+  currentT = null;
+  nav('detail');
+  document.getElementById('d-teams').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
+  document.getElementById('d-bracket').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
+
+  fetch(CLOUD + '/api/v1/rivals/' + id)
+    .then(function(r){return r.json();})
+    .then(function(t) {
+      currentT = t;
+      var cat = t.category_type==='suma'?'Suma '+t.suma_valor:(t.categoria||'—');
+      var fmt = {double_elimination:'Doble Elim.',single_elimination:'Elim. Simple',round_robin:'Round Robin',round_robin_playoffs:'RR + Playoffs'}[t.format]||t.format;
+      var date = t.start_date ? new Date(t.start_date*1000).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      var statusLabel = {draft:'BORRADOR',open:'ABIERTO',closed:'CERRADO',active:'EN CURSO',finished:'FINALIZADO'};
+
+      document.getElementById('d-name').textContent = t.name;
+      document.getElementById('d-meta').textContent = (t.club_name||'')+(t.club_city?' · '+t.club_city:'')+' · '+date;
+      document.getElementById('d-badge').innerHTML = '<span class="badge badge-'+t.status+'">'+statusLabel[t.status]+'</span>';
+      document.getElementById('d-info').innerHTML = [
+        {l:'CATEGORÍA',v:cat},{l:'FORMATO',v:fmt},
+        {l:'PRECIO',v:t.price>0?'$'+t.price:'Gratis'},
+        {l:'PREMIO',v:t.prize_info||'—'},
+        {l:'PAREJAS',v:t.teams_count+'/'+t.max_teams},
+      ].map(function(s){return '<div><div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:3px;">'+s.l+'</div><div style="font-size:13px;font-weight:600;">'+s.v+'</div></div>';}).join('');
+
+      // Actions
+      var acts = '<button class="btn btn-secondary btn-sm" onclick="editT(\''+t.id+'\')">✏️ Editar</button>';
+      if (t.status==='draft') acts += '<button class="btn btn-secondary btn-sm" onclick="changeStatus(\'open\')">📢 Abrir</button>';
+      if (t.status==='open') acts += '<button class="btn btn-secondary btn-sm" onclick="changeStatus(\'closed\')">🔒 Cerrar</button>';
+      if (t.status==='closed'||t.status==='open') acts += '<button class="btn btn-primary btn-sm" onclick="genBracket()">⚡ Bracket</button>';
+      if (t.status==='active') acts += '<button class="btn btn-secondary btn-sm" onclick="changeStatus(\'finished\')">✅ Finalizar</button>';
+      document.getElementById('detail-actions').innerHTML = acts;
+
+      renderTeams(t.teams||[]);
+      renderBracket(t.bracket||[]);
+    });
+}
+
+function renderTeams(teams) {
+  var el = document.getElementById('d-teams');
+  document.getElementById('d-teams-count').textContent = '('+teams.length+')';
+  if (!teams.length) { el.innerHTML = '<div class="empty">Sin parejas</div>'; return; }
+  el.innerHTML = teams.map(function(t,i) {
+    var p1 = t.player1?(t.player1.name||'@'+t.player1.username):'—';
+    var p2 = t.player2?(t.player2.name||'@'+t.player2.username):'—';
+    return '<div class="team-row">'
+      +'<div class="team-seed">'+(t.seed||i+1)+'</div>'
+      +'<div class="team-info"><div class="team-name">'+(t.team_name||p1+' / '+p2)+'</div>'
+      +'<div class="team-sub">'+p1+' &amp; '+p2+(t.wins+t.losses>0?' · '+t.wins+'W-'+t.losses+'L':'')+'</div></div>'
+      +'<button class="btn btn-danger btn-sm" onclick="removeTeam(\''+t.id+'\')">✕</button>'
+      +'</div>';
+  }).join('');
+}
+
+function renderBracket(bracket) {
+  var el = document.getElementById('d-bracket');
+  if (!bracket.length) { el.innerHTML = '<div class="empty">Sin bracket</div>'; return; }
+  var html = '';
+  ['winners','losers','grand_final'].forEach(function(side) {
+    var matches = bracket.filter(function(m){return m.bracket_side===side;});
+    if (!matches.length) return;
+    var labels = {winners:'GANADORES',losers:'PERDEDORES',grand_final:'GRAN FINAL'};
+    html += '<div style="margin-bottom:12px;"><div style="font-size:9px;color:var(--muted2);letter-spacing:2px;margin-bottom:6px;">'+labels[side]+'</div>';
+    matches.forEach(function(m) {
+      if (m.status==='bye') return;
+      var t1 = m.team1?(m.team1.team_name||'Equipo'):'Por definir';
+      var t2 = m.team2?(m.team2.team_name||'Equipo'):'Por definir';
+      var score = m.score?m.score.map(function(s){return s.t1+'-'+s.t2;}).join(', '):'';
+      var canScore = m.status==='pending'&&m.team1_id&&m.team2_id;
+      html += '<div class="match-card"><div class="match-round">R'+m.round_number+'</div><div class="match-body">'
+        +'<div class="match-team'+(m.winner_id===m.team1_id?' w':m.winner_id?' l':'')+'"><span>'+t1+'</span>'+(score?'<span style="font-size:10px;color:var(--muted);font-family:monospace;">'+score+'</span>':'')+'</div>'
+        +'<div class="match-divider"></div>'
+        +'<div class="match-team'+(m.winner_id===m.team2_id?' w':m.winner_id?' l':'')+'"><span>'+t2+'</span></div>'
+        +(canScore?'<button class="btn btn-secondary btn-sm" style="margin-top:6px;width:100%;" onclick="openScore('+JSON.stringify(m)+')">Capturar resultado</button>':'')
+        +'</div></div>';
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+// ── SAVE TOURNAMENT ───────────────────────────────────────────────────────────
+function saveTournament() {
+  var body = {
+    name: document.getElementById('f-name').value.trim(),
+    description: document.getElementById('f-desc').value.trim()||null,
+    club_id: document.getElementById('f-club').value,
+    has_picale: document.getElementById('f-picale').value==='true',
+    category_type: document.getElementById('f-cattype').value,
+    categoria: document.getElementById('f-cat').value||null,
+    suma_valor: parseInt(document.getElementById('f-suma').value)||null,
+    format: document.getElementById('f-format').value,
+    price: parseFloat(document.getElementById('f-price').value)||0,
+    max_teams: parseInt(document.getElementById('f-maxteams').value),
+    prize_info: document.getElementById('f-prize').value||null,
+    registration_open: document.getElementById('f-regopen').value?new Date(document.getElementById('f-regopen').value).toISOString():null,
+    registration_close: document.getElementById('f-regclose').value?new Date(document.getElementById('f-regclose').value).toISOString():null,
+    start_date: document.getElementById('f-start').value?new Date(document.getElementById('f-start').value).toISOString():null,
+    end_date: document.getElementById('f-end').value?new Date(document.getElementById('f-end').value).toISOString():null,
+  };
+  if (!body.name||!body.club_id) { showToast('Nombre y club son obligatorios'); return; }
+
+  document.getElementById('btn-save').disabled = true;
+  getAdminToken().then(function(token) {
+    var url = editId ? CLOUD+'/api/v1/rivals/'+editId : CLOUD+'/api/v1/rivals/';
+    return fetch(url, {method:editId?'PUT':'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify(body)});
+  })
+  .then(function(r){if(!r.ok)return r.json().then(function(d){throw new Error(d.detail||'Error');});return r.json();})
+  .then(function(t) {
+    showToast(editId?'Guardado ✓':'Torneo creado ✓');
+    editId = null;
+    loadTournaments();
+    openDetail(t.id);
+  })
+  .catch(function(e){showToast('Error: '+e.message);})
+  .finally(function(){document.getElementById('btn-save').disabled=false;});
+}
+
+function editT(id) {
+  editId = id;
+  fetch(CLOUD+'/api/v1/rivals/'+id).then(function(r){return r.json();}).then(function(t) {
+    document.getElementById('f-name').value = t.name||'';
+    document.getElementById('f-desc').value = t.description||'';
+    document.getElementById('f-club').value = t.club_id||'';
+    document.getElementById('f-picale').value = t.has_picale?'true':'false';
+    document.getElementById('f-cattype').value = t.category_type||'fixed';
+    document.getElementById('f-cat').value = t.categoria||'';
+    document.getElementById('f-suma').value = t.suma_valor||'';
+    document.getElementById('f-format').value = t.format||'double_elimination';
+    document.getElementById('f-maxteams').value = t.max_teams||16;
+    document.getElementById('f-price').value = t.price||'';
+    document.getElementById('f-prize').value = t.prize_info||'';
+    if (t.start_date) document.getElementById('f-start').value = new Date(t.start_date*1000).toISOString().slice(0,16);
+    if (t.end_date) document.getElementById('f-end').value = new Date(t.end_date*1000).toISOString().slice(0,16);
+    if (t.registration_open) document.getElementById('f-regopen').value = new Date(t.registration_open*1000).toISOString().slice(0,16);
+    if (t.registration_close) document.getElementById('f-regclose').value = new Date(t.registration_close*1000).toISOString().slice(0,16);
+    onCatChange();
+    nav('create');
+  });
+}
+
+function changeStatus(s) {
+  if (!currentT) return;
+  getAdminToken().then(function(token) {
+    return fetch(CLOUD+'/api/v1/rivals/'+currentT.id, {method:'PUT', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({status:s})});
+  }).then(function(){showToast('Estado actualizado ✓');openDetail(currentT.id);})
+  .catch(function(){showToast('Error');});
+}
+
+// ── ADD TEAM ──────────────────────────────────────────────────────────────────
+function openAddTeam() {
+  if (!currentT) return;
+  var isSuma = currentT.category_type==='suma';
+  document.getElementById('at-cat1-wrap').style.display = isSuma?'block':'none';
+  document.getElementById('at-cat2-wrap').style.display = isSuma?'block':'none';
+  document.getElementById('m-addteam').classList.add('open');
+}
+
+function addTeam() {
+  if (!currentT) return;
+  var body = {
+    player1_username: document.getElementById('at-p1').value.trim().replace('@',''),
+    player2_username: document.getElementById('at-p2').value.trim().replace('@',''),
+    team_name: document.getElementById('at-name').value.trim()||null,
+    seed: parseInt(document.getElementById('at-seed').value)||null,
+    categoria_p1: document.getElementById('at-cat1').value||null,
+    categoria_p2: document.getElementById('at-cat2').value||null,
+  };
+  if (!body.player1_username||!body.player2_username){showToast('Ingresa ambos usuarios');return;}
+  getAdminToken().then(function(token){
+    return fetch(CLOUD+'/api/v1/rivals/'+currentT.id+'/teams',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)});
+  }).then(function(r){if(!r.ok)return r.json().then(function(d){throw new Error(d.detail||'Error');});return r.json();})
+  .then(function(){showToast('Pareja agregada ✓');closeModal('m-addteam');['at-p1','at-p2','at-name','at-seed'].forEach(function(id){document.getElementById(id).value='';});openDetail(currentT.id);})
+  .catch(function(e){showToast('Error: '+e.message);});
+}
+
+function removeTeam(teamId) {
+  if (!currentT||!confirm('¿Quitar pareja?')) return;
+  getAdminToken().then(function(token){
+    return fetch(CLOUD+'/api/v1/rivals/'+currentT.id+'/teams/'+teamId,{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+  }).then(function(){showToast('Pareja eliminada');openDetail(currentT.id);})
+  .catch(function(){showToast('Error');});
+}
+
+// ── BRACKET ───────────────────────────────────────────────────────────────────
+function genBracket() {
+  if (!currentT||!confirm('¿Generar bracket?')) return;
+  getAdminToken().then(function(token){
+    return fetch(CLOUD+'/api/v1/rivals/'+currentT.id+'/generate-bracket',{method:'POST',headers:{'Authorization':'Bearer '+token}});
+  }).then(function(r){if(!r.ok)return r.json().then(function(d){throw new Error(d.detail||'Error');});return r.json();})
+  .then(function(d){showToast('Bracket: '+d.generated+' partidos ✓');openDetail(currentT.id);})
+  .catch(function(e){showToast('Error: '+e.message);});
+}
+
+// ── SCORE ─────────────────────────────────────────────────────────────────────
+function openScore(m) {
+  scoringM = m;
+  sets = [{t1:0,t2:0}];
+  renderSets();
+  var t1 = m.team1?m.team1.team_name:'Equipo 1';
+  var t2 = m.team2?m.team2.team_name:'Equipo 2';
+  document.getElementById('sm-info').textContent = t1+' vs '+t2;
+  document.getElementById('sm-winner').innerHTML = '<option value="">Selecciona ganador...</option>'
+    +'<option value="'+m.team1_id+'">'+t1+'</option>'
+    +'<option value="'+m.team2_id+'">'+t2+'</option>';
+  document.getElementById('m-score').classList.add('open');
+}
+
+function renderSets() {
+  document.getElementById('sm-sets').innerHTML = sets.map(function(s,i){
+    return '<div class="set-row"><span class="set-label">SET '+(i+1)+'</span>'
+      +'<input class="set-input" type="number" value="'+s.t1+'" min="0" max="7" onchange="sets['+i+'].t1=parseInt(this.value)||0">'
+      +'<span style="color:var(--muted);">—</span>'
+      +'<input class="set-input" type="number" value="'+s.t2+'" min="0" max="7" onchange="sets['+i+'].t2=parseInt(this.value)||0">'
+      +(i>0?'<button onclick="sets.splice('+i+',1);renderSets();" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">✕</button>':'')
+      +'</div>';
+  }).join('');
+}
+
+function addSet(){sets.push({t1:0,t2:0});renderSets();}
+
+function saveScore() {
+  if (!scoringM) return;
+  var wid = document.getElementById('sm-winner').value;
+  if (!wid){showToast('Selecciona ganador');return;}
+  getAdminToken().then(function(token){
+    return fetch(CLOUD+'/api/v1/rivals/'+currentT.id+'/matches/'+scoringM.id+'/result',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({winner_id:wid,score:sets})});
+  }).then(function(r){if(!r.ok)return r.json().then(function(d){throw new Error(d.detail||'Error');});return r.json();})
+  .then(function(){showToast('Resultado guardado ✓');closeModal('m-score');openDetail(currentT.id);})
+  .catch(function(e){showToast('Error: '+e.message);});
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){t.classList.remove('show');},2500);
+}
+</script>
+</body>
+</html>
