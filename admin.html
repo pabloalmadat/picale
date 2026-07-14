@@ -568,7 +568,7 @@ function getAdminToken() {
   if (adminToken) return Promise.resolve(adminToken);
   var body = new URLSearchParams();
   body.append('username', 'pablo.almadat@tcncontrol.com');
-  body.append('password', 'Yaquis2002.');
+  body.append('password', ADMIN_PASS);
   return fetch(CLOUD + '/api/v1/auth/login', {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
