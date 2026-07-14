@@ -482,18 +482,48 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   <div class="modal">
     <div class="modal-head"><div class="modal-title">AGREGAR PAREJA</div><button class="modal-close" onclick="closeModal('m-addteam')">×</button></div>
     <div class="modal-body">
-      <div class="form-grid">
-        <div class="field"><label>@USUARIO JUGADOR 1</label><input type="text" id="at-p1" placeholder="pabloalmada"></div>
-        <div class="field"><label>@USUARIO JUGADOR 2</label><input type="text" id="at-p2" placeholder="carlosechegaray"></div>
+      <!-- Player 1 -->
+      <div class="field">
+        <label>JUGADOR 1 (@usuario)</label>
+        <input type="text" id="at-p1" placeholder="Escribe @usuario..." oninput="lookupPlayer(this.value,1)" autocomplete="off">
+        <div id="at-p1-info" style="margin-top:6px;padding:8px 12px;background:var(--bg3);border-radius:7px;font-size:12px;color:var(--muted);display:none;"></div>
+      </div>
+      <div class="field" id="at-cat1-wrap">
+        <label>CATEGORÍA J1</label>
+        <select id="at-cat1" onchange="checkSuma()">
+          <option value="">Selecciona...</option>
+          <option>Open</option><option>Primera</option><option>Segunda</option>
+          <option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option>
+          <option>Femenil Open</option><option>Femenil Primera</option><option>Femenil Segunda</option>
+          <option>Femenil Tercera</option><option>Femenil Cuarta</option><option>Femenil Quinta</option><option>Femenil Sexta</option>
+        </select>
+      </div>
+      <!-- Player 2 -->
+      <div class="field">
+        <label>JUGADOR 2 (@usuario)</label>
+        <input type="text" id="at-p2" placeholder="Escribe @usuario..." oninput="lookupPlayer(this.value,2)" autocomplete="off">
+        <div id="at-p2-info" style="margin-top:6px;padding:8px 12px;background:var(--bg3);border-radius:7px;font-size:12px;color:var(--muted);display:none;"></div>
+      </div>
+      <div class="field" id="at-cat2-wrap">
+        <label>CATEGORÍA J2</label>
+        <select id="at-cat2" onchange="checkSuma()">
+          <option value="">Selecciona...</option>
+          <option>Open</option><option>Primera</option><option>Segunda</option>
+          <option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option>
+          <option>Femenil Open</option><option>Femenil Primera</option><option>Femenil Segunda</option>
+          <option>Femenil Tercera</option><option>Femenil Cuarta</option><option>Femenil Quinta</option><option>Femenil Sexta</option>
+        </select>
+      </div>
+      <!-- Suma check -->
+      <div id="at-suma-check" style="display:none;padding:8px 12px;border-radius:7px;font-size:12px;margin-top:4px;"></div>
+      <div class="form-grid" style="margin-top:4px;">
         <div class="field"><label>NOMBRE PAREJA (opcional)</label><input type="text" id="at-name"></div>
         <div class="field"><label>CABEZA DE SERIE</label><input type="number" id="at-seed" min="1"></div>
-        <div class="field" id="at-cat1-wrap" style="display:none;"><label>CATEGORÍA J1</label><select id="at-cat1"><option value="">...</option><option>Open</option><option>Primera</option><option>Segunda</option><option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option></select></div>
-        <div class="field" id="at-cat2-wrap" style="display:none;"><label>CATEGORÍA J2</label><select id="at-cat2"><option value="">...</option><option>Open</option><option>Primera</option><option>Segunda</option><option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option></select></div>
       </div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-secondary" onclick="closeModal('m-addteam')">Cancelar</button>
-      <button class="btn btn-primary" onclick="addTeam()">Agregar</button>
+      <button class="btn btn-primary" onclick="addTeam()">Agregar pareja</button>
     </div>
   </div>
 </div>
@@ -768,11 +798,73 @@ function changeStatus(s) {
 }
 
 // ── ADD TEAM ──────────────────────────────────────────────────────────────────
+var playerCache = {};
+
+function lookupPlayer(val, num) {
+  var username = val.trim().replace('@','');
+  var infoEl = document.getElementById('at-p'+num+'-info');
+  var catEl = document.getElementById('at-cat'+num);
+  if (!username || username.length < 2) { infoEl.style.display='none'; return; }
+  if (playerCache[username]) {
+    showPlayerInfo(playerCache[username], num);
+    return;
+  }
+  clearTimeout(lookupPlayer._t);
+  lookupPlayer._t = setTimeout(function() {
+    fetch(CLOUD+'/api/v1/auth/profile/'+username)
+      .then(function(r){return r.json();})
+      .then(function(u) {
+        playerCache[username] = u;
+        showPlayerInfo(u, num);
+      })
+      .catch(function() { infoEl.innerHTML='❌ Usuario no encontrado'; infoEl.style.display='block'; infoEl.style.color='var(--red)'; });
+  }, 400);
+}
+
+function showPlayerInfo(u, num) {
+  var infoEl = document.getElementById('at-p'+num+'-info');
+  var catEl = document.getElementById('at-cat'+num);
+  var name = u.name || ('@'+u.username);
+  var cat = u.categoria || '—';
+  infoEl.innerHTML = '✓ <strong style="color:var(--text);">'+name+'</strong> · '+cat+(u.ciudad?' · '+u.ciudad:'');
+  infoEl.style.display = 'block';
+  infoEl.style.color = 'var(--green)';
+  // Auto-fill category
+  if (u.categoria && catEl) catEl.value = u.categoria;
+  checkSuma();
+}
+
+function checkSuma() {
+  var el = document.getElementById('at-suma-check');
+  if (!currentT || currentT.category_type !== 'suma' || !currentT.suma_valor) { el.style.display='none'; return; }
+  var catValues = {Open:1,Primera:2,Segunda:3,Tercera:4,Cuarta:5,Quinta:6,Sexta:7,
+    'Femenil Open':1,'Femenil Primera':2,'Femenil Segunda':3,'Femenil Tercera':4,'Femenil Cuarta':5,'Femenil Quinta':6,'Femenil Sexta':7};
+  var c1 = document.getElementById('at-cat1').value;
+  var c2 = document.getElementById('at-cat2').value;
+  if (!c1 || !c2) { el.style.display='none'; return; }
+  var sum = (catValues[c1]||0) + (catValues[c2]||0);
+  var max = parseInt(currentT.suma_valor);
+  el.style.display = 'block';
+  if (sum <= max) {
+    el.innerHTML = '✓ Suma válida: '+c1+' ('+catValues[c1]+') + '+c2+' ('+catValues[c2]+') = <strong style="color:var(--green);">'+sum+'</strong> (máx. '+max+')';
+    el.style.background = 'var(--green-dim)';
+    el.style.border = '1px solid var(--green-border)';
+    el.style.color = 'var(--green)';
+  } else {
+    el.innerHTML = '✗ Suma inválida: '+c1+' + '+c2+' = <strong style="color:var(--red);">'+sum+'</strong> (máx. '+max+')';
+    el.style.background = 'var(--red-dim)';
+    el.style.border = '1px solid rgba(224,82,82,.3)';
+    el.style.color = 'var(--red)';
+  }
+}
+
 function openAddTeam() {
   if (!currentT) return;
-  var isSuma = currentT.category_type==='suma';
-  document.getElementById('at-cat1-wrap').style.display = isSuma?'block':'none';
-  document.getElementById('at-cat2-wrap').style.display = isSuma?'block':'none';
+  // Always show categories for suma tournaments, show for all actually
+  ['at-cat1-wrap','at-cat2-wrap'].forEach(function(id){ document.getElementById(id).style.display='block'; });
+  ['at-p1','at-p2','at-name','at-seed'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['at-p1-info','at-p2-info','at-suma-check'].forEach(function(id){ document.getElementById(id).style.display='none'; });
+  playerCache = {};
   document.getElementById('m-addteam').classList.add('open');
 }
 
