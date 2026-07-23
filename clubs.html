@@ -247,7 +247,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
     <!-- LIVE -->
     <div id="section-live">
       <div class="live-container" id="live-container">
-        <video id="liveVideo" autoplay muted playsinline onclick="togglePlay()"></video>
+        <video id="liveVideo" autoplay muted playsinline x-webkit-airplay="allow" onclick="togglePlay()"></video>
         <div class="live-overlay"><span class="live-dot"></span><span class="live-label">EN VIVO</span></div>
         <div class="live-controls">
           <button class="live-ctrl-btn" onclick="toggleMute()" id="mute-btn" title="Silencio">
@@ -255,6 +255,9 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
           </button>
           <button class="live-ctrl-btn" onclick="toggleFullscreen()" title="Pantalla completa">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          </button>
+          <button class="live-ctrl-btn" onclick="toggleAirplay()" title="AirPlay">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="12 15 17 21 7 21 12 15"/></svg>
           </button>
           <a class="live-ctrl-btn" id="tv-link" href="tv.html" target="_blank" title="Ver en TV">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
@@ -292,9 +295,12 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
 <div class="vmodal" id="vmodal">
   <div class="vmodal-bar">
     <div style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:1px;" id="vmodal-title">—</div>
+    <button onclick="modalAirplay()" title="AirPlay" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="12 15 17 21 7 21 12 15"/></svg>
+    </button>
     <button onclick="(function(){var v=document.getElementById('modal-video');if(v.requestFullscreen)v.requestFullscreen();else if(v.webkitEnterFullscreen)v.webkitEnterFullscreen();})()" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;font-size:18px;">&#x26F6;</button><button class="vmodal-close" onclick="closeModal()">×</button>
   </div>
-  <video id="modal-video" controls playsinline style="width:100%;flex:1;object-fit:contain;background:#000;"></video>
+  <video id="modal-video" controls playsinline x-webkit-airplay="allow" style="width:100%;flex:1;object-fit:contain;background:#000;"></video>
 </div>
 
 <script>
@@ -368,14 +374,52 @@ function goBack() {
   document.getElementById('page-landing').classList.add('active');
 }
 
+function _isIOS() {
+  return /iP(hone|od|ad)/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
 function toggleFullscreen() {
   var container = document.getElementById('live-container');
-  if (!document.fullscreenElement) {
+  var video = document.getElementById('liveVideo');
+
+  // iOS Safari doesn't support Fullscreen API on plain <div> elements,
+  // only the native video fullscreen player via webkitEnterFullscreen.
+  if (_isIOS()) {
+    if (video.webkitEnterFullscreen) {
+      try { video.webkitEnterFullscreen(); } catch (e) {}
+    } else if (video.requestFullscreen) {
+      video.requestFullscreen();
+    }
+    return;
+  }
+
+  var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+  if (!fsEl) {
     if (container.requestFullscreen) container.requestFullscreen();
     else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+    else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
   } else {
     if (document.exitFullscreen) document.exitFullscreen();
     else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+}
+
+function toggleAirplay() {
+  var video = document.getElementById('liveVideo');
+  if (video && typeof video.webkitShowPlaybackTargetPicker === 'function') {
+    video.webkitShowPlaybackTargetPicker();
+  } else {
+    alert('AirPlay solo está disponible en Safari (iPhone, iPad o Mac).');
+  }
+}
+
+function modalAirplay() {
+  var video = document.getElementById('modal-video');
+  if (video && typeof video.webkitShowPlaybackTargetPicker === 'function') {
+    video.webkitShowPlaybackTargetPicker();
+  } else {
+    alert('AirPlay solo está disponible en Safari (iPhone, iPad o Mac).');
   }
 }
 

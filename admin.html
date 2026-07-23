@@ -482,37 +482,57 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   <div class="modal">
     <div class="modal-head"><div class="modal-title">AGREGAR PAREJA</div><button class="modal-close" onclick="closeModal('m-addteam')">×</button></div>
     <div class="modal-body">
-      <!-- Player 1 -->
-      <div class="field">
-        <label>JUGADOR 1 (@usuario)</label>
-        <input type="text" id="at-p1" placeholder="Escribe @usuario..." oninput="lookupPlayer(this.value,1)" autocomplete="off">
-        <div id="at-p1-info" style="margin-top:6px;padding:8px 12px;background:var(--bg3);border-radius:7px;font-size:12px;color:var(--muted);display:none;"></div>
+      <!-- Toggle: con/sin cuenta -->
+      <div style="display:flex;gap:8px;margin-bottom:4px;">
+        <button class="btn btn-secondary btn-sm" id="btn-con-cuenta" onclick="setPlayerMode(true)" style="border-color:var(--green);color:var(--green);">Con cuenta Pícale</button>
+        <button class="btn btn-secondary btn-sm" id="btn-sin-cuenta" onclick="setPlayerMode(false)">Sin cuenta</button>
       </div>
-      <div class="field" id="at-cat1-wrap">
-        <label>CATEGORÍA J1</label>
-        <select id="at-cat1" onchange="checkSuma()">
-          <option value="">Selecciona...</option>
-          <option>Open</option><option>Primera</option><option>Segunda</option>
-          <option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option>
-          <option>Femenil Open</option><option>Femenil Primera</option><option>Femenil Segunda</option>
-          <option>Femenil Tercera</option><option>Femenil Cuarta</option><option>Femenil Quinta</option><option>Femenil Sexta</option>
-        </select>
+
+      <!-- Con cuenta -->
+      <div id="mode-con-cuenta">
+        <div class="field">
+          <label>JUGADOR 1 (@usuario)</label>
+          <input type="text" id="at-p1" placeholder="pabloalmada" oninput="lookupPlayer(this.value,1)" autocomplete="off">
+          <div id="at-p1-info" style="margin-top:5px;padding:7px 12px;background:var(--bg3);border-radius:7px;font-size:12px;display:none;"></div>
+        </div>
+        <div class="field">
+          <label>JUGADOR 2 (@usuario)</label>
+          <input type="text" id="at-p2" placeholder="carlosechegaray" oninput="lookupPlayer(this.value,2)" autocomplete="off">
+          <div id="at-p2-info" style="margin-top:5px;padding:7px 12px;background:var(--bg3);border-radius:7px;font-size:12px;display:none;"></div>
+        </div>
       </div>
-      <!-- Player 2 -->
-      <div class="field">
-        <label>JUGADOR 2 (@usuario)</label>
-        <input type="text" id="at-p2" placeholder="Escribe @usuario..." oninput="lookupPlayer(this.value,2)" autocomplete="off">
-        <div id="at-p2-info" style="margin-top:6px;padding:8px 12px;background:var(--bg3);border-radius:7px;font-size:12px;color:var(--muted);display:none;"></div>
+
+      <!-- Sin cuenta -->
+      <div id="mode-sin-cuenta" style="display:none;">
+        <div class="form-grid">
+          <div class="field"><label>NOMBRE JUGADOR 1</label><input type="text" id="at-name1" placeholder="Juan Pérez"></div>
+          <div class="field"><label>NOMBRE JUGADOR 2</label><input type="text" id="at-name2" placeholder="Carlos López"></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted2);margin-top:4px;">Los jugadores sin cuenta no podrán ver sus clips en la plataforma</div>
       </div>
-      <div class="field" id="at-cat2-wrap">
-        <label>CATEGORÍA J2</label>
-        <select id="at-cat2" onchange="checkSuma()">
-          <option value="">Selecciona...</option>
-          <option>Open</option><option>Primera</option><option>Segunda</option>
-          <option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option>
-          <option>Femenil Open</option><option>Femenil Primera</option><option>Femenil Segunda</option>
-          <option>Femenil Tercera</option><option>Femenil Cuarta</option><option>Femenil Quinta</option><option>Femenil Sexta</option>
-        </select>
+
+      <!-- Categorías siempre visibles -->
+      <div class="form-grid" style="margin-top:4px;">
+        <div class="field">
+          <label>CATEGORÍA J1</label>
+          <select id="at-cat1" onchange="checkSuma()">
+            <option value="">Selecciona...</option>
+            <option>Open</option><option>Primera</option><option>Segunda</option>
+            <option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option>
+            <option>Femenil Open</option><option>Femenil Primera</option><option>Femenil Segunda</option>
+            <option>Femenil Tercera</option><option>Femenil Cuarta</option><option>Femenil Quinta</option><option>Femenil Sexta</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>CATEGORÍA J2</label>
+          <select id="at-cat2" onchange="checkSuma()">
+            <option value="">Selecciona...</option>
+            <option>Open</option><option>Primera</option><option>Segunda</option>
+            <option>Tercera</option><option>Cuarta</option><option>Quinta</option><option>Sexta</option>
+            <option>Femenil Open</option><option>Femenil Primera</option><option>Femenil Segunda</option>
+            <option>Femenil Tercera</option><option>Femenil Cuarta</option><option>Femenil Quinta</option><option>Femenil Sexta</option>
+          </select>
+        </div>
       </div>
       <!-- Suma check -->
       <div id="at-suma-check" style="display:none;padding:8px 12px;border-radius:7px;font-size:12px;margin-top:4px;"></div>
@@ -544,6 +564,25 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     <div class="modal-foot">
       <button class="btn btn-secondary" onclick="closeModal('m-score')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveScore()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: LINK PLAYER -->
+<div class="modal-overlay" id="m-link">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">VINCULAR CUENTA</div><button class="modal-close" onclick="closeModal('m-link')">×</button></div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;" id="link-info">Vincula el @usuario de Pícale a este jugador invitado.</div>
+      <div class="field">
+        <label>@USUARIO DE PÍCALE</label>
+        <input type="text" id="link-username" placeholder="pabloalmada" oninput="lookupPlayer(this.value,'link')" autocomplete="off">
+        <div id="at-link-info" style="margin-top:5px;padding:7px 12px;background:var(--bg3);border-radius:7px;font-size:12px;display:none;"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('m-link')">Cancelar</button>
+      <button class="btn btn-primary" onclick="linkPlayer()">Vincular</button>
     </div>
   </div>
 </div>
@@ -802,8 +841,8 @@ var playerCache = {};
 
 function lookupPlayer(val, num) {
   var username = val.trim().replace('@','');
-  var infoEl = document.getElementById('at-p'+num+'-info');
-  var catEl = document.getElementById('at-cat'+num);
+  var infoEl = document.getElementById(num === 'link' ? 'at-link-info' : 'at-p'+num+'-info');
+  var catEl = num === 'link' ? null : document.getElementById('at-cat'+num);
   if (!username || username.length < 2) { infoEl.style.display='none'; return; }
   if (playerCache[username]) {
     showPlayerInfo(playerCache[username], num);
@@ -822,8 +861,8 @@ function lookupPlayer(val, num) {
 }
 
 function showPlayerInfo(u, num) {
-  var infoEl = document.getElementById('at-p'+num+'-info');
-  var catEl = document.getElementById('at-cat'+num);
+  var infoEl = document.getElementById(num === 'link' ? 'at-link-info' : 'at-p'+num+'-info');
+  var catEl = num === 'link' ? null : document.getElementById('at-cat'+num);
   var name = u.name || ('@'+u.username);
   var cat = u.categoria || '—';
   infoEl.innerHTML = '✓ <strong style="color:var(--text);">'+name+'</strong> · '+cat+(u.ciudad?' · '+u.ciudad:'');
@@ -845,40 +884,76 @@ function checkSuma() {
   var sum = (catValues[c1]||0) + (catValues[c2]||0);
   var max = parseInt(currentT.suma_valor);
   el.style.display = 'block';
-  if (sum <= max) {
-    el.innerHTML = '✓ Suma válida: '+c1+' ('+catValues[c1]+') + '+c2+' ('+catValues[c2]+') = <strong style="color:var(--green);">'+sum+'</strong> (máx. '+max+')';
+  // Suma >= min means players are equal or worse level (higher number = lower level)
+  if (sum >= max) {
+    el.innerHTML = '✓ Válida: '+c1+' ('+catValues[c1]+') + '+c2+' ('+catValues[c2]+') = <strong style="color:var(--green);">'+sum+'</strong> (mín. '+max+')';
     el.style.background = 'var(--green-dim)';
     el.style.border = '1px solid var(--green-border)';
     el.style.color = 'var(--green)';
   } else {
-    el.innerHTML = '✗ Suma inválida: '+c1+' + '+c2+' = <strong style="color:var(--red);">'+sum+'</strong> (máx. '+max+')';
+    el.innerHTML = '✗ Nivel muy alto: '+c1+' + '+c2+' = <strong style="color:var(--red);">'+sum+'</strong> (mín. '+max+') — categorías demasiado altas para este torneo';
     el.style.background = 'var(--red-dim)';
     el.style.border = '1px solid rgba(224,82,82,.3)';
     el.style.color = 'var(--red)';
   }
 }
 
+var playerMode = true; // true = con cuenta, false = sin cuenta
+
+function setPlayerMode(withAccount) {
+  playerMode = withAccount;
+  document.getElementById('mode-con-cuenta').style.display = withAccount ? 'block' : 'none';
+  document.getElementById('mode-sin-cuenta').style.display = withAccount ? 'none' : 'block';
+  document.getElementById('btn-con-cuenta').style.borderColor = withAccount ? 'var(--green)' : '';
+  document.getElementById('btn-con-cuenta').style.color = withAccount ? 'var(--green)' : '';
+  document.getElementById('btn-sin-cuenta').style.borderColor = !withAccount ? 'var(--green)' : '';
+  document.getElementById('btn-sin-cuenta').style.color = !withAccount ? 'var(--green)' : '';
+}
+
 function openAddTeam() {
   if (!currentT) return;
-  // Always show categories for suma tournaments, show for all actually
-  ['at-cat1-wrap','at-cat2-wrap'].forEach(function(id){ document.getElementById(id).style.display='block'; });
-  ['at-p1','at-p2','at-name','at-seed'].forEach(function(id){ document.getElementById(id).value=''; });
-  ['at-p1-info','at-p2-info','at-suma-check'].forEach(function(id){ document.getElementById(id).style.display='none'; });
+  playerMode = true;
+  setPlayerMode(true);
+  ['at-p1','at-p2','at-name1','at-name2','at-name','at-seed'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value='';
+  });
+  ['at-p1-info','at-p2-info','at-suma-check'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.style.display='none';
+  });
+  document.getElementById('at-cat1').value='';
+  document.getElementById('at-cat2').value='';
   playerCache = {};
   document.getElementById('m-addteam').classList.add('open');
 }
 
 function addTeam() {
   if (!currentT) return;
-  var body = {
-    player1_username: document.getElementById('at-p1').value.trim().replace('@',''),
-    player2_username: document.getElementById('at-p2').value.trim().replace('@',''),
-    team_name: document.getElementById('at-name').value.trim()||null,
-    seed: parseInt(document.getElementById('at-seed').value)||null,
-    categoria_p1: document.getElementById('at-cat1').value||null,
-    categoria_p2: document.getElementById('at-cat2').value||null,
-  };
-  if (!body.player1_username||!body.player2_username){showToast('Ingresa ambos usuarios');return;}
+  var body;
+  if (playerMode) {
+    var p1 = document.getElementById('at-p1').value.trim().replace('@','');
+    var p2 = document.getElementById('at-p2').value.trim().replace('@','');
+    if (!p1||!p2){showToast('Ingresa ambos @usuarios');return;}
+    body = {
+      player1_username: p1,
+      player2_username: p2,
+      team_name: document.getElementById('at-name').value.trim()||null,
+      seed: parseInt(document.getElementById('at-seed').value)||null,
+      categoria_p1: document.getElementById('at-cat1').value||null,
+      categoria_p2: document.getElementById('at-cat2').value||null,
+    };
+  } else {
+    var n1 = document.getElementById('at-name1').value.trim();
+    var n2 = document.getElementById('at-name2').value.trim();
+    if (!n1||!n2){showToast('Ingresa el nombre de ambos jugadores');return;}
+    body = {
+      player1_username: 'guest_'+n1.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+Date.now(),
+      player2_username: 'guest_'+n2.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+Date.now(),
+      team_name: n1+' / '+n2,
+      seed: parseInt(document.getElementById('at-seed').value)||null,
+      categoria_p1: document.getElementById('at-cat1').value||null,
+      categoria_p2: document.getElementById('at-cat2').value||null,
+    };
+  }
   getAdminToken().then(function(token){
     return fetch(CLOUD+'/api/v1/rivals/'+currentT.id+'/teams',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)});
   }).then(function(r){if(!r.ok)return r.json().then(function(d){throw new Error(d.detail||'Error');});return r.json();})
@@ -944,6 +1019,33 @@ function saveScore() {
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+var linkingTeamId = null;
+var linkingSlot = null;
+
+function openLink(teamId, slot) {
+  linkingTeamId = teamId;
+  linkingSlot = slot;
+  document.getElementById('link-info').textContent = 'Vincula el @usuario de Pícale al jugador ' + slot + ' de esta pareja.';
+  document.getElementById('link-username').value = '';
+  document.getElementById('at-link-info').style.display = 'none';
+  document.getElementById('m-link').classList.add('open');
+}
+
+function linkPlayer() {
+  var username = document.getElementById('link-username').value.trim().replace('@','');
+  if (!username) { showToast('Ingresa el @usuario'); return; }
+  getAdminToken().then(function(token) {
+    return fetch(CLOUD+'/api/v1/rivals/'+currentT.id+'/teams/'+linkingTeamId+'/link', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({player_slot: linkingSlot, username: username})
+    });
+  })
+  .then(function(r){if(!r.ok)return r.json().then(function(d){throw new Error(d.detail||'Error');});return r.json();})
+  .then(function(){showToast('Cuenta vinculada ✓');closeModal('m-link');openDetail(currentT.id);})
+  .catch(function(e){showToast('Error: '+e.message);});
+}
 
 function showToast(msg) {
   var t = document.getElementById('toast');
