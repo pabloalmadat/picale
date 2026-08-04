@@ -327,6 +327,26 @@ html,body{
   </div>
 </div>
 
+<!-- MID-MATCH AD OVERLAY -->
+<div id="mid-match-ad" style="
+  position:fixed;inset:0;z-index:150;
+  background:#000;
+  display:none;align-items:center;justify-content:center;
+">
+  <img id="mid-ad-image" style="display:none;width:100%;height:100%;object-fit:cover;">
+  <video id="mid-ad-video" style="display:none;width:100%;height:100%;object-fit:cover;" muted></video>
+  <!-- Logo bar -->
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:24px 40px;background:linear-gradient(to top,rgba(0,0,0,.9),transparent);display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <img src="/assets/somos_padel.jpg" style="height:36px;object-fit:contain;" onerror="this.style.display='none'">
+      <div style="width:1px;height:28px;background:rgba(212,224,0,.3);"></div>
+      <img src="/assets/picale_logo.png" style="height:36px;object-fit:contain;" onerror="this.style.display='none'">
+    </div>
+    <div id="mid-ad-court" style="font-family:var(--display);font-size:22px;letter-spacing:3px;color:var(--yellow);">CANCHA —</div>
+    <div id="mid-ad-countdown" style="font-family:var(--mono);font-size:16px;color:rgba(212,224,0,.5);"></div>
+  </div>
+</div>
+
 <!-- SET FLASH -->
 <div id="set-flash">
   <div class="flash-title" id="flash-title">SET GANADO</div>
@@ -350,6 +370,12 @@ var adList = [];
 var adIndex = 0;
 var adTimer = null;
 var pollTimer = null;
+var adInterruptTimer = null;  // Timer to show mid-match ad
+var midMatchAdTimer = null;   // Timer to hide mid-match ad
+var AD_INTERVAL = 60000;      // Show ad every 60s
+var AD_DURATION = 15000;      // Ad lasts 15s
+var inMidMatchAd = false;     // Currently showing mid-match ad
+var pendingState = null;      // State received during ad
 
 // ── SETUP ─────────────────────────────────────────────────────────────────────
 document.getElementById('ads-court-label').textContent = 'CANCHA ' + courtNum;
@@ -441,9 +467,13 @@ function showScreen(name) {
   });
   if (name === 'ads') {
     clearTimeout(adTimer);
+    clearTimeout(adInterruptTimer);
     startAds();
+  } else if (name === 'match') {
+    clearTimeout(adTimer);
   } else {
     clearTimeout(adTimer);
+    clearTimeout(adInterruptTimer);
   }
 }
 
@@ -505,7 +535,24 @@ function pollActiveMatch() {
 // ── RENDER STATE ──────────────────────────────────────────────────────────────
 function renderState(s) {
   if (!s.overlay_visible) { showScreen('ads'); return; }
+
+  // If mid-match ad is showing and a point was scored, cut the ad
+  if (inMidMatchAd && prevState) {
+    var pointScored = (s.pts_left !== prevState.pts_left || s.pts_right !== prevState.pts_right ||
+                       s.games_left !== prevState.games_left || s.games_right !== prevState.games_right ||
+                       (s.sets_history||[]).length !== (prevState.sets_history||[]).length);
+    if (pointScored) {
+      clearTimeout(midMatchAdTimer);
+      hideMidMatchAd();
+    } else {
+      // Store state for when ad finishes
+      pendingState = s;
+      return;
+    }
+  }
+
   showScreen('match');
+  scheduleMidMatchAd(); // Reset timer on any state update
 
   // Names
   document.getElementById('name-l1').textContent = (s.left_p1 || '—').toUpperCase();
@@ -591,6 +638,71 @@ function showFlash(title, sub, dur) {
   document.getElementById('flash-sub').textContent = sub || '';
   f.classList.add('show');
   setTimeout(function(){ f.classList.remove('show'); }, dur);
+}
+
+// ── MID-MATCH ADS ────────────────────────────────────────────────────────────
+function scheduleMidMatchAd() {
+  clearTimeout(adInterruptTimer);
+  if (currentScreen !== 'match') return;
+  adInterruptTimer = setTimeout(showMidMatchAd, AD_INTERVAL);
+}
+
+function showMidMatchAd() {
+  if (currentScreen !== 'match' || !ADS.length) {
+    scheduleMidMatchAd();
+    return;
+  }
+  inMidMatchAd = true;
+  var ad = ADS[Math.floor(Math.random() * ADS.length)];
+  var overlay = document.getElementById('mid-match-ad');
+  var img = document.getElementById('mid-ad-image');
+  var vid = document.getElementById('mid-ad-video');
+  document.getElementById('mid-ad-court').textContent = 'CANCHA ' + courtNum;
+  overlay.style.display = 'flex';
+
+  if (ad.type === 'video') {
+    img.style.display = 'none';
+    vid.style.display = 'block';
+    vid.src = ad.src;
+    vid.play();
+  } else {
+    vid.style.display = 'none';
+    img.style.display = 'block';
+    img.src = ad.src;
+  }
+
+  // Countdown
+  var remaining = Math.ceil(AD_DURATION / 1000);
+  document.getElementById('mid-ad-countdown').textContent = remaining + 's';
+  var countEl = document.getElementById('mid-ad-countdown');
+  var countInterval = setInterval(function() {
+    remaining--;
+    if (remaining <= 0) { clearInterval(countInterval); }
+    else { countEl.textContent = remaining + 's'; }
+  }, 1000);
+
+  // Auto-hide after duration
+  clearTimeout(midMatchAdTimer);
+  midMatchAdTimer = setTimeout(hideMidMatchAd, AD_DURATION);
+}
+
+function hideMidMatchAd() {
+  inMidMatchAd = false;
+  var overlay = document.getElementById('mid-match-ad');
+  overlay.style.display = 'none';
+  var vid = document.getElementById('mid-ad-video');
+  vid.pause(); vid.src = '';
+  document.getElementById('mid-ad-countdown').textContent = '';
+  clearTimeout(midMatchAdTimer);
+
+  // Apply any pending state that arrived during the ad
+  if (pendingState) {
+    renderState(pendingState);
+    pendingState = null;
+  }
+
+  // Schedule next ad
+  scheduleMidMatchAd();
 }
 
 // ── START ─────────────────────────────────────────────────────────────────────
