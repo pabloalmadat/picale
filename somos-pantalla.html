@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Somos Pádel · Pantalla</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --yellow:#D4E000;
+  --black:#0A0A0A;
+  --white:#F0EDE6;
+  --muted:rgba(240,237,230,.5);
+  --display:'Bebas Neue',sans-serif;
+  --body:'DM Sans',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+html,body{
+  width:100vw;height:100vh;
+  background:var(--black);
+  color:var(--white);
+  font-family:var(--body);
+  overflow:hidden;
+}
+
+/* ── SCREENS ── */
+.screen{position:absolute;inset:0;display:none;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* ── ADS SCREEN ── */
+#screen-ads{background:#000;align-items:center;justify-content:center;}
+#ad-media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.ads-logo-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:24px 40px;
+  background:linear-gradient(to top, rgba(0,0,0,.9) 0%, transparent 100%);
+  display:flex;align-items:center;justify-content:space-between;
+  z-index:10;
+}
+.ads-logos{display:flex;align-items:center;gap:16px;}
+.ads-logo-img{height:36px;width:auto;object-fit:contain;}
+.ads-logo-div{width:1px;height:28px;background:rgba(212,224,0,.3);}
+.ads-court{font-family:var(--display);font-size:22px;letter-spacing:3px;color:var(--yellow);}
+.ads-idle{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:24px;
+}
+.ads-idle-logo{height:120px;width:auto;object-fit:contain;}
+.ads-idle-name{font-family:var(--display);font-size:64px;letter-spacing:6px;color:var(--yellow);}
+.ads-idle-sub{font-size:18px;color:var(--muted);letter-spacing:2px;}
+
+/* ── MATCH SCREEN ── */
+#screen-match{
+  background:var(--black);
+  display:flex;flex-direction:column;
+}
+
+/* Top bar */
+.match-topbar{
+  padding:20px 48px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:2px solid rgba(212,224,0,.15);
+  flex-shrink:0;
+}
+.match-logos{display:flex;align-items:center;gap:16px;}
+.match-logo-img{height:40px;width:auto;object-fit:contain;}
+.match-logo-div{width:1px;height:32px;background:rgba(212,224,0,.25);}
+.match-court{font-family:var(--display);font-size:28px;letter-spacing:3px;color:var(--yellow);}
+.match-time{font-family:var(--mono);font-size:24px;color:var(--muted);}
+.live-pill{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 16px;background:rgba(212,224,0,.1);
+  border:1px solid rgba(212,224,0,.3);border-radius:20px;
+  font-size:12px;font-weight:700;letter-spacing:2px;color:var(--yellow);
+}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--yellow);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+/* Score area */
+.match-body{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:32px 48px;
+}
+
+/* Scoreboard */
+.scoreboard{
+  width:100%;max-width:1100px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(212,224,0,.12);
+  border-radius:16px;overflow:hidden;
+}
+
+/* Column headers */
+.sb-colheads{
+  display:flex;border-bottom:1px solid rgba(255,255,255,.06);
+  background:rgba(0,0,0,.4);
+}
+.sb-col-name{flex:1;padding:12px 32px;font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:600;}
+.sb-col-set{width:80px;text-align:center;padding:12px 0;font-size:11px;color:var(--muted);letter-spacing:2px;border-left:1px solid rgba(255,255,255,.06);}
+.sb-col-game{width:100px;text-align:center;padding:12px 0;font-size:11px;color:var(--muted);letter-spacing:2px;border-left:1px solid rgba(255,255,255,.06);}
+.sb-col-pts{width:120px;text-align:center;padding:12px 0;font-size:11px;color:var(--muted);letter-spacing:2px;border-left:1px solid rgba(212,224,0,.1);}
+
+/* Team rows */
+.sb-row{display:flex;align-items:stretch;border-bottom:1px solid rgba(255,255,255,.04);}
+.sb-row:last-child{border-bottom:none;}
+.sb-row.serving .sb-name-cell::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:4px;height:50%;background:var(--yellow);border-radius:0 3px 3px 0;
+}
+
+/* Name cell */
+.sb-name-cell{
+  flex:1;padding:28px 32px;
+  display:flex;align-items:center;gap:16px;
+  position:relative;
+}
+.sb-serve-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--yellow);flex-shrink:0;opacity:0;
+  box-shadow:0 0 10px var(--yellow);
+}
+.sb-row.serving .sb-serve-dot{opacity:1;}
+.sb-names{flex:1;}
+.sb-name1{
+  font-family:var(--display);font-size:48px;letter-spacing:2px;
+  color:var(--white);line-height:1;
+}
+.sb-name2{
+  font-family:var(--display);font-size:48px;letter-spacing:2px;
+  color:var(--white);line-height:1;
+}
+.sb-row.leading .sb-name1,
+.sb-row.leading .sb-name2{color:var(--yellow);}
+
+/* Score cells */
+.sb-set-cell{
+  width:80px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:36px;font-weight:700;
+  color:rgba(240,237,230,.4);
+  border-left:1px solid rgba(255,255,255,.06);
+}
+.sb-set-cell.won{color:var(--white);}
+.sb-set-cell.current{color:var(--yellow);}
+.sb-game-cell{
+  width:100px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:56px;font-weight:700;
+  color:var(--white);
+  border-left:1px solid rgba(255,255,255,.06);
+}
+.sb-game-cell.leading{color:var(--yellow);}
+.sb-pts-cell{
+  width:120px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:52px;font-weight:700;
+  color:var(--white);
+  background:rgba(212,224,0,.04);
+  border-left:1px solid rgba(212,224,0,.1);
+}
+.sb-pts-cell.adv{font-size:28px;color:var(--yellow);letter-spacing:2px;}
+.sb-pts-cell.leading{color:var(--yellow);}
+
+/* Tiebreak */
+.tb-banner{
+  background:rgba(212,224,0,.08);border-top:1px solid rgba(212,224,0,.2);
+  padding:8px;text-align:center;
+  font-family:var(--mono);font-size:13px;color:var(--yellow);letter-spacing:3px;
+}
+
+/* ── CLASE SCREEN ── */
+#screen-clase{
+  background:var(--black);
+  align-items:center;justify-content:center;
+  flex-direction:column;gap:0;
+}
+.clase-bg{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 30%, rgba(91,158,232,.08) 0%, transparent 70%);
+}
+.clase-content{position:relative;text-align:center;z-index:1;}
+.clase-eyebrow{
+  font-size:14px;letter-spacing:4px;color:rgba(91,158,232,.7);
+  font-weight:600;margin-bottom:16px;
+}
+.clase-activity{
+  font-family:var(--display);font-size:clamp(48px,8vw,100px);
+  letter-spacing:4px;color:#5B9EE8;line-height:.9;margin-bottom:24px;
+}
+.clase-student{
+  font-family:var(--display);font-size:clamp(36px,6vw,72px);
+  letter-spacing:3px;color:var(--white);margin-bottom:12px;
+}
+.clase-coach{
+  font-size:22px;color:var(--muted);letter-spacing:1px;
+}
+.clase-logos{
+  margin-top:48px;display:flex;align-items:center;justify-content:center;gap:20px;
+}
+.clase-logo{height:40px;width:auto;object-fit:contain;}
+
+/* ── SET FLASH ── */
+#set-flash{
+  position:fixed;inset:0;
+  background:var(--yellow);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:200;
+  opacity:0;pointer-events:none;
+  transition:opacity .3s;
+}
+#set-flash.show{opacity:1;}
+.flash-title{font-family:var(--display);font-size:clamp(48px,10vw,120px);letter-spacing:6px;color:var(--black);}
+.flash-sub{font-family:var(--display);font-size:clamp(24px,5vw,56px);letter-spacing:4px;color:rgba(0,0,0,.6);margin-top:8px;}
+
+/* ── CLOCK ── */
+.clock{font-family:var(--mono);font-size:22px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<!-- ADS SCREEN -->
+<div class="screen active" id="screen-ads">
+  <!-- Idle state (no media) -->
+  <div class="ads-idle" id="ads-idle">
+    <img src="/assets/somos_padel.jpg" class="ads-idle-logo" onerror="this.style.display='none'">
+    <div class="ads-idle-name">SOMOS PÁDEL</div>
+    <div class="ads-idle-sub">MONTERREY · 8 CANCHAS</div>
+  </div>
+
+  <!-- Media (image or video) -->
+  <img id="ad-image" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
+  <video id="ad-video" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" muted loop></video>
+
+  <!-- Logo bar -->
+  <div class="ads-logo-bar">
+    <div class="ads-logos">
+      <img src="/assets/somos_padel.jpg" class="ads-logo-img" onerror="this.style.display='none'">
+      <div class="ads-logo-div"></div>
+      <img src="/assets/picale_logo.png" class="ads-logo-img" onerror="this.style.display='none'">
+    </div>
+    <div class="ads-court" id="ads-court-label">CANCHA —</div>
+    <div class="clock" id="clock-ads">--:--</div>
+  </div>
+</div>
+
+<!-- MATCH SCREEN -->
+<div class="screen" id="screen-match">
+  <div class="match-topbar">
+    <div class="match-logos">
+      <img src="/assets/somos_padel.jpg" class="match-logo-img" onerror="this.style.display='none'">
+      <div class="match-logo-div"></div>
+      <img src="/assets/picale_logo.png" class="match-logo-img" onerror="this.style.display='none'">
+    </div>
+    <div class="match-court" id="match-court-label">CANCHA —</div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="clock" id="clock-match">--:--</div>
+      <div class="live-pill"><div class="live-dot"></div>EN VIVO</div>
+    </div>
+  </div>
+
+  <div class="match-body">
+    <div class="scoreboard">
+      <!-- Column headers -->
+      <div class="sb-colheads">
+        <div class="sb-col-name">JUGADORES</div>
+        <div class="sb-col-set" id="sh-col-1">SET 1</div>
+        <div class="sb-col-set" id="sh-col-2">SET 2</div>
+        <div class="sb-col-set" id="sh-col-3">SET 3</div>
+        <div class="sb-col-game">JUEGOS</div>
+        <div class="sb-col-pts">PUNTOS</div>
+      </div>
+
+      <!-- Left team -->
+      <div class="sb-row" id="row-left">
+        <div class="sb-name-cell">
+          <div class="sb-serve-dot"></div>
+          <div class="sb-names">
+            <div class="sb-name1" id="name-l1">—</div>
+            <div class="sb-name2" id="name-l2">—</div>
+          </div>
+        </div>
+        <div class="sb-set-cell" id="sh-l-1">-</div>
+        <div class="sb-set-cell" id="sh-l-2">-</div>
+        <div class="sb-set-cell" id="sh-l-3">-</div>
+        <div class="sb-game-cell" id="game-left">0</div>
+        <div class="sb-pts-cell" id="pts-left">0</div>
+      </div>
+
+      <!-- Right team -->
+      <div class="sb-row" id="row-right">
+        <div class="sb-name-cell">
+          <div class="sb-serve-dot"></div>
+          <div class="sb-names">
+            <div class="sb-name1" id="name-r1">—</div>
+            <div class="sb-name2" id="name-r2">—</div>
+          </div>
+        </div>
+        <div class="sb-set-cell" id="sh-r-1">-</div>
+        <div class="sb-set-cell" id="sh-r-2">-</div>
+        <div class="sb-set-cell" id="sh-r-3">-</div>
+        <div class="sb-game-cell" id="game-right">0</div>
+        <div class="sb-pts-cell" id="pts-right">0</div>
+      </div>
+
+      <!-- Tiebreak banner -->
+      <div class="tb-banner" id="tb-banner" style="display:none;">TIE-BREAK</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLASE SCREEN -->
+<div class="screen" id="screen-clase">
+  <div class="clase-bg"></div>
+  <div class="clase-content">
+    <div class="clase-eyebrow">CLASE EN CURSO</div>
+    <div class="clase-activity" id="clase-activity">CLASE PARTICULAR</div>
+    <div class="clase-student" id="clase-student">—</div>
+    <div class="clase-coach" id="clase-coach"></div>
+    <div class="clase-logos">
+      <img src="/assets/somos_padel.jpg" class="clase-logo" onerror="this.style.display='none'">
+      <img src="/assets/picale_logo.png" class="clase-logo" onerror="this.style.display='none'">
+    </div>
+  </div>
+  <!-- Court label bottom right -->
+  <div style="position:absolute;bottom:32px;right:48px;display:flex;align-items:center;gap:16px;">
+    <div class="clock" id="clock-clase">--:--</div>
+    <div style="font-family:var(--display);font-size:22px;letter-spacing:3px;color:rgba(212,224,0,.5);" id="clase-court-label">CANCHA —</div>
+  </div>
+</div>
+
+<!-- SET FLASH -->
+<div id="set-flash">
+  <div class="flash-title" id="flash-title">SET GANADO</div>
+  <div class="flash-sub" id="flash-sub"></div>
+</div>
+
+<!-- ADS MANAGER (hidden) -->
+<div id="ads-manager" style="display:none;">
+  <!-- List of ad files - edit this to add ads -->
+  <!-- Format: <div class="ad" data-type="image|video" data-src="/assets/somos/anuncios/ad1.jpg" data-duration="8"></div> -->
+</div>
+
+<script>
+var CLOUD = 'https://api.picalereplay.com';
+var courtNum = parseInt(new URLSearchParams(window.location.search).get('cancha') || '1');
+var matchId = new URLSearchParams(window.location.search).get('match_id');
+var ws = null;
+var prevState = null;
+var currentScreen = 'ads';
+var adList = [];
+var adIndex = 0;
+var adTimer = null;
+var pollTimer = null;
+
+// ── SETUP ─────────────────────────────────────────────────────────────────────
+document.getElementById('ads-court-label').textContent = 'CANCHA ' + courtNum;
+document.getElementById('match-court-label').textContent = 'CANCHA ' + courtNum;
+document.getElementById('clase-court-label').textContent = 'CANCHA ' + courtNum;
+
+// ── CLOCK ─────────────────────────────────────────────────────────────────────
+function updateClock() {
+  var now = new Date();
+  var h = String(now.getHours()).padStart(2,'0');
+  var m = String(now.getMinutes()).padStart(2,'0');
+  var time = h + ':' + m;
+  ['clock-ads','clock-match','clock-clase'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = time;
+  });
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+// ── ADS ───────────────────────────────────────────────────────────────────────
+// Load ads from /assets/somos/anuncios/
+// Tries to load ads.json manifest, fallback to idle screen
+var ADS = [];
+
+function loadAds() {
+  fetch('/assets/somos/anuncios/ads.json')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      ADS = data;
+      if (currentScreen === 'ads') startAds();
+    })
+    .catch(function() {
+      // No ads configured, show idle
+      showIdle();
+    });
+}
+
+function startAds() {
+  if (!ADS.length) { showIdle(); return; }
+  adIndex = 0;
+  showAd();
+}
+
+function showAd() {
+  if (!ADS.length) { showIdle(); return; }
+  var ad = ADS[adIndex % ADS.length];
+  var img = document.getElementById('ad-image');
+  var vid = document.getElementById('ad-video');
+  var idle = document.getElementById('ads-idle');
+
+  idle.style.display = 'none';
+
+  if (ad.type === 'video') {
+    img.style.display = 'none';
+    vid.style.display = 'block';
+    vid.src = ad.src;
+    vid.play();
+    var dur = ad.duration || 15;
+    clearTimeout(adTimer);
+    adTimer = setTimeout(nextAd, dur * 1000);
+  } else {
+    vid.style.display = 'none';
+    img.style.display = 'block';
+    img.src = ad.src;
+    var dur = ad.duration || 8;
+    clearTimeout(adTimer);
+    adTimer = setTimeout(nextAd, dur * 1000);
+  }
+}
+
+function nextAd() {
+  adIndex++;
+  showAd();
+}
+
+function showIdle() {
+  document.getElementById('ads-idle').style.display = 'flex';
+  document.getElementById('ad-image').style.display = 'none';
+  document.getElementById('ad-video').style.display = 'none';
+}
+
+// ── SCREENS ───────────────────────────────────────────────────────────────────
+function showScreen(name) {
+  currentScreen = name;
+  ['ads','match','clase'].forEach(function(s) {
+    var el = document.getElementById('screen-' + s);
+    el.classList.toggle('active', s === name);
+  });
+  if (name === 'ads') {
+    clearTimeout(adTimer);
+    startAds();
+  } else {
+    clearTimeout(adTimer);
+  }
+}
+
+// ── WEBSOCKET ─────────────────────────────────────────────────────────────────
+function connectWS(mid) {
+  if (ws) { ws.close(); ws = null; }
+  var wsUrl = CLOUD.replace('https://','wss://').replace('http://','ws://') + '/api/v1/score/' + mid + '/ws';
+  ws = new WebSocket(wsUrl);
+  ws.onmessage = function(e) {
+    var msg = JSON.parse(e.data);
+    if (msg.type === 'state_update' && msg.state) renderState(msg.state);
+  };
+  ws.onclose = function() { setTimeout(function(){ if(matchId) connectWS(matchId); }, 3000); };
+
+  // Also get current state
+  fetch(CLOUD + '/api/v1/score/' + mid)
+    .then(function(r){return r.json();})
+    .then(function(d){if(d.state) renderState(d.state);})
+    .catch(function(){});
+}
+
+// ── POLL FOR ACTIVE MATCH ─────────────────────────────────────────────────────
+function pollActiveMatch() {
+  if (matchId) return; // Manual match_id set, don't poll
+
+  fetch(CLOUD + '/api/v1/playtomic/court/' + courtNum + '/now')
+    .then(function(r){return r.json();})
+    .then(function(d) {
+      var booking = d.booking;
+      if (!booking) {
+        showScreen('ads');
+        return;
+      }
+
+      if (booking.display_type === 'clase') {
+        showScreen('clase');
+        document.getElementById('clase-activity').textContent = (booking.activity_name || 'CLASE').toUpperCase();
+        document.getElementById('clase-student').textContent = (booking.participants[0] || '—').toUpperCase();
+        document.getElementById('clase-coach').textContent = booking.coach_id ? 'Coach #' + booking.coach_id : '';
+      } else {
+        // partido or torneo - check if there's an active score match
+        fetch(CLOUD + '/api/v1/score/court/' + courtNum + '/now')
+          .then(function(r){return r.json();})
+          .then(function(sd) {
+            if (sd.match_id) {
+              matchId = sd.match_id;
+              showScreen('match');
+              connectWS(matchId);
+            } else {
+              showScreen('ads');
+            }
+          })
+          .catch(function(){ showScreen('ads'); });
+      }
+    })
+    .catch(function(){ showScreen('ads'); });
+}
+
+// ── RENDER STATE ──────────────────────────────────────────────────────────────
+function renderState(s) {
+  if (!s.overlay_visible) { showScreen('ads'); return; }
+  showScreen('match');
+
+  // Names
+  document.getElementById('name-l1').textContent = (s.left_p1 || '—').toUpperCase();
+  document.getElementById('name-l2').textContent = (s.left_p2 || '').toUpperCase();
+  document.getElementById('name-r1').textContent = (s.right_p1 || '—').toUpperCase();
+  document.getElementById('name-r2').textContent = (s.right_p2 || '').toUpperCase();
+
+  // Server
+  document.getElementById('row-left').classList.toggle('serving', s.current_server === 'left');
+  document.getElementById('row-right').classList.toggle('serving', s.current_server === 'right');
+
+  // Sets history
+  var hist = s.sets_history || [];
+  for (var i = 1; i <= 3; i++) {
+    var lEl = document.getElementById('sh-l-' + i);
+    var rEl = document.getElementById('sh-r-' + i);
+    var colEl = document.getElementById('sh-col-' + i);
+    if (i - 1 < hist.length) {
+      var sl = hist[i-1][0], sr = hist[i-1][1];
+      lEl.textContent = sl; lEl.className = 'sb-set-cell' + (sl > sr ? ' won' : '');
+      rEl.textContent = sr; rEl.className = 'sb-set-cell' + (sr > sl ? ' won' : '');
+      colEl.textContent = 'SET ' + i;
+    } else if (i - 1 === hist.length) {
+      lEl.textContent = s.sets_left; lEl.className = 'sb-set-cell current';
+      rEl.textContent = s.sets_right; rEl.className = 'sb-set-cell current';
+      colEl.textContent = 'SET ' + i;
+    } else {
+      lEl.textContent = '-'; lEl.className = 'sb-set-cell';
+      rEl.textContent = '-'; rEl.className = 'sb-set-cell';
+    }
+  }
+
+  // Games
+  var gl = s.games_left, gr = s.games_right;
+  var glEl = document.getElementById('game-left');
+  var grEl = document.getElementById('game-right');
+  glEl.textContent = gl; glEl.className = 'sb-game-cell' + (gl > gr ? ' leading' : '');
+  grEl.textContent = gr; grEl.className = 'sb-game-cell' + (gr > gl ? ' leading' : '');
+
+  // Leading row highlight
+  document.getElementById('row-left').classList.toggle('leading', s.sets_left > s.sets_right);
+  document.getElementById('row-right').classList.toggle('leading', s.sets_right > s.sets_left);
+
+  // Points
+  var pl = s.pts_left, pr = s.pts_right;
+  var plEl = document.getElementById('pts-left');
+  var prEl = document.getElementById('pts-right');
+  plEl.textContent = pl;
+  prEl.textContent = pr;
+  plEl.className = 'sb-pts-cell' + (pl === 'ADV' ? ' adv' : '');
+  prEl.className = 'sb-pts-cell' + (pr === 'ADV' ? ' adv' : '');
+
+  // Tiebreak
+  document.getElementById('tb-banner').style.display = s.in_tiebreak ? 'block' : 'none';
+
+  // Set flash
+  if (prevState) {
+    var ph = (prevState.sets_history||[]).length;
+    var nh = (s.sets_history||[]).length;
+    if (nh > ph) {
+      var last = s.sets_history[s.sets_history.length - 1];
+      var wname = last[0] > last[1]
+        ? (s.left_p1 + (s.left_p2 ? ' / ' + s.left_p2 : ''))
+        : (s.right_p1 + (s.right_p2 ? ' / ' + s.right_p2 : ''));
+      showFlash('SET ' + nh, wname.toUpperCase());
+    }
+    if (s.status === 'finished' && prevState.status !== 'finished') {
+      var wn = s.sets_left > s.sets_right
+        ? (s.left_p1 + (s.left_p2 ? ' / ' + s.left_p2 : ''))
+        : (s.right_p1 + (s.right_p2 ? ' / ' + s.right_p2 : ''));
+      showFlash('PARTIDO GANADO', wn.toUpperCase(), 6000);
+      setTimeout(function(){ showScreen('ads'); }, 8000);
+    }
+  }
+
+  prevState = s;
+}
+
+function showFlash(title, sub, dur) {
+  dur = dur || 4000;
+  var f = document.getElementById('set-flash');
+  document.getElementById('flash-title').textContent = title;
+  document.getElementById('flash-sub').textContent = sub || '';
+  f.classList.add('show');
+  setTimeout(function(){ f.classList.remove('show'); }, dur);
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
+loadAds();
+
+if (matchId) {
+  showScreen('match');
+  connectWS(matchId);
+} else {
+  pollActiveMatch();
+  pollTimer = setInterval(pollActiveMatch, 30000); // check every 30s
+}
+</script>
+</body>
+</html>
