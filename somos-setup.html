@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<title>Somos Pádel · Setup</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0A0A0A;--bg2:#111;--bg3:#161616;--bg4:#1c1c1c;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --text:#F0EDE6;--muted:rgba(240,237,230,.45);--muted2:rgba(240,237,230,.2);
+  --yellow:#D4E000;--yellow-dim:rgba(212,224,0,.1);--yellow-border:rgba(212,224,0,.25);
+  --red:#E05252;--green:#5EE87A;
+  --display:'Bebas Neue',sans-serif;--body:'DM Sans',sans-serif;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;}
+
+.topbar{
+  padding:calc(var(--safe-top)+12px) 16px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(10,10,10,.9);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:50;
+}
+.topbar-logo{display:flex;align-items:center;gap:8px;}
+.topbar-logo img{height:24px;}
+.topbar-name{font-family:var(--display);font-size:16px;letter-spacing:1px;color:var(--yellow);}
+.court-badge{font-family:var(--display);font-size:14px;color:var(--muted);}
+
+.content{max-width:480px;margin:0 auto;padding:20px 16px calc(var(--safe-bottom)+32px);}
+
+/* ── BOOKING CARD ── */
+.booking-card{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:16px;
+  overflow:hidden;margin-bottom:16px;
+}
+.booking-header{
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.booking-type{
+  font-size:9px;font-weight:700;letter-spacing:2px;
+  padding:3px 10px;border-radius:20px;
+}
+.type-partido{background:rgba(212,224,0,.1);color:var(--yellow);border:1px solid var(--yellow-border);}
+.type-clase{background:rgba(91,158,232,.1);color:#5B9EE8;border:1px solid rgba(91,158,232,.3);}
+.type-torneo{background:rgba(224,82,82,.1);color:var(--red);border:1px solid rgba(224,82,82,.3);}
+.type-reserva{background:var(--bg4);color:var(--muted);border:1px solid var(--border2);}
+.booking-time{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+.booking-body{padding:16px;}
+
+/* ── FIELD ── */
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.field:last-child{margin-bottom:0;}
+.field label{font-size:9px;color:var(--muted);letter-spacing:1.5px;font-weight:600;}
+.field input,.field select{
+  padding:11px 14px;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:9px;color:var(--text);font-family:var(--body);font-size:15px;
+  outline:none;transition:border-color .15s;-webkit-appearance:none;
+}
+.field input:focus,.field select:focus{border-color:var(--yellow);}
+.field select option{background:var(--bg3);}
+
+.team-section{
+  background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:12px;margin-bottom:10px;
+}
+.team-label{font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;font-weight:600;}
+
+/* ── CLASE VIEW ── */
+.clase-section{padding:16px;}
+.clase-title{font-family:var(--display);font-size:28px;letter-spacing:2px;color:#5B9EE8;margin-bottom:4px;}
+.clase-sub{font-size:13px;color:var(--muted);}
+
+/* ── BUTTONS ── */
+.btn{
+  width:100%;padding:14px;border-radius:10px;
+  font-family:var(--display);font-size:20px;letter-spacing:2px;
+  cursor:pointer;border:none;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary{background:var(--yellow);color:#000;}
+.btn-primary:hover{opacity:.9;}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+.btn-secondary{background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--body);font-size:14px;font-weight:600;letter-spacing:0;}
+.btn-secondary:hover{border-color:var(--border2);}
+
+.action-stack{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+
+/* ── STATES ── */
+.loading-state{padding:48px 20px;text-align:center;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:32px;height:32px;border:3px solid var(--border2);border-top-color:var(--yellow);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;}
+.loading-text{font-size:14px;color:var(--muted);}
+
+.empty-state{
+  padding:48px 20px;text-align:center;
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-title{font-family:var(--display);font-size:24px;letter-spacing:1px;margin-bottom:6px;}
+.empty-sub{font-size:13px;color:var(--muted);line-height:1.5;}
+
+.success-state{
+  padding:48px 20px;text-align:center;
+  background:rgba(212,224,0,.05);border:1px solid var(--yellow-border);border-radius:16px;
+}
+.success-icon{font-size:48px;margin-bottom:12px;}
+.success-title{font-family:var(--display);font-size:28px;letter-spacing:2px;color:var(--yellow);margin-bottom:6px;}
+.success-sub{font-size:13px;color:var(--muted);line-height:1.5;}
+
+.scoring-mode-toggle{
+  display:flex;gap:6px;margin-bottom:12px;
+}
+.mode-btn{
+  flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:600;
+  background:var(--bg3);border:1px solid var(--border2);color:var(--muted);
+  cursor:pointer;transition:all .15s;text-align:center;
+}
+.mode-btn.active{background:var(--yellow-dim);border-color:var(--yellow-border);color:var(--yellow);}
+
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.info-row:last-child{border-bottom:none;}
+.info-label{font-size:11px;color:var(--muted);}
+.info-value{font-size:13px;font-weight:600;}
+
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:rgba(18,18,18,.97);border:1px solid var(--border2);
+  border-radius:20px;padding:8px 20px;font-size:13px;
+  opacity:0;transition:all .25s;z-index:999;white-space:nowrap;
+  backdrop-filter:blur(12px);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">
+    <img src="/assets/somos_padel.jpg" alt="Somos Pádel" onerror="this.style.display='none'">
+    <div class="topbar-name">SOMOS PÁDEL</div>
+  </div>
+  <div class="court-badge" id="court-badge">CANCHA —</div>
+</div>
+
+<div class="content">
+  <!-- LOADING -->
+  <div class="loading-state" id="state-loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Cargando reserva...</div>
+  </div>
+
+  <!-- EMPTY -->
+  <div class="empty-state" id="state-empty" style="display:none;">
+    <div class="empty-icon">📅</div>
+    <div class="empty-title">SIN RESERVA</div>
+    <div class="empty-sub" id="empty-sub">No hay reserva activa en esta cancha ahora mismo.</div>
+    <div id="next-booking-info" style="margin-top:16px;"></div>
+    <div class="action-stack" style="margin-top:16px;">
+      <button class="btn btn-secondary" onclick="showManualSetup()">Configurar manualmente</button>
+    </div>
+  </div>
+
+  <!-- PARTIDO SETUP -->
+  <div id="state-partido" style="display:none;">
+    <div class="booking-card">
+      <div class="booking-header">
+        <span class="booking-type type-partido" id="p-type-badge">PARTIDO</span>
+        <span class="booking-time" id="p-time">--:-- — --:--</span>
+      </div>
+      <div class="booking-body">
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1.5px;margin-bottom:12px;">EQUIPO IZQUIERDA</div>
+        <div class="team-section">
+          <div class="field">
+            <label>JUGADOR 1</label>
+            <input type="text" id="p-l1" placeholder="Nombre">
+          </div>
+          <div class="field">
+            <label>JUGADOR 2</label>
+            <input type="text" id="p-l2" placeholder="Nombre">
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1.5px;margin:12px 0 10px;">EQUIPO DERECHA</div>
+        <div class="team-section">
+          <div class="field">
+            <label>JUGADOR 3</label>
+            <input type="text" id="p-r1" placeholder="Nombre">
+          </div>
+          <div class="field">
+            <label>JUGADOR 4</label>
+            <input type="text" id="p-r2" placeholder="Nombre">
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1.5px;margin:12px 0 8px;">SAQUE INICIAL</div>
+        <div class="scoring-mode-toggle" id="server-toggle">
+          <div class="mode-btn active" id="srv-left" onclick="setServer('left')">EQUIPO IZQ.</div>
+          <div class="mode-btn" id="srv-right" onclick="setServer('right')">EQUIPO DER.</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1.5px;margin:12px 0 8px;">MODALIDAD</div>
+        <div class="scoring-mode-toggle">
+          <div class="mode-btn active" id="mode-trad" onclick="setMode('traditional')">VENTAJA</div>
+          <div class="mode-btn" id="mode-gold" onclick="setMode('golden_point')">PUNTO DE ORO</div>
+        </div>
+      </div>
+    </div>
+    <div class="action-stack">
+      <button class="btn btn-primary" onclick="startMatch()" id="btn-start">INICIAR PARTIDO</button>
+      <button class="btn btn-secondary" onclick="loadBooking()">↻ Recargar reserva</button>
+    </div>
+  </div>
+
+  <!-- CLASE SETUP -->
+  <div id="state-clase" style="display:none;">
+    <div class="booking-card">
+      <div class="booking-header">
+        <span class="booking-type type-clase">CLASE</span>
+        <span class="booking-time" id="c-time">--:-- — --:--</span>
+      </div>
+      <div class="booking-body">
+        <div class="field">
+          <label>NOMBRE DE LA ACTIVIDAD</label>
+          <input type="text" id="c-activity" placeholder="Clase particular">
+        </div>
+        <div class="field">
+          <label>ALUMNO</label>
+          <input type="text" id="c-student" placeholder="Nombre del alumno">
+        </div>
+        <div class="field">
+          <label>COACH</label>
+          <input type="text" id="c-coach" placeholder="Nombre del coach">
+        </div>
+      </div>
+    </div>
+    <div class="action-stack">
+      <button class="btn btn-primary" onclick="startClase()">ACTIVAR PANTALLA</button>
+      <button class="btn btn-secondary" onclick="loadBooking()">↻ Recargar reserva</button>
+    </div>
+  </div>
+
+  <!-- TORNEO SETUP -->
+  <div id="state-torneo" style="display:none;">
+    <div class="booking-card">
+      <div class="booking-header">
+        <span class="booking-type type-torneo">TORNEO</span>
+        <span class="booking-time" id="t-time">--:-- — --:--</span>
+      </div>
+      <div class="booking-body">
+        <div class="field">
+          <label>NOMBRE DEL TORNEO</label>
+          <input type="text" id="t-name" placeholder="Nombre del torneo">
+        </div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1.5px;margin:12px 0 8px;">EQUIPO IZQUIERDA</div>
+        <div class="team-section">
+          <div class="field"><label>JUGADOR 1</label><input type="text" id="t-l1" placeholder="Nombre"></div>
+          <div class="field"><label>JUGADOR 2</label><input type="text" id="t-l2" placeholder="Nombre"></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1.5px;margin:12px 0 8px;">EQUIPO DERECHA</div>
+        <div class="team-section">
+          <div class="field"><label>JUGADOR 3</label><input type="text" id="t-r1" placeholder="Nombre"></div>
+          <div class="field"><label>JUGADOR 4</label><input type="text" id="t-r2" placeholder="Nombre"></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1.5px;margin:12px 0 8px;">SAQUE INICIAL</div>
+        <div class="scoring-mode-toggle">
+          <div class="mode-btn active" id="tsrv-left" onclick="setServer('left','t')">EQUIPO IZQ.</div>
+          <div class="mode-btn" id="tsrv-right" onclick="setServer('right','t')">EQUIPO DER.</div>
+        </div>
+      </div>
+    </div>
+    <div class="action-stack">
+      <button class="btn btn-primary" onclick="startMatch('torneo')">INICIAR PARTIDO</button>
+      <button class="btn btn-secondary" onclick="loadBooking()">↻ Recargar reserva</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="state-success" style="display:none;">
+    <div class="success-state">
+      <div class="success-icon">✅</div>
+      <div class="success-title">¡LISTO!</div>
+      <div class="success-sub" id="success-msg">El marcador está activo en la transmisión.</div>
+    </div>
+    <div class="action-stack" style="margin-top:16px;">
+      <button class="btn btn-secondary" onclick="location.reload()">Configurar otro partido</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var CLOUD = 'https://api.picalereplay.com';
+var courtNum = parseInt(new URLSearchParams(window.location.search).get('cancha') || '1');
+var currentServer = 'left';
+var currentMode = 'traditional';
+var currentBooking = null;
+
+var PICALE_COURTS = {
+  1: '6bc0621c-f99a-4e1f-8971-d70155ea3383',
+  2: 'e1dc778e-831f-4fa4-bc86-d6a31a7de1d1',
+  3: 'fc8bbc6d-e21b-466d-92e6-a2beefe6bd38',
+  4: '2d54ad6f-895f-4f6c-b985-95b431fe03b3',
+  5: '28b6283d-dacf-428d-a3fb-fc0015d5f6aa',
+  6: '519bbd5d-b2f5-4a84-a257-6d327bebf9a8',
+  7: '28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512',
+  8: '35c16c54-f31e-4397-922b-044722d06524',
+};
+
+document.getElementById('court-badge').textContent = 'CANCHA ' + courtNum;
+document.title = 'Cancha ' + courtNum + ' · Somos Pádel';
+
+function showState(id) {
+  ['loading','empty','partido','clase','torneo','success'].forEach(function(s) {
+    document.getElementById('state-'+s).style.display = s === id ? 'block' : 'none';
+  });
+}
+
+function formatTime(dt) {
+  if (!dt) return '--:--';
+  return dt.substring(11, 16);
+}
+
+function loadBooking() {
+  showState('loading');
+  fetch(CLOUD + '/api/v1/playtomic/court/' + courtNum + '/now')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      currentBooking = d.booking;
+      if (!currentBooking) {
+        // No active booking
+        var sub = 'No hay reserva activa en esta cancha ahora mismo.';
+        if (d.next) {
+          sub = 'Próxima reserva: ' + formatTime(d.next.start) + ' — ' + d.next.display_type;
+          document.getElementById('next-booking-info').innerHTML =
+            '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;">'
+            +'<div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:4px;">PRÓXIMA</div>'
+            +'<div style="font-size:14px;font-weight:600;">'+formatTime(d.next.start)+' — '+(d.next.activity_name||d.next.display_type)+'</div>'
+            +'<div style="font-size:12px;color:var(--muted);margin-top:2px;">'+d.next.court_name+'</div>'
+            +'</div>';
+        }
+        document.getElementById('empty-sub').textContent = sub;
+        showState('empty');
+        return;
+      }
+      fillBooking(currentBooking);
+    })
+    .catch(function(e) {
+      showToast('Error cargando reserva');
+      showState('empty');
+    });
+}
+
+function fillBooking(b) {
+  var type = b.display_type;
+
+  if (type === 'partido' || type === 'reserva') {
+    document.getElementById('p-type-badge').textContent = type.toUpperCase();
+    document.getElementById('p-type-badge').className = 'booking-type type-' + (type === 'reserva' ? 'reserva' : 'partido');
+    document.getElementById('p-time').textContent = formatTime(b.start) + ' — ' + formatTime(b.end);
+    document.getElementById('p-l1').value = b.team_left[0] || '';
+    document.getElementById('p-l2').value = b.team_left[1] || '';
+    document.getElementById('p-r1').value = b.team_right[0] || '';
+    document.getElementById('p-r2').value = b.team_right[1] || '';
+    showState('partido');
+
+  } else if (type === 'clase') {
+    document.getElementById('c-time').textContent = formatTime(b.start) + ' — ' + formatTime(b.end);
+    document.getElementById('c-activity').value = b.activity_name || 'Clase particular';
+    document.getElementById('c-student').value = b.participants[0] || '';
+    document.getElementById('c-coach').value = '';
+    showState('clase');
+
+  } else if (type === 'torneo') {
+    document.getElementById('t-time').textContent = formatTime(b.start) + ' — ' + formatTime(b.end);
+    document.getElementById('t-name').value = b.activity_name || 'Torneo';
+    document.getElementById('t-l1').value = b.team_left[0] || '';
+    document.getElementById('t-l2').value = b.team_left[1] || '';
+    document.getElementById('t-r1').value = b.team_right[0] || '';
+    document.getElementById('t-r2').value = b.team_right[1] || '';
+    showState('torneo');
+  }
+}
+
+function setServer(side, prefix) {
+  currentServer = side;
+  prefix = prefix || '';
+  var leftId = prefix ? 'tsrv-left' : 'srv-left';
+  var rightId = prefix ? 'tsrv-right' : 'srv-right';
+  document.getElementById(leftId).classList.toggle('active', side === 'left');
+  document.getElementById(rightId).classList.toggle('active', side === 'right');
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('mode-trad').classList.toggle('active', mode === 'traditional');
+  document.getElementById('mode-gold').classList.toggle('active', mode === 'golden_point');
+}
+
+function startMatch(type) {
+  type = type || 'partido';
+  var prefix = type === 'torneo' ? 't' : 'p';
+  var l1, l2, r1, r2;
+
+  if (type === 'torneo') {
+    l1 = document.getElementById('t-l1').value.trim();
+    l2 = document.getElementById('t-l2').value.trim();
+    r1 = document.getElementById('t-r1').value.trim();
+    r2 = document.getElementById('t-r2').value.trim();
+  } else {
+    l1 = document.getElementById('p-l1').value.trim();
+    l2 = document.getElementById('p-l2').value.trim();
+    r1 = document.getElementById('p-r1').value.trim();
+    r2 = document.getElementById('p-r2').value.trim();
+  }
+
+  if (!l1 || !r1) { showToast('Ingresa al menos el nombre de un jugador por equipo'); return; }
+
+  var btn = document.getElementById('btn-start');
+  if (btn) { btn.disabled = true; btn.textContent = 'INICIANDO...'; }
+
+  var courtId = PICALE_COURTS[courtNum];
+  fetch(CLOUD + '/api/v1/score/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      court_id: courtId,
+      court_name: 'Cancha ' + courtNum,
+      club_name: 'Somos Pádel',
+      left_p1: l1, left_p2: l2,
+      right_p1: r1, right_p2: r2,
+      current_server: currentServer,
+      scoring_mode: currentMode,
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    document.getElementById('success-msg').innerHTML =
+      'El marcador está activo en la transmisión de Cancha ' + courtNum + '.<br><br>'
+      + '<a href="' + d.overlay_url + '" target="_blank" style="color:var(--yellow);font-size:12px;">Ver overlay →</a>';
+    showState('success');
+  })
+  .catch(function(e) {
+    showToast('Error iniciando partido');
+    if (btn) { btn.disabled = false; btn.textContent = 'INICIAR PARTIDO'; }
+  });
+}
+
+function startClase() {
+  var activity = document.getElementById('c-activity').value.trim() || 'Clase';
+  var student = document.getElementById('c-student').value.trim();
+  var coach = document.getElementById('c-coach').value.trim();
+  if (!student) { showToast('Ingresa el nombre del alumno'); return; }
+
+  var courtId = PICALE_COURTS[courtNum];
+  // For clases, create a match with class info as player names
+  fetch(CLOUD + '/api/v1/score/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      court_id: courtId,
+      court_name: 'Cancha ' + courtNum,
+      club_name: 'Somos Pádel',
+      left_p1: student, left_p2: '',
+      right_p1: coach ? 'Coach: ' + coach : 'Coach', right_p2: '',
+      current_server: 'left',
+      scoring_mode: 'traditional',
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    document.getElementById('success-msg').innerHTML =
+      'Pantalla activa para la clase de ' + student + ' en Cancha ' + courtNum + '.';
+    showState('success');
+  })
+  .catch(function() { showToast('Error'); });
+}
+
+function showManualSetup() {
+  currentBooking = null;
+  // Show partido setup with empty fields
+  document.getElementById('p-type-badge').textContent = 'PARTIDO';
+  document.getElementById('p-time').textContent = '';
+  ['p-l1','p-l2','p-r1','p-r2'].forEach(function(id){ document.getElementById(id).value=''; });
+  showState('partido');
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){ t.classList.remove('show'); }, 2500);
+}
+
+loadBooking();
+</script>
+</body>
+</html>
