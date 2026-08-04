@@ -372,8 +372,11 @@ var adTimer = null;
 var pollTimer = null;
 var adInterruptTimer = null;  // Timer to show mid-match ad
 var midMatchAdTimer = null;   // Timer to hide mid-match ad
-var AD_INTERVAL = 60000;      // Show ad every 60s
-var AD_DURATION = 15000;      // Ad lasts 15s
+var _adSec = parseInt(new URLSearchParams(window.location.search).get('ad'), 10);
+var AD_INTERVAL = (_adSec > 0 ? _adSec : 60) * 1000;  // ?ad=15 -> cada 15s (default 60s)
+var AD_DURATION = 15000;      // Duracion del anuncio (15s)
+var CUT_AD_ON_POINT = false;  // true = corta el anuncio si cae un punto durante el partido
+var DEMO = new URLSearchParams(window.location.search).get('demo') === '1';
 var inMidMatchAd = false;     // Currently showing mid-match ad
 var pendingState = null;      // State received during ad
 
@@ -558,11 +561,11 @@ function renderState(s) {
     var pointScored = (s.pts_left !== prevState.pts_left || s.pts_right !== prevState.pts_right ||
                        s.games_left !== prevState.games_left || s.games_right !== prevState.games_right ||
                        (s.sets_history||[]).length !== (prevState.sets_history||[]).length);
-    if (pointScored) {
+    if (pointScored && CUT_AD_ON_POINT) {
       clearTimeout(midMatchAdTimer);
       hideMidMatchAd();
     } else {
-      // Store state for when ad finishes
+      // Guarda el estado para aplicarlo cuando termine el anuncio
       pendingState = s;
       return;
     }
@@ -635,6 +638,9 @@ function renderState(s) {
         ? (s.left_p1 + (s.left_p2 ? ' / ' + s.left_p2 : ''))
         : (s.right_p1 + (s.right_p2 ? ' / ' + s.right_p2 : ''));
       showFlash('SET ' + nh, wname.toUpperCase());
+      // Anuncio al terminar el set (despues del flash de ~4s)
+      clearTimeout(adInterruptTimer);
+      setTimeout(function(){ if (currentScreen === 'match' && !inMidMatchAd) showMidMatchAd(); }, 4200);
     }
     if (s.status === 'finished' && prevState.status !== 'finished') {
       var wn = s.sets_left > s.sets_right
@@ -723,9 +729,74 @@ function hideMidMatchAd() {
 }
 
 // ── START ─────────────────────────────────────────────────────────────────────
+// ── DEMO (simula un partido para probar la TV sin hardware) ──────────────────
+function startDemo() {
+  console.log('[DEMO] partido simulado iniciado');
+  var PTS = ['0','15','30','40'];
+  var st = {
+    overlay_visible: true,
+    left_p1: 'ALMADA', left_p2: 'TAPIA',
+    right_p1: 'GALAN', right_p2: 'LEBRON',
+    current_server: 'left',
+    pts_left: '0', pts_right: '0',
+    games_left: 4, games_right: 4,   // arranca cerca del fin de set 1
+    sets_left: 0, sets_right: 0,
+    sets_history: [],
+    in_tiebreak: false,
+    status: 'live'
+  };
+  var pi = 0, ri = 0;
+
+  function labels() {
+    if (pi > 3 || ri > 3) {
+      if (pi === ri) { pi = 3; ri = 3; st.pts_left = '40'; st.pts_right = '40'; }
+      else if (pi > ri) { st.pts_left = 'ADV'; st.pts_right = '40'; }
+      else { st.pts_left = '40'; st.pts_right = 'ADV'; }
+    } else {
+      st.pts_left = PTS[pi];
+      st.pts_right = PTS[ri];
+    }
+  }
+
+  function tick() {
+    if (st.status === 'finished') return;
+    if (inMidMatchAd) { setTimeout(tick, 1000); return; } // no marcar puntos durante el anuncio
+
+    if (Math.random() < 0.5) pi++; else ri++;
+
+    var gameWon = (pi >= 4 && pi - ri >= 2) ? 'L' : (ri >= 4 && ri - pi >= 2) ? 'R' : null;
+    if (gameWon) {
+      if (gameWon === 'L') st.games_left++; else st.games_right++;
+      pi = 0; ri = 0;
+      st.current_server = st.current_server === 'left' ? 'right' : 'left';
+
+      var setWon = (st.games_left >= 6 && st.games_left - st.games_right >= 2) ? 'L'
+                 : (st.games_right >= 6 && st.games_right - st.games_left >= 2) ? 'R' : null;
+      if (setWon) {
+        st.sets_history.push([st.games_left, st.games_right]);
+        if (setWon === 'L') st.sets_left++; else st.sets_right++;
+        st.games_left = 0; st.games_right = 0;
+        if (st.sets_left === 2 || st.sets_right === 2) st.status = 'finished';
+      }
+    }
+    labels();
+    renderState(JSON.parse(JSON.stringify(st)));
+
+    if (st.status === 'finished') { setTimeout(startDemo, 15000); return; }
+    setTimeout(tick, 1500);
+  }
+
+  showScreen('match');
+  renderState(JSON.parse(JSON.stringify(st)));
+  setTimeout(tick, 1500);
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
 loadAds();
 
-if (matchId) {
+if (DEMO) {
+  startDemo();
+} else if (matchId) {
   showScreen('match');
   connectWS(matchId);
 } else {
