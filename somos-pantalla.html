@@ -400,38 +400,53 @@ setInterval(updateClock, 10000);
 // Load ads from /assets/somos/anuncios/
 // Tries to load ads.json manifest, fallback to idle screen
 var ADS = [];
+var adFailCount = 0;
 
 function loadAds() {
   fetch('/assets/somos/anuncios/ads.json')
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (!r.ok) throw new Error('ads.json HTTP ' + r.status);
+      return r.json();
+    })
     .then(function(data) {
-      ADS = data;
+      ADS = Array.isArray(data) ? data : (data.ads || []);
+      console.log('[ADS] cargados:', ADS.length, ADS);
       if (currentScreen === 'ads') startAds();
     })
-    .catch(function() {
-      // No ads configured, show idle
+    .catch(function(err) {
+      console.warn('[ADS] no se pudieron cargar:', err);
       showIdle();
     });
 }
 
 function startAds() {
+  console.log('[ADS] startAds, count=', ADS.length);
   if (!ADS.length) { showIdle(); return; }
   adIndex = 0;
+  adFailCount = 0;
   showAd();
 }
 
 function showAd() {
   if (!ADS.length) { showIdle(); return; }
+  if (adFailCount >= ADS.length) {
+    console.warn('[ADS] todas las imágenes fallaron -> idle');
+    adFailCount = 0;
+    showIdle();
+    return;
+  }
   var ad = ADS[adIndex % ADS.length];
   var img = document.getElementById('ad-image');
   var vid = document.getElementById('ad-video');
   var idle = document.getElementById('ads-idle');
 
+  console.log('[ADS] mostrando', adIndex % ADS.length, ad.src);
   idle.style.display = 'none';
 
   if (ad.type === 'video') {
     img.style.display = 'none';
     vid.style.display = 'block';
+    vid.onerror = function(){ console.warn('[ADS] video roto:', ad.src); adFailCount++; clearTimeout(adTimer); setTimeout(nextAd, 300); };
     vid.src = ad.src;
     vid.play();
     var dur = ad.duration || 15;
@@ -440,6 +455,8 @@ function showAd() {
   } else {
     vid.style.display = 'none';
     img.style.display = 'block';
+    img.onload = function(){ adFailCount = 0; };
+    img.onerror = function(){ console.warn('[ADS] imagen rota:', ad.src); adFailCount++; img.style.display='none'; clearTimeout(adTimer); setTimeout(nextAd, 300); };
     img.src = ad.src;
     var dur = ad.duration || 8;
     clearTimeout(adTimer);
