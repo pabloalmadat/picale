@@ -122,6 +122,22 @@
   .card-link{color:var(--muted);text-decoration:none;transition:.15s;}
   .card:hover .card-link{color:var(--yellow);}
 
+  /* Próximas reservas */
+  .next{margin-top:14px;padding-top:12px;border-top:1px solid var(--faint);}
+  .next-title{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:9px;}
+  .next-empty{font-size:12px;color:rgba(240,237,230,.3);font-style:italic;}
+  .next-row{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+  .next-row:last-child{margin-bottom:0;}
+  .next-time{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--white);min-width:44px;}
+  .next-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+  .next-dot.reserva{background:var(--partido);}
+  .next-dot.partido{background:var(--partido);}
+  .next-dot.torneo{background:var(--torneo);}
+  .next-dot.clase{background:var(--clase);}
+  .next-info{display:flex;flex-direction:column;min-width:0;line-height:1.25;}
+  .next-type{font-size:12.5px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .next-who{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
   .foot-note{margin-top:26px;text-align:center;font-size:11px;color:var(--muted);letter-spacing:1px;}
 </style>
 </head>
@@ -171,6 +187,43 @@
     libre:'Libre', clase:'Clase', partido:'Partido',
     torneo:'Torneo', live:'En vivo', error:'Sin datos', loading:'Cargando'
   };
+
+  var TODAY_BY_COURT = {};  // { "1":[bookings...], ... } de /playtomic/today
+
+  // ── PRÓXIMAS RESERVAS (desde /today) ──────────────────────────────────────────
+  function fetchToday(){
+    return fetch(CLOUD + '/api/v1/playtomic/today')
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(d){ TODAY_BY_COURT = (d && d.by_court) ? d.by_court : {}; })
+      .catch(function(){ TODAY_BY_COURT = {}; });
+  }
+
+  // Próximas N reservas de una cancha: no canceladas y que aún no terminan
+  function nextBookings(courtNum, n){
+    var list = TODAY_BY_COURT[String(courtNum)] || [];
+    var now = new Date();
+    return list
+      .filter(function(b){ return !b.is_canceled && new Date(b.end) > now; })
+      .sort(function(a,b){ return new Date(a.start) - new Date(b.start); })
+      .slice(0, n || 3);
+  }
+
+  function bookingLabel(b){
+    var map = { reserva:'Reserva', partido:'Partido', torneo:'Torneo', clase:'Clase' };
+    var t = map[b.display_type] || 'Reserva';
+    if (b.activity_name) t = b.activity_name.trim();
+    return t;
+  }
+
+  // Oculta placeholders tipo "Jugador 2" / "Participante 1"
+  function bookingWho(b){
+    var p = (b.participants || []).filter(function(x){
+      return x && !/^(jugador|participante)\s*\d*$/i.test(x.trim());
+    });
+    if (!p.length) return '';
+    if (p.length <= 2) return p.map(function(s){return s.trim();}).join(', ');
+    return p.slice(0,2).map(function(s){return s.trim();}).join(', ') + ' +' + (p.length - 2);
+  }
 
   // ── FETCH POR CANCHA ─────────────────────────────────────────────────────────
   function fetchCourt(court) {
@@ -240,6 +293,28 @@
     return head + players;
   }
 
+  function nextBlock(courtNum){
+    var now = new Date();
+    var upcoming = (TODAY_BY_COURT[String(courtNum)] || [])
+      .filter(function(b){ return !b.is_canceled && new Date(b.start) > now; })
+      .sort(function(a,b){ return new Date(a.start) - new Date(b.start); })
+      .slice(0,3);
+    if (!upcoming.length)
+      return '<div class="next"><div class="next-title">Próximas</div>'+
+             '<div class="next-empty">Sin más reservas hoy</div></div>';
+    var rows = upcoming.map(function(b){
+      var hh = new Date(b.start).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+      var who = bookingWho(b);
+      return '<div class="next-row">'+
+        '<span class="next-time">'+hh+'</span>'+
+        '<span class="next-dot '+b.display_type+'"></span>'+
+        '<span class="next-info"><span class="next-type">'+bookingLabel(b)+'</span>'+
+          (who?'<span class="next-who">'+who+'</span>':'')+'</span>'+
+      '</div>';
+    }).join('');
+    return '<div class="next"><div class="next-title">Próximas</div>'+rows+'</div>';
+  }
+
   function render(results){
     var grid = document.getElementById('grid');
     grid.innerHTML = results.map(function(res){
@@ -252,6 +327,7 @@
           '<div class="badge '+res.status+'"><span class="badge-dot"></span>'+STATUS_LABEL[res.status]+'</div>'+
         '</div>'+
         '<div class="card-body">'+cardBody(res)+'</div>'+
+        nextBlock(res.court.num, res.live)+
         '<div class="card-foot">'+
           '<span>'+(t || 'Cancha '+res.court.num)+'</span>'+
           '<span class="card-link">Abrir pantalla ↗</span>'+
@@ -283,7 +359,8 @@
   var countdown = REFRESH_SECS;
   function loadAll(){
     countdown = REFRESH_SECS;
-    Promise.all(COURTS.map(fetchCourt)).then(render);
+    Promise.all([ fetchToday() ].concat(COURTS.map(fetchCourt)))
+      .then(function(all){ render(all.slice(1)); });
   }
 
   // ── CLOCK + COUNTDOWN ─────────────────────────────────────────────────────────
