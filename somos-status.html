@@ -190,6 +190,18 @@
 
   var TODAY_BY_COURT = {};  // { "1":[bookings...], ... } de /playtomic/today
 
+  // El backend guarda horarios en UTC SIN zona (ej "2026-08-05T18:00:00").
+  // Sin 'Z', el navegador los tomaría como hora local -> mal. Forzamos UTC.
+  function parseDT(s){
+    if(!s) return null;
+    var hasTZ = /[zZ]$|[+\-]\d{2}:?\d{2}$/.test(s);
+    return new Date(hasTZ ? s : s + 'Z');
+  }
+  function hhmm(s){
+    var d = parseDT(s);
+    return d ? d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '';
+  }
+
   // ── PRÓXIMAS RESERVAS (desde /today) ──────────────────────────────────────────
   function fetchToday(){
     return fetch(CLOUD + '/api/v1/playtomic/today')
@@ -203,8 +215,8 @@
     var list = TODAY_BY_COURT[String(courtNum)] || [];
     var now = new Date();
     return list
-      .filter(function(b){ return !b.is_canceled && new Date(b.end) > now; })
-      .sort(function(a,b){ return new Date(a.start) - new Date(b.start); })
+      .filter(function(b){ return !b.is_canceled && parseDT(b.end) > now; })
+      .sort(function(a,b){ return parseDT(a.start) - parseDT(b.start); })
       .slice(0, n || 3);
   }
 
@@ -256,11 +268,6 @@
     var s = b.start_time || b.start || b.time || null;
     var e = b.end_time || b.end || null;
     if(!s) return '';
-    function hhmm(v){
-      var d = new Date(v);
-      if(isNaN(d)) return String(v).slice(0,5);
-      return d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-    }
     return e ? (hhmm(s)+' – '+hhmm(e)) : hhmm(s);
   }
 
@@ -296,17 +303,16 @@
   function nextBlock(courtNum){
     var now = new Date();
     var upcoming = (TODAY_BY_COURT[String(courtNum)] || [])
-      .filter(function(b){ return !b.is_canceled && new Date(b.start) > now; })
-      .sort(function(a,b){ return new Date(a.start) - new Date(b.start); })
+      .filter(function(b){ return !b.is_canceled && parseDT(b.start) > now; })
+      .sort(function(a,b){ return parseDT(a.start) - parseDT(b.start); })
       .slice(0,3);
     if (!upcoming.length)
       return '<div class="next"><div class="next-title">Próximas</div>'+
              '<div class="next-empty">Sin más reservas hoy</div></div>';
     var rows = upcoming.map(function(b){
-      var hh = new Date(b.start).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
       var who = bookingWho(b);
       return '<div class="next-row">'+
-        '<span class="next-time">'+hh+'</span>'+
+        '<span class="next-time">'+hhmm(b.start)+'</span>'+
         '<span class="next-dot '+b.display_type+'"></span>'+
         '<span class="next-info"><span class="next-type">'+bookingLabel(b)+'</span>'+
           (who?'<span class="next-who">'+who+'</span>':'')+'</span>'+
