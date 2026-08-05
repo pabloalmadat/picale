@@ -534,7 +534,7 @@ function pollActiveMatch() {
         document.getElementById('clase-student').textContent = (booking.participants[0] || '—').toUpperCase();
         document.getElementById('clase-coach').textContent = booking.coach_id ? 'Coach #' + booking.coach_id : '';
       } else {
-        // partido or torneo - check if there's an active score match
+        // partido / reserva / torneo - ¿ya hay marcador activo?
         fetch(CLOUD + '/api/v1/score/court/' + courtNum + '/now')
           .then(function(r){return r.json();})
           .then(function(sd) {
@@ -543,13 +543,65 @@ function pollActiveMatch() {
               connectWS(matchId);  // renderState mostrara el marcador cuando llegue score real
               if (currentScreen !== 'match') showScreen('ads'); // mientras tanto, anuncios
             } else {
-              showScreen('ads');
+              // No hay marcador: se crea SOLO desde la reserva de Playtomic
+              autoStartMatch(booking);
             }
           })
           .catch(function(){ showScreen('ads'); });
       }
     })
     .catch(function(){ showScreen('ads'); });
+}
+
+// Crea el marcador automáticamente desde la reserva de Playtomic (sin tocar el setup).
+// El setup sigue sirviendo para modificar (saque, punto de oro, editar nombres).
+var AUTO_SCORING_MODE = 'traditional';  // 'traditional' (ventaja) o 'golden_point' (punto de oro)
+var autoStarting = false;
+function autoStartMatch(booking) {
+  if (matchId || autoStarting) return;   // ya hay marcador o ya se está creando
+  autoStarting = true;
+
+  function clean(x){ return (x || '').trim(); }
+  function isReal(x){ return x && !/^(jugador|participante)\s*\d*$/i.test(clean(x)); }
+
+  var L = (booking.team_left || []).filter(isReal);
+  var R = (booking.team_right || []).filter(isReal);
+  // Respaldo: si no vienen equipos, parte la lista de participantes en dos
+  if (!L.length || !R.length) {
+    var p = (booking.participants || []).filter(isReal);
+    if (!L.length) L = p.slice(0, 2);
+    if (!R.length) R = p.slice(2, 4);
+  }
+
+  var l1 = clean(L[0]) || 'Equipo A', l2 = clean(L[1]);
+  var r1 = clean(R[0]) || 'Equipo B', r2 = clean(R[1]);
+
+  console.log('[AUTO] creando marcador para cancha', courtNum, l1, l2, 'vs', r1, r2);
+
+  fetch(CLOUD + '/api/v1/score/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      court_name: 'Cancha ' + courtNum,
+      club_name: 'Somos Pádel',
+      left_p1: l1, left_p2: l2,
+      right_p1: r1, right_p2: r2,
+      current_server: 'left',
+      scoring_mode: AUTO_SCORING_MODE
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    autoStarting = false;
+    var mid = d.match_id || d.id || (d.match && d.match.id);
+    if (!mid && d.overlay_url) {
+      var m = d.overlay_url.match(/match_id=([^&]+)/);
+      if (m) mid = m[1];
+    }
+    if (mid) { matchId = mid; connectWS(matchId); }
+    else { showScreen('ads'); }   // no se pudo, seguimos en anuncios
+  })
+  .catch(function(){ autoStarting = false; showScreen('ads'); });
 }
 
 // ── RENDER STATE ──────────────────────────────────────────────────────────────
