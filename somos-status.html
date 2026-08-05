@@ -16,6 +16,7 @@
     --body:'DM Sans',sans-serif;
     --mono:'JetBrains Mono',monospace;
     --libre:#5fb87a;
+    --reserva:#8b93f0;
     --clase:#35c5e0;
     --partido:var(--yellow);
     --torneo:#ff9838;
@@ -60,22 +61,22 @@
 
   /* Grid */
   .grid{
-    display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+    display:grid;grid-template-columns:repeat(2,1fr);gap:16px;
   }
-  @media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr);}}
-  @media(max-width:560px){.grid{grid-template-columns:1fr;}}
+  @media(max-width:820px){.grid{grid-template-columns:1fr;}}
 
   .card{
     position:relative;background:rgba(255,255,255,.02);
     border:1px solid var(--faint);border-radius:12px;padding:20px 20px 20px 24px;
-    overflow:hidden;cursor:pointer;transition:.15s;min-height:150px;
+    overflow:hidden;transition:.15s;
     display:flex;flex-direction:column;
   }
-  .card:hover{border-color:rgba(212,224,0,.3);transform:translateY(-2px);}
+  .card:hover{border-color:rgba(212,224,0,.2);}
   .card::before{
     content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--muted);
   }
   .card.libre::before{background:var(--libre);}
+  .card.reserva::before{background:var(--reserva);}
   .card.clase::before{background:var(--clase);}
   .card.partido::before{background:var(--partido);}
   .card.torneo::before{background:var(--torneo);}
@@ -94,6 +95,8 @@
   .badge-dot{width:7px;height:7px;border-radius:50%;}
   .badge.libre{color:var(--libre);background:rgba(95,184,122,.1);}
   .badge.libre .badge-dot{background:var(--libre);}
+  .badge.reserva{color:var(--reserva);background:rgba(139,147,240,.12);}
+  .badge.reserva .badge-dot{background:var(--reserva);}
   .badge.clase{color:var(--clase);background:rgba(53,197,224,.1);}
   .badge.clase .badge-dot{background:var(--clase);}
   .badge.partido{color:var(--partido);background:rgba(212,224,0,.1);}
@@ -122,21 +125,50 @@
   .card-link{color:var(--muted);text-decoration:none;transition:.15s;}
   .card:hover .card-link{color:var(--yellow);}
 
-  /* Próximas reservas */
-  .next{margin-top:14px;padding-top:12px;border-top:1px solid var(--faint);}
-  .next-title{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:9px;}
+  /* Agenda del día */
+  .agenda{margin-top:14px;padding-top:12px;border-top:1px solid var(--faint);}
+  .agenda-title{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
   .next-empty{font-size:12px;color:rgba(240,237,230,.3);font-style:italic;}
-  .next-row{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
-  .next-row:last-child{margin-bottom:0;}
-  .next-time{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--white);min-width:44px;}
-  .next-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;}
-  .next-dot.reserva{background:var(--partido);}
-  .next-dot.partido{background:var(--partido);}
-  .next-dot.torneo{background:var(--torneo);}
-  .next-dot.clase{background:var(--clase);}
-  .next-info{display:flex;flex-direction:column;min-width:0;line-height:1.25;}
-  .next-type{font-size:12.5px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .next-who{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  .ag-row{
+    border:1px solid var(--faint);border-radius:8px;padding:10px 12px;margin-bottom:8px;
+    cursor:pointer;transition:.15s;background:rgba(255,255,255,.015);
+  }
+  .ag-row:last-child{margin-bottom:0;}
+  .ag-row:hover{border-color:rgba(255,255,255,.14);}
+  .ag-row.past{opacity:.62;}
+  .ag-row.live{border-color:rgba(212,224,0,.35);background:rgba(212,224,0,.05);}
+  .ag-row.cancel{opacity:.4;}
+  .ag-row.cancel .ag-type,.ag-row.cancel .vs-team{text-decoration:line-through;}
+
+  .ag-main{display:flex;align-items:center;gap:9px;}
+  .ag-time{font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--white);white-space:nowrap;}
+  .ag-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+  .ag-dot.reserva{background:var(--reserva);}
+  .ag-dot.partido{background:var(--partido);}
+  .ag-dot.torneo{background:var(--torneo);}
+  .ag-dot.clase{background:var(--clase);}
+  .ag-type{font-size:12.5px;color:var(--white);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ag-tag{font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap;}
+  .ag-tag.past{color:var(--muted);background:rgba(255,255,255,.05);}
+  .ag-tag.live{color:var(--black);background:var(--yellow);}
+  .ag-tag.future{color:var(--libre);background:rgba(95,184,122,.12);}
+  .ag-tag.cancel{color:var(--error);background:rgba(224,85,106,.12);}
+
+  .ag-teams{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:8px;font-size:12px;}
+  .vs-team{color:var(--white);}
+  .vs-sep{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;}
+  .vs-more{color:var(--muted);font-size:11px;}
+  .ag-empty{color:rgba(240,237,230,.3);font-style:italic;}
+
+  .ag-detail{max-height:0;overflow:hidden;transition:max-height .25s ease;}
+  .ag-row.open .ag-detail{max-height:400px;margin-top:12px;}
+  .det-line{display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--faint);font-size:12px;align-items:flex-start;}
+  .det-k{min-width:74px;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:1px;padding-top:3px;}
+  .det-v{color:var(--white);}
+  .det-v.mono{font-family:var(--mono);font-size:11px;color:var(--muted);word-break:break-all;}
+  .det-players{display:flex;flex-wrap:wrap;gap:5px;}
+  .pchip{font-size:11px;color:var(--white);background:rgba(255,255,255,.06);padding:3px 8px;border-radius:5px;}
 
   .foot-note{margin-top:26px;text-align:center;font-size:11px;color:var(--muted);letter-spacing:1px;}
 </style>
@@ -184,7 +216,7 @@
   ];
 
   var STATUS_LABEL = {
-    libre:'Libre', clase:'Clase', partido:'Partido',
+    libre:'Libre', reserva:'Reservada', clase:'Clase', partido:'Partido',
     torneo:'Torneo', live:'En vivo', error:'Sin datos', loading:'Cargando'
   };
 
@@ -237,30 +269,30 @@
     return p.slice(0,2).map(function(s){return s.trim();}).join(', ') + ' +' + (p.length - 2);
   }
 
-  // ── FETCH POR CANCHA ─────────────────────────────────────────────────────────
-  function fetchCourt(court) {
-    return fetch(CLOUD + '/api/v1/playtomic/court/' + court.num + '/now')
-      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-      .then(function(d){
-        var b = d.booking;
-        if (!b) return { court:court, status:'libre', booking:null, live:false };
+  // Estado actual de la cancha: se calcula desde la agenda del día (cualquier tipo
+  // de reserva cuenta como ocupada) + revisión de marcador en vivo.
+  function fetchCourt(court){
+    var now = new Date();
+    var active = (TODAY_BY_COURT[String(court.num)] || []).filter(function(b){
+      return !b.is_canceled && parseDT(b.start) <= now && now < parseDT(b.end);
+    }).sort(function(a,b){ return parseDT(a.start) - parseDT(b.start); })[0];
 
-        if (b.display_type === 'clase') {
-          return { court:court, status:'clase', booking:b, live:false };
-        }
-        // partido / torneo -> revisar si hay marcador activo
-        return fetch(CLOUD + '/api/v1/score/court/' + court.num + '/now')
-          .then(function(r){ return r.ok ? r.json() : {}; })
-          .then(function(sd){
-            var st = (b.display_type === 'torneo') ? 'torneo' : 'partido';
-            return { court:court, status: sd && sd.match_id ? 'live' : st,
-                     booking:b, live: !!(sd && sd.match_id), matchId: sd && sd.match_id };
-          })
-          .catch(function(){
-            return { court:court, status: b.display_type === 'torneo' ? 'torneo':'partido', booking:b, live:false };
-          });
+    if (!active) return Promise.resolve({ court:court, status:'libre', booking:null, live:false });
+
+    var base = active.display_type;
+    var status = ['reserva','partido','torneo','clase'].indexOf(base) >= 0 ? base : 'reserva';
+
+    if (status === 'clase')
+      return Promise.resolve({ court:court, status:'clase', booking:active, live:false });
+
+    // partido / torneo / reserva -> ¿hay marcador en vivo?
+    return fetch(CLOUD + '/api/v1/score/court/' + court.num + '/now')
+      .then(function(r){ return r.ok ? r.json() : {}; })
+      .then(function(sd){
+        return { court:court, status: sd && sd.match_id ? 'live' : status,
+                 booking:active, live: !!(sd && sd.match_id) };
       })
-      .catch(function(){ return { court:court, status:'error', booking:null, live:false }; });
+      .catch(function(){ return { court:court, status:status, booking:active, live:false }; });
   }
 
   // ── RENDER ───────────────────────────────────────────────────────────────────
@@ -289,36 +321,77 @@
              '<div class="card-secondary">Alumno: '+alumno+(coach?' · '+coach:'')+'</div>';
     }
 
-    // partido / torneo / live
+    // reserva / partido / torneo / live
     var players = (b.participants && b.participants.length)
       ? '<div class="card-players">'+b.participants.slice(0,4).map(function(p){
           return '<span class="player-tag">'+p+'</span>'; }).join('')+'</div>'
       : '<div class="card-secondary">Reserva activa</div>';
-    var head = res.live
-      ? '<div class="card-primary" style="color:var(--yellow)">Marcador en vivo</div>'
-      : '<div class="card-primary">'+(res.status==='torneo'?'Torneo':'Partido')+'</div>';
+    var label = res.live ? 'Marcador en vivo'
+      : res.status === 'torneo' ? 'Torneo'
+      : res.status === 'reserva' ? 'Reservada'
+      : 'Partido';
+    var head = '<div class="card-primary"'+(res.live?' style="color:var(--yellow)"':'')+'>'+label+'</div>';
     return head + players;
   }
 
-  function nextBlock(courtNum){
-    var now = new Date();
-    var upcoming = (TODAY_BY_COURT[String(courtNum)] || [])
-      .filter(function(b){ return !b.is_canceled && parseDT(b.start) > now; })
-      .sort(function(a,b){ return parseDT(a.start) - parseDT(b.start); })
-      .slice(0,3);
-    if (!upcoming.length)
-      return '<div class="next"><div class="next-title">Próximas</div>'+
-             '<div class="next-empty">Sin más reservas hoy</div></div>';
-    var rows = upcoming.map(function(b){
-      var who = bookingWho(b);
-      return '<div class="next-row">'+
-        '<span class="next-time">'+hhmm(b.start)+'</span>'+
-        '<span class="next-dot '+b.display_type+'"></span>'+
-        '<span class="next-info"><span class="next-type">'+bookingLabel(b)+'</span>'+
-          (who?'<span class="next-who">'+who+'</span>':'')+'</span>'+
+  var STAT_TAG = { past:'Terminada', live:'En curso', future:'Próxima', cancel:'Cancelada' };
+  function statusOf(b){
+    var now=new Date(), s=parseDT(b.start), e=parseDT(b.end);
+    if(b.is_canceled) return 'cancel';
+    if(e && e<now) return 'past';
+    if(s && e && s<=now && now<=e) return 'live';
+    return 'future';
+  }
+  function realPlayers(b){
+    return (b.participants||[]).filter(function(x){
+      return x && !/^(jugador|participante)\s*\d*$/i.test(x.trim());
+    }).map(function(x){ return x.trim(); });
+  }
+  function teamsSummary(b){
+    var L=(b.team_left||[]).map(function(x){return x.trim();}).filter(Boolean);
+    var R=(b.team_right||[]).map(function(x){return x.trim();}).filter(Boolean);
+    L=L.filter(function(x){return !/^(jugador|participante)\s*\d*$/i.test(x);});
+    R=R.filter(function(x){return !/^(jugador|participante)\s*\d*$/i.test(x);});
+    if(L.length && R.length){
+      var extra=realPlayers(b).length-(L.length+R.length);
+      return '<span class="vs-team">'+L.join(' / ')+'</span>'+
+             '<span class="vs-sep">vs</span>'+
+             '<span class="vs-team">'+R.join(' / ')+'</span>'+
+             (extra>0?'<span class="vs-more">+'+extra+'</span>':'');
+    }
+    var p=realPlayers(b);
+    return p.length ? '<span class="vs-team">'+p.join(', ')+'</span>' : '<span class="ag-empty">Sin nombres</span>';
+  }
+
+  function agendaBlock(courtNum){
+    var list=(TODAY_BY_COURT[String(courtNum)]||[]).slice()
+      .sort(function(a,b){ return parseDT(a.start)-parseDT(b.start); });
+    if(!list.length)
+      return '<div class="agenda"><div class="agenda-title">Agenda hoy</div>'+
+             '<div class="next-empty">Sin reservas hoy</div></div>';
+    var rows=list.map(function(b){
+      var st=statusOf(b);
+      var players=realPlayers(b);
+      var detail='<div class="ag-detail">'+
+        (players.length?'<div class="det-line"><span class="det-k">Jugadores</span><span class="det-players">'+
+           players.map(function(p){return '<span class="pchip">'+p+'</span>';}).join('')+'</span></div>':'')+
+        (b.coach_id?'<div class="det-line"><span class="det-k">Coach</span><span class="det-v">#'+b.coach_id+'</span></div>':'')+
+        '<div class="det-line"><span class="det-k">Reserva</span><span class="det-v">'+(b.booking_type||'—')+'</span></div>'+
+        '<div class="det-line"><span class="det-k">Origen</span><span class="det-v">'+(b.origin||'—')+'</span></div>'+
+        (b.picale_court_id?'<div class="det-line"><span class="det-k">Court ID</span><span class="det-v mono">'+b.picale_court_id+'</span></div>':'')+
+      '</div>';
+      return '<div class="ag-row '+st+'" onclick="this.classList.toggle(\'open\')">'+
+        '<div class="ag-main">'+
+          '<span class="ag-time">'+hhmm(b.start)+'–'+hhmm(b.end)+'</span>'+
+          '<span class="ag-dot '+b.display_type+'"></span>'+
+          '<span class="ag-type">'+bookingLabel(b)+'</span>'+
+          '<span class="ag-tag '+st+'">'+STAT_TAG[st]+'</span>'+
+        '</div>'+
+        '<div class="ag-teams">'+teamsSummary(b)+'</div>'+
+        detail+
       '</div>';
     }).join('');
-    return '<div class="next"><div class="next-title">Próximas</div>'+rows+'</div>';
+    return '<div class="agenda"><div class="agenda-title">Agenda hoy · '+list.length+'</div>'+rows+'</div>';
   }
 
   function render(results){
@@ -327,16 +400,16 @@
       var b = res.booking;
       var t = b ? fmtTime(b) : '';
       return ''+
-      '<div class="card '+res.status+'" onclick="window.open(\'somos-pantalla.html?cancha='+res.court.num+'\',\'_blank\')">'+
+      '<div class="card '+res.status+'">'+
         '<div class="card-head">'+
           '<div class="card-court">'+res.court.name+'</div>'+
           '<div class="badge '+res.status+'"><span class="badge-dot"></span>'+STATUS_LABEL[res.status]+'</div>'+
         '</div>'+
         '<div class="card-body">'+cardBody(res)+'</div>'+
-        nextBlock(res.court.num, res.live)+
+        agendaBlock(res.court.num)+
         '<div class="card-foot">'+
-          '<span>'+(t || 'Cancha '+res.court.num)+'</span>'+
-          '<span class="card-link">Abrir pantalla ↗</span>'+
+          '<span>Cancha '+res.court.num+'</span>'+
+          '<span class="card-link" onclick="event.stopPropagation();window.open(\'somos-pantalla.html?cancha='+res.court.num+'\',\'_blank\')">Abrir pantalla ↗</span>'+
         '</div>'+
       '</div>';
     }).join('');
@@ -348,6 +421,7 @@
       ['live','En vivo','var(--live)'],
       ['partido','Partidos','var(--partido)'],
       ['torneo','Torneos','var(--torneo)'],
+      ['reserva','Reservadas','var(--reserva)'],
       ['clase','Clases','var(--clase)'],
       ['libre','Libres','var(--libre)'],
       ['error','Sin datos','var(--error)']
@@ -365,8 +439,9 @@
   var countdown = REFRESH_SECS;
   function loadAll(){
     countdown = REFRESH_SECS;
-    Promise.all([ fetchToday() ].concat(COURTS.map(fetchCourt)))
-      .then(function(all){ render(all.slice(1)); });
+    fetchToday()
+      .then(function(){ return Promise.all(COURTS.map(fetchCourt)); })
+      .then(render);
   }
 
   // ── CLOCK + COUNTDOWN ─────────────────────────────────────────────────────────
