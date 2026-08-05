@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Somos Pádel · Estado de Canchas</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --yellow:#D4E000;
+    --black:#0A0A0A;
+    --white:#F0EDE6;
+    --muted:rgba(240,237,230,.5);
+    --faint:rgba(240,237,230,.08);
+    --display:'Bebas Neue',sans-serif;
+    --body:'DM Sans',sans-serif;
+    --mono:'JetBrains Mono',monospace;
+    --libre:#5fb87a;
+    --clase:#35c5e0;
+    --partido:var(--yellow);
+    --torneo:#ff9838;
+    --live:var(--yellow);
+    --error:#e0556a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--black);color:var(--white);font-family:var(--body);
+    min-height:100vh;padding:24px;
+  }
+
+  /* Top bar */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-bottom:20px;border-bottom:1px solid var(--faint);margin-bottom:20px;
+    flex-wrap:wrap;gap:16px;
+  }
+  .brand{display:flex;align-items:center;gap:16px;}
+  .brand-title{font-family:var(--display);font-size:34px;letter-spacing:3px;color:var(--white);line-height:1;}
+  .brand-sub{font-size:12px;letter-spacing:3px;color:var(--yellow);text-transform:uppercase;margin-top:2px;}
+  .topright{display:flex;align-items:center;gap:24px;}
+  .clock{font-family:var(--mono);font-size:26px;color:var(--white);}
+  .refresh-box{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);letter-spacing:1px;}
+  .refresh-dot{width:8px;height:8px;border-radius:50%;background:var(--libre);box-shadow:0 0 8px var(--libre);}
+  .btn{
+    background:transparent;border:1px solid var(--faint);color:var(--white);
+    font-family:var(--body);font-size:12px;letter-spacing:1px;text-transform:uppercase;
+    padding:8px 14px;border-radius:6px;cursor:pointer;transition:.15s;
+  }
+  .btn:hover{border-color:var(--yellow);color:var(--yellow);}
+
+  /* Summary chips */
+  .summary{display:flex;gap:12px;margin-bottom:22px;flex-wrap:wrap;}
+  .chip{
+    display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.02);
+    border:1px solid var(--faint);border-radius:8px;padding:10px 16px;
+  }
+  .chip-dot{width:10px;height:10px;border-radius:50%;}
+  .chip-num{font-family:var(--mono);font-size:20px;font-weight:700;}
+  .chip-label{font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+
+  /* Grid */
+  .grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+  }
+  @media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr;}}
+
+  .card{
+    position:relative;background:rgba(255,255,255,.02);
+    border:1px solid var(--faint);border-radius:12px;padding:20px 20px 20px 24px;
+    overflow:hidden;cursor:pointer;transition:.15s;min-height:150px;
+    display:flex;flex-direction:column;
+  }
+  .card:hover{border-color:rgba(212,224,0,.3);transform:translateY(-2px);}
+  .card::before{
+    content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--muted);
+  }
+  .card.libre::before{background:var(--libre);}
+  .card.clase::before{background:var(--clase);}
+  .card.partido::before{background:var(--partido);}
+  .card.torneo::before{background:var(--torneo);}
+  .card.live::before{background:var(--live);}
+  .card.error::before{background:var(--error);}
+  .card.loading::before{background:var(--muted);}
+
+  .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .card-court{font-family:var(--display);font-size:30px;letter-spacing:2px;color:var(--white);line-height:1;}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:7px;
+    font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+    padding:5px 11px;border-radius:20px;
+  }
+  .badge-dot{width:7px;height:7px;border-radius:50%;}
+  .badge.libre{color:var(--libre);background:rgba(95,184,122,.1);}
+  .badge.libre .badge-dot{background:var(--libre);}
+  .badge.clase{color:var(--clase);background:rgba(53,197,224,.1);}
+  .badge.clase .badge-dot{background:var(--clase);}
+  .badge.partido{color:var(--partido);background:rgba(212,224,0,.1);}
+  .badge.partido .badge-dot{background:var(--partido);}
+  .badge.torneo{color:var(--torneo);background:rgba(255,152,56,.12);}
+  .badge.torneo .badge-dot{background:var(--torneo);}
+  .badge.live{color:var(--black);background:var(--yellow);}
+  .badge.live .badge-dot{background:var(--black);animation:pulse 1.1s infinite;}
+  .badge.error{color:var(--error);background:rgba(224,85,106,.12);}
+  .badge.error .badge-dot{background:var(--error);}
+  .badge.loading{color:var(--muted);background:rgba(255,255,255,.04);}
+  .badge.loading .badge-dot{background:var(--muted);animation:pulse 1.1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+
+  .card-body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;}
+  .card-primary{font-size:16px;font-weight:600;color:var(--white);line-height:1.3;}
+  .card-secondary{font-size:13px;color:var(--muted);line-height:1.4;}
+  .card-players{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;}
+  .player-tag{font-size:12px;color:var(--white);background:rgba(255,255,255,.05);padding:3px 9px;border-radius:5px;}
+
+  .card-foot{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-top:14px;padding-top:12px;border-top:1px solid var(--faint);
+    font-size:11px;color:var(--muted);letter-spacing:.5px;
+  }
+  .card-link{color:var(--muted);text-decoration:none;transition:.15s;}
+  .card:hover .card-link{color:var(--yellow);}
+
+  .foot-note{margin-top:26px;text-align:center;font-size:11px;color:var(--muted);letter-spacing:1px;}
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <div>
+        <div class="brand-title">SOMOS PÁDEL</div>
+        <div class="brand-sub">Estado de Canchas</div>
+      </div>
+    </div>
+    <div class="topright">
+      <div class="refresh-box">
+        <span class="refresh-dot"></span>
+        <span id="refresh-text">Actualiza en 20s</span>
+      </div>
+      <button class="btn" onclick="loadAll()">Actualizar ahora</button>
+      <div class="clock" id="clock">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="foot-note">PÍCALE REPLAY · datos en vivo desde Playtomic · toca una cancha para abrir su pantalla</div>
+
+<script>
+  // ── CONFIG ─────────────────────────────────────────────────────────────────
+  var CLOUD = 'https://api.picalereplay.com';
+  var REFRESH_SECS = 20;
+
+  // Canchas de Somos Pádel. Para agregar otro club, extiende esta lista.
+  var COURTS = [
+    { num:1, name:'PÁDEL 1' },
+    { num:2, name:'PÁDEL 2' },
+    { num:3, name:'PÁDEL 3' },
+    { num:4, name:'PÁDEL 4' },
+    { num:5, name:'PÁDEL 5' },
+    { num:6, name:'PÁDEL 6' },
+    { num:7, name:'PÁDEL 7' },
+    { num:8, name:'PÁDEL 8' }
+  ];
+
+  var STATUS_LABEL = {
+    libre:'Libre', clase:'Clase', partido:'Partido',
+    torneo:'Torneo', live:'En vivo', error:'Sin datos', loading:'Cargando'
+  };
+
+  // ── FETCH POR CANCHA ─────────────────────────────────────────────────────────
+  function fetchCourt(court) {
+    return fetch(CLOUD + '/api/v1/playtomic/court/' + court.num + '/now')
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(d){
+        var b = d.booking;
+        if (!b) return { court:court, status:'libre', booking:null, live:false };
+
+        if (b.display_type === 'clase') {
+          return { court:court, status:'clase', booking:b, live:false };
+        }
+        // partido / torneo -> revisar si hay marcador activo
+        return fetch(CLOUD + '/api/v1/score/court/' + court.num + '/now')
+          .then(function(r){ return r.ok ? r.json() : {}; })
+          .then(function(sd){
+            var st = (b.display_type === 'torneo') ? 'torneo' : 'partido';
+            return { court:court, status: sd && sd.match_id ? 'live' : st,
+                     booking:b, live: !!(sd && sd.match_id), matchId: sd && sd.match_id };
+          })
+          .catch(function(){
+            return { court:court, status: b.display_type === 'torneo' ? 'torneo':'partido', booking:b, live:false };
+          });
+      })
+      .catch(function(){ return { court:court, status:'error', booking:null, live:false }; });
+  }
+
+  // ── RENDER ───────────────────────────────────────────────────────────────────
+  function fmtTime(b){
+    var s = b.start_time || b.start || b.time || null;
+    var e = b.end_time || b.end || null;
+    if(!s) return '';
+    function hhmm(v){
+      var d = new Date(v);
+      if(isNaN(d)) return String(v).slice(0,5);
+      return d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    }
+    return e ? (hhmm(s)+' – '+hhmm(e)) : hhmm(s);
+  }
+
+  function cardBody(res){
+    var b = res.booking;
+    if (res.status === 'libre')
+      return '<div class="card-primary" style="color:var(--libre)">Disponible</div>'+
+             '<div class="card-secondary">Sin reserva ahora</div>';
+
+    if (res.status === 'error')
+      return '<div class="card-primary" style="color:var(--error)">Sin conexión</div>'+
+             '<div class="card-secondary">No se pudo leer Playtomic</div>';
+
+    if (res.status === 'clase'){
+      var act = (b.activity_name || 'Clase');
+      var alumno = (b.participants && b.participants[0]) ? b.participants[0] : '—';
+      var coach = b.coach_id ? ('Coach #' + b.coach_id) : '';
+      return '<div class="card-primary">'+act+'</div>'+
+             '<div class="card-secondary">Alumno: '+alumno+(coach?' · '+coach:'')+'</div>';
+    }
+
+    // partido / torneo / live
+    var players = (b.participants && b.participants.length)
+      ? '<div class="card-players">'+b.participants.slice(0,4).map(function(p){
+          return '<span class="player-tag">'+p+'</span>'; }).join('')+'</div>'
+      : '<div class="card-secondary">Reserva activa</div>';
+    var head = res.live
+      ? '<div class="card-primary" style="color:var(--yellow)">Marcador en vivo</div>'
+      : '<div class="card-primary">'+(res.status==='torneo'?'Torneo':'Partido')+'</div>';
+    return head + players;
+  }
+
+  function render(results){
+    var grid = document.getElementById('grid');
+    grid.innerHTML = results.map(function(res){
+      var b = res.booking;
+      var t = b ? fmtTime(b) : '';
+      return ''+
+      '<div class="card '+res.status+'" onclick="window.open(\'somos-pantalla.html?cancha='+res.court.num+'\',\'_blank\')">'+
+        '<div class="card-head">'+
+          '<div class="card-court">'+res.court.name+'</div>'+
+          '<div class="badge '+res.status+'"><span class="badge-dot"></span>'+STATUS_LABEL[res.status]+'</div>'+
+        '</div>'+
+        '<div class="card-body">'+cardBody(res)+'</div>'+
+        '<div class="card-foot">'+
+          '<span>'+(t || 'Cancha '+res.court.num)+'</span>'+
+          '<span class="card-link">Abrir pantalla ↗</span>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+
+    // Resumen
+    var counts = { libre:0, clase:0, partido:0, torneo:0, live:0, error:0 };
+    results.forEach(function(r){ counts[r.status] = (counts[r.status]||0)+1; });
+    var order = [
+      ['live','En vivo','var(--live)'],
+      ['partido','Partidos','var(--partido)'],
+      ['torneo','Torneos','var(--torneo)'],
+      ['clase','Clases','var(--clase)'],
+      ['libre','Libres','var(--libre)'],
+      ['error','Sin datos','var(--error)']
+    ];
+    document.getElementById('summary').innerHTML = order
+      .filter(function(o){ return counts[o[0]] > 0 || o[0]==='libre' || o[0]==='live'; })
+      .map(function(o){
+        return '<div class="chip"><span class="chip-dot" style="background:'+o[2]+'"></span>'+
+               '<span class="chip-num" style="color:'+o[2]+'">'+(counts[o[0]]||0)+'</span>'+
+               '<span class="chip-label">'+o[1]+'</span></div>';
+      }).join('');
+  }
+
+  // ── LOAD ─────────────────────────────────────────────────────────────────────
+  var countdown = REFRESH_SECS;
+  function loadAll(){
+    countdown = REFRESH_SECS;
+    Promise.all(COURTS.map(fetchCourt)).then(render);
+  }
+
+  // ── CLOCK + COUNTDOWN ─────────────────────────────────────────────────────────
+  function tickClock(){
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('es-MX',{hour12:false});
+  }
+  setInterval(function(){
+    tickClock();
+    countdown--;
+    document.getElementById('refresh-text').textContent =
+      countdown > 0 ? ('Actualiza en '+countdown+'s') : 'Actualizando…';
+    if (countdown <= 0) loadAll();
+  }, 1000);
+
+  // ── INIT ─────────────────────────────────────────────────────────────────────
+  // Placeholder de carga
+  document.getElementById('grid').innerHTML = COURTS.map(function(c){
+    return '<div class="card loading"><div class="card-head">'+
+           '<div class="card-court">'+c.name+'</div>'+
+           '<div class="badge loading"><span class="badge-dot"></span>Cargando</div></div>'+
+           '<div class="card-body"><div class="card-secondary">Consultando Playtomic…</div></div></div>';
+  }).join('');
+  tickClock();
+  loadAll();
+</script>
+</body>
+</html>
