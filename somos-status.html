@@ -363,8 +363,16 @@
     return p.length ? '<span class="vs-team">'+p.join(', ')+'</span>' : '<span class="ag-empty">Sin nombres</span>';
   }
 
+  function sameLocalDay(a, b){
+    return a && b && a.getFullYear()===b.getFullYear() &&
+           a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+  }
+
   function agendaBlock(courtNum){
-    var list=(TODAY_BY_COURT[String(courtNum)]||[]).slice()
+    var hoy = new Date();
+    // El backend agrupa por día UTC; filtramos a las que caen en el día LOCAL de hoy
+    var list=(TODAY_BY_COURT[String(courtNum)]||[])
+      .filter(function(b){ return sameLocalDay(parseDT(b.start), hoy); })
       .sort(function(a,b){ return parseDT(a.start)-parseDT(b.start); });
     if(!list.length)
       return '<div class="agenda"><div class="agenda-title">Agenda hoy</div>'+
