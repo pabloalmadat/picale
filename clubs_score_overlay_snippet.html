@@ -1,0 +1,139 @@
+<!-- ============================================================
+  PÍCALE — Overlay de marcador en clubs.html
+  Reutiliza score-overlay.html como iframe transparente
+  encima del player HLS.
+
+  CÓMO INSTALARLO:
+  1. Pega el <style> junto a tus otros estilos.
+  2. Pega el <script> antes de cerrar </body>.
+  3. En tu función donde cambias de cancha (donde ya haces
+     el switch del HLS), agrega UNA línea:
+
+        ScoreOverlay.setCourt(court.courtId);
+
+     donde `court` es el objeto de COURTS que estás activando.
+  4. Asegúrate de que el contenedor del video tenga
+     position:relative (normalmente ya lo tiene).
+============================================================ -->
+
+<style>
+  /* Capa del overlay sobre el video */
+  .score-ovl-wrap {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;   /* no bloquea controles del player */
+    z-index: 5;
+    display: none;
+  }
+  .score-ovl-wrap.on { display: block; }
+
+  /* El iframe se renderiza a 1920x1080 (como en OBS)
+     y se escala al tamaño real del player */
+  .score-ovl-wrap iframe {
+    width: 1920px;
+    height: 1080px;
+    border: 0;
+    background: transparent;
+    transform-origin: top left;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+// ============================================================
+// ScoreOverlay — muestra score-overlay.html sobre el stream
+// cuando hay un match en vivo en la cancha seleccionada.
+// ============================================================
+const ScoreOverlay = {
+  API: CLOUD + '/api/v1/score',   // usa tu constante CLOUD existente
+  POLL_MS: 20000,
+
+  // Canchas con marcador habilitado (agrega más court_ids después)
+  enabledCourts: [
+    '6bc0621c-f99a-4e1f-8971-d70155ea3383',  // Somos Pádel C1
+  ],
+
+  courtId: null,
+  matchId: null,
+  timer: null,
+  wrap: null,
+  iframe: null,
+
+  // ---- llamar esto al cambiar de cancha ----
+  setCourt(courtId) {
+    this.courtId = courtId;
+    this.hide();
+    clearInterval(this.timer);
+    this.timer = null;
+
+    if (!this.enabledCourts.includes(courtId)) return;
+
+    this.check();  // primer chequeo inmediato
+    this.timer = setInterval(() => this.check(), this.POLL_MS);
+  },
+
+  async check() {
+    try {
+      const r = await fetch(`${this.API}/court/${this.courtId}/active`);
+      if (!r.ok) return;
+      const data = await r.json();
+
+      if (data.match_id && data.match_id !== this.matchId) {
+        this.show(data.match_id);
+      } else if (!data.match_id && this.matchId) {
+        this.hide();  // el match terminó
+      }
+    } catch (e) {
+      // sin red o API caída: no rompas el player
+      console.warn('ScoreOverlay:', e.message);
+    }
+  },
+
+  show(matchId) {
+    this.matchId = matchId;
+
+    // contenedor del video: ajusta el selector si tu player vive en otro id
+    const host = document.querySelector('#player-container')
+              || document.querySelector('video')?.parentElement;
+    if (!host) return;
+
+    if (getComputedStyle(host).position === 'static') {
+      host.style.position = 'relative';
+    }
+
+    if (!this.wrap) {
+      this.wrap = document.createElement('div');
+      this.wrap.className = 'score-ovl-wrap';
+      this.iframe = document.createElement('iframe');
+      this.iframe.setAttribute('allowtransparency', 'true');
+      this.wrap.appendChild(this.iframe);
+      host.appendChild(this.wrap);
+
+      // re-escalar cuando cambie el tamaño del player
+      new ResizeObserver(() => this.rescale()).observe(host);
+    } else if (this.wrap.parentElement !== host) {
+      host.appendChild(this.wrap);
+    }
+
+    this.iframe.src = `score-overlay.html?match_id=${matchId}`;
+    this.wrap.classList.add('on');
+    this.rescale();
+  },
+
+  rescale() {
+    if (!this.wrap || !this.iframe) return;
+    const w = this.wrap.clientWidth;
+    if (!w) return;
+    this.iframe.style.transform = `scale(${w / 1920})`;
+  },
+
+  hide() {
+    this.matchId = null;
+    if (this.wrap) {
+      this.wrap.classList.remove('on');
+      this.iframe.src = 'about:blank';
+    }
+  },
+};
+</script>
