@@ -89,6 +89,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--b
 /* ── LIVE VIDEO ── */
 .live-container{position:relative;width:100%;background:#000;aspect-ratio:16/9;}
 .live-container video{width:100%;height:100%;object-fit:cover;display:block;}
+/* ── SCORE OVERLAY (marcador sobre el stream) ── */
+.score-ovl-wrap{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:2;}
+.score-ovl-wrap iframe{width:1920px;height:1080px;border:0;background:transparent;transform-origin:top left;pointer-events:none;}
 .live-overlay{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.6);padding:4px 10px;border-radius:20px;}
 .live-label{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--green);}
 .live-status{padding:20px;text-align:center;color:var(--muted);font-size:13px;}
@@ -259,6 +262,9 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
     <div id="section-live">
       <div class="live-container" id="live-container">
         <video id="liveVideo" autoplay muted playsinline x-webkit-airplay="allow" onclick="togglePlay()"></video>
+        <div class="score-ovl-wrap" id="score-ovl" style="display:none;">
+          <iframe id="score-ovl-frame" allowtransparency="true"></iframe>
+        </div>
         <div class="live-overlay"><span class="live-dot"></span><span class="live-label">EN VIVO</span></div>
         <div class="live-controls">
           <button class="live-ctrl-btn" onclick="toggleMute()" id="mute-btn" title="Silencio">
@@ -365,6 +371,73 @@ var CLUBS_CONFIG = {
 var activeCourt = 'c2';
 var activeSection = 'live';
 var hlsInstance = null;
+
+// ── SCORE OVERLAY (marcador en vivo sobre el stream) ──
+var ScoreOverlay = {
+  POLL_MS: 20000,
+  // Canchas con marcador habilitado (agrega más court_ids aquí)
+  enabledCourts: ['6bc0621c-f99a-4e1f-8971-d70155ea3383'], // Somos Pádel C1
+  courtId: null, matchId: null, timer: null, _ro: null,
+
+  setCourt: function(courtId) {
+    this.stop();
+    this.courtId = courtId;
+    if (this.enabledCourts.indexOf(courtId) === -1) return;
+    var self = this;
+    this.check();
+    this.timer = setInterval(function(){ self.check(); }, this.POLL_MS);
+    if (!this._ro && window.ResizeObserver) {
+      var host = document.getElementById('live-container');
+      if (host) {
+        this._ro = new ResizeObserver(function(){ self.rescale(); });
+        this._ro.observe(host);
+      }
+    }
+  },
+
+  check: function() {
+    var self = this;
+    fetch(CLOUD + '/api/v1/score/court/' + this.courtId + '/active')
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(data){
+        if (!data) return;
+        if (data.match_id && data.match_id !== self.matchId) self.show(data.match_id);
+        else if (!data.match_id && self.matchId) self.hide();
+      })
+      .catch(function(){ /* API caída: no romper el player */ });
+  },
+
+  show: function(matchId) {
+    this.matchId = matchId;
+    var wrap = document.getElementById('score-ovl');
+    var frame = document.getElementById('score-ovl-frame');
+    if (!wrap || !frame) return;
+    frame.src = 'score-overlay.html?match_id=' + matchId;
+    wrap.style.display = 'block';
+    this.rescale();
+  },
+
+  rescale: function() {
+    var wrap = document.getElementById('score-ovl');
+    var frame = document.getElementById('score-ovl-frame');
+    if (!wrap || !frame || wrap.style.display === 'none') return;
+    var w = wrap.clientWidth;
+    if (w) frame.style.transform = 'scale(' + (w / 1920) + ')';
+  },
+
+  hide: function() {
+    this.matchId = null;
+    var wrap = document.getElementById('score-ovl');
+    var frame = document.getElementById('score-ovl-frame');
+    if (wrap) wrap.style.display = 'none';
+    if (frame) frame.src = 'about:blank';
+  },
+
+  stop: function() {
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+    this.hide();
+  }
+};
 
 // ── NAVIGATION ──
 function openClub(id) {
@@ -496,11 +569,13 @@ function stopHLS() {
   if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
   var v = document.getElementById('liveVideo');
   v.pause(); v.src = '';
+  ScoreOverlay.stop();
 }
 
 function loadLive() {
   stopHLS();
   var court = COURTS[activeCourt];
+  ScoreOverlay.setCourt(court.courtId);
   var v = document.getElementById('liveVideo');
   var status = document.getElementById('live-status');
   status.style.display = 'none';
