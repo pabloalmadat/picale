@@ -383,12 +383,12 @@ var courtNum = parseInt(new URLSearchParams(window.location.search).get('cancha'
 // Mapa cancha (1-8) -> court_id UUID de Somos Pádel en la BD del VPS
 var SOMOS_COURT_IDS = {
   1: '6bc0621c-f99a-4e1f-8971-d70155ea3383',
-  2: 'e1dc778e-0000-0000-0000-000000000000',
-  3: 'fc8bbc6d-0000-0000-0000-000000000000',
-  4: '2d54ad6f-0000-0000-0000-000000000000',
-  5: '28b6283d-0000-0000-0000-000000000000',
-  6: '519bbd5d-0000-0000-0000-000000000000',
-  7: '28d80e5a-0000-0000-0000-000000000000',
+  2: 'e1dc778e-831f-4fa4-bc86-d6a31a7de1d1',
+  3: 'fc8bbc6d-e21b-466d-92e6-a2beefe6bd38',
+  4: '2d54ad6f-895f-4f6c-b985-95b431fe03b3',
+  5: '28b6283d-dacf-428d-a3fb-fc0015d5f6aa',
+  6: '519bbd5d-b2f5-4a84-a257-6d327bebf9a8',
+  7: '28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512',
   8: '35c16c54-f31e-4397-922b-044722d06524'
 };
 var courtId = SOMOS_COURT_IDS[courtNum] || null;
@@ -597,7 +597,9 @@ function pollActiveMatch() {
 
 // Muestra la vista de reta/torneo (sin nombres: Playtomic no da el cruce por cancha).
 function showReta(booking) {
-  var name = (booking.activity_name || 'RETA').toUpperCase();
+  var name = (booking.activity_name || 'RETA');
+  // Quitar el sufijo del club: "RETAS 4TA VARONIL - SOMOS PADEL" -> "RETAS 4TA VARONIL"
+  name = name.split(/\s*[-–|]\s*/)[0].trim().toUpperCase();
   document.getElementById('reta-activity').textContent = name;
   showScreen('reta');
 }
