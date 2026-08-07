@@ -327,6 +327,23 @@ html,body{
   </div>
 </div>
 
+<!-- RETA / TORNEO EN CURSO -->
+<div class="screen" id="screen-reta">
+  <div class="clase-bg"></div>
+  <div class="clase-content">
+    <div class="clase-eyebrow">RETA EN CURSO</div>
+    <div class="clase-activity" id="reta-activity">RETA</div>
+    <div class="clase-logos" style="margin-top:40px;">
+      <img src="/assets/somos_padel.jpg" class="clase-logo" onerror="this.style.display='none'">
+      <img src="/assets/picale_logo.png" class="clase-logo" onerror="this.style.display='none'">
+    </div>
+  </div>
+  <div style="position:absolute;bottom:32px;right:48px;display:flex;align-items:center;gap:16px;">
+    <div class="clock" id="clock-reta">--:--</div>
+    <div style="font-family:var(--display);font-size:22px;letter-spacing:3px;color:rgba(212,224,0,.5);" id="reta-court-label">CANCHA —</div>
+  </div>
+</div>
+
 <!-- MID-MATCH AD OVERLAY -->
 <div id="mid-match-ad" style="
   position:fixed;inset:0;z-index:150;
@@ -362,6 +379,20 @@ html,body{
 <script>
 var CLOUD = 'https://api.picalereplay.com';
 var courtNum = parseInt(new URLSearchParams(window.location.search).get('cancha') || '1');
+
+// Mapa cancha (1-8) -> court_id UUID de Somos Pádel en la BD del VPS
+var SOMOS_COURT_IDS = {
+  1: '6bc0621c-f99a-4e1f-8971-d70155ea3383',
+  2: 'e1dc778e-0000-0000-0000-000000000000',
+  3: 'fc8bbc6d-0000-0000-0000-000000000000',
+  4: '2d54ad6f-0000-0000-0000-000000000000',
+  5: '28b6283d-0000-0000-0000-000000000000',
+  6: '519bbd5d-0000-0000-0000-000000000000',
+  7: '28d80e5a-0000-0000-0000-000000000000',
+  8: '35c16c54-f31e-4397-922b-044722d06524'
+};
+var courtId = SOMOS_COURT_IDS[courtNum] || null;
+
 var matchId = new URLSearchParams(window.location.search).get('match_id');
 var ws = null;
 var prevState = null;
@@ -384,6 +415,7 @@ var pendingState = null;      // State received during ad
 document.getElementById('ads-court-label').textContent = 'CANCHA ' + courtNum;
 document.getElementById('match-court-label').textContent = 'CANCHA ' + courtNum;
 document.getElementById('clase-court-label').textContent = 'CANCHA ' + courtNum;
+document.getElementById('reta-court-label').textContent = 'CANCHA ' + courtNum;
 
 // ── CLOCK ─────────────────────────────────────────────────────────────────────
 function updateClock() {
@@ -391,7 +423,7 @@ function updateClock() {
   var h = String(now.getHours()).padStart(2,'0');
   var m = String(now.getMinutes()).padStart(2,'0');
   var time = h + ':' + m;
-  ['clock-ads','clock-match','clock-clase'].forEach(function(id) {
+  ['clock-ads','clock-match','clock-clase','clock-reta'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.textContent = time;
   });
@@ -535,7 +567,8 @@ function pollActiveMatch() {
         document.getElementById('clase-coach').textContent = booking.coach_id ? 'Coach #' + booking.coach_id : '';
       } else {
         // partido / reserva / torneo - ¿ya hay marcador activo?
-        fetch(CLOUD + '/api/v1/score/court/' + courtNum + '/now')
+        if (!courtId) { console.warn('[PANTALLA] cancha', courtNum, 'sin court_id configurado en SOMOS_COURT_IDS'); showScreen('ads'); return; }
+        fetch(CLOUD + '/api/v1/score/court/' + courtId + '/active')
           .then(function(r){return r.json();})
           .then(function(sd) {
             if (sd.match_id) {
@@ -543,14 +576,30 @@ function pollActiveMatch() {
               connectWS(matchId);  // renderState mostrara el marcador cuando llegue score real
               if (currentScreen !== 'match') showScreen('ads'); // mientras tanto, anuncios
             } else {
-              // No hay marcador: se crea SOLO desde la reserva de Playtomic
-              autoStartMatch(booking);
+              // No hay marcador activo.
+              // En RETAS/TORNEOS Playtomic NO da el cruce por cancha (manda los mismos
+              // 24 inscritos a todas las canchas), asi que NO auto-creamos marcador con
+              // los primeros 4 (saldria mal). Solo mostramos que hay reta y anuncios.
+              // El marcador real solo aparece si alguien lo arranca manual desde el setup.
+              if (booking.booking_type === 'TOURNAMENT') {
+                showReta(booking);
+              } else {
+                // Reserva normal 2v2: si, auto-crear desde Playtomic
+                autoStartMatch(booking);
+              }
             }
           })
           .catch(function(){ showScreen('ads'); });
       }
     })
     .catch(function(){ showScreen('ads'); });
+}
+
+// Muestra la vista de reta/torneo (sin nombres: Playtomic no da el cruce por cancha).
+function showReta(booking) {
+  var name = (booking.activity_name || 'RETA').toUpperCase();
+  document.getElementById('reta-activity').textContent = name;
+  showScreen('reta');
 }
 
 // Crea el marcador automáticamente desde la reserva de Playtomic (sin tocar el setup).
@@ -582,6 +631,7 @@ function autoStartMatch(booking) {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
+      court_id: courtId,
       court_name: 'Cancha ' + courtNum,
       club_name: 'Somos Pádel',
       left_p1: l1, left_p2: l2,
