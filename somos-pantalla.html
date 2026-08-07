@@ -514,7 +514,7 @@ function showIdle() {
 // ── SCREENS ───────────────────────────────────────────────────────────────────
 function showScreen(name) {
   currentScreen = name;
-  ['ads','match','clase'].forEach(function(s) {
+  ['ads','match','clase','reta'].forEach(function(s) {
     var el = document.getElementById('screen-' + s);
     el.classList.toggle('active', s === name);
   });
