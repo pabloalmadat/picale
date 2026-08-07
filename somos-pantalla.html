@@ -394,6 +394,7 @@ var SOMOS_COURT_IDS = {
 var courtId = SOMOS_COURT_IDS[courtNum] || null;
 
 var matchId = new URLSearchParams(window.location.search).get('match_id');
+var manualMatch = !!matchId;  // true si vino en la URL (?match_id=X); no hacer polling en ese caso
 var ws = null;
 var prevState = null;
 var currentScreen = 'ads';
@@ -549,7 +550,7 @@ function connectWS(mid) {
 
 // ── POLL FOR ACTIVE MATCH ─────────────────────────────────────────────────────
 function pollActiveMatch() {
-  if (matchId) return; // Manual match_id set, don't poll
+  if (manualMatch) return; // match_id fijo en la URL: no auto-descubrir
 
   fetch(CLOUD + '/api/v1/playtomic/court/' + courtNum + '/now')
     .then(function(r){return r.json();})
@@ -572,11 +573,16 @@ function pollActiveMatch() {
           .then(function(r){return r.json();})
           .then(function(sd) {
             if (sd.match_id) {
-              matchId = sd.match_id;
-              connectWS(matchId);  // renderState mostrara el marcador cuando llegue score real
-              if (currentScreen !== 'match') showScreen('ads'); // mientras tanto, anuncios
+              // Hay marcador activo: conectar solo si es uno nuevo (evita reconectar en cada poll)
+              if (sd.match_id !== matchId) {
+                matchId = sd.match_id;
+                connectWS(matchId);
+                if (currentScreen !== 'match') showScreen('ads'); // mientras llega el score real
+              }
             } else {
-              // No hay marcador activo.
+              // No hay marcador activo en la BD.
+              // Si teniamos uno pegado (se borro/termino), soltarlo.
+              if (matchId) { if (ws) { ws.close(); ws = null; } matchId = null; }
               // En RETAS/TORNEOS Playtomic NO da el cruce por cancha (manda los mismos
               // 24 inscritos a todas las canchas), asi que NO auto-creamos marcador con
               // los primeros 4 (saldria mal). Solo mostramos que hay reta y anuncios.
@@ -751,6 +757,9 @@ function renderState(s) {
         ? (s.left_p1 + (s.left_p2 ? ' / ' + s.left_p2 : ''))
         : (s.right_p1 + (s.right_p2 ? ' / ' + s.right_p2 : ''));
       showFlash('PARTIDO GANADO', wn.toUpperCase(), 6000);
+      // Soltar el match para que el polling vuelva a detectar reta/nuevos partidos
+      if (ws) { ws.close(); ws = null; }
+      matchId = null;
       setTimeout(function(){ showScreen('ads'); }, 8000);
     }
   }
