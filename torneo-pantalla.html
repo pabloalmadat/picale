@@ -4,32 +4,113 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Torneo Inaugural · Somos Pádel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  :root{
+    --bg:#0a0d0f;
+    --yellow:#d4f000;
+    --text:#f2f5f0;
+    --muted:#8b979a;
+    --line:rgba(212,240,0,.18);
+    --display:'Archivo Black', sans-serif;
+    --body:'Archivo', sans-serif;
+  }
   *{margin:0;padding:0;box-sizing:border-box;}
-  html,body{
-    width:100%;height:100%;
-    background:#0a0d0f;
-    overflow:hidden;
-  }
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--body);}
   .stage{
-    width:100vw;height:100vh;
-    display:flex;align-items:center;justify-content:center;
-    /* leve resplandor de fondo con el amarillo Somos */
-    background:radial-gradient(ellipse 70% 60% at 50% 50%, rgba(212,240,0,.05), transparent 70%), #0a0d0f;
+    position:fixed;inset:0;
+    display:flex;flex-direction:column;
+    padding:3.5vh 4vw;
+    background:
+      radial-gradient(ellipse 55% 45% at 50% 22%, rgba(26,58,74,.5), transparent 70%),
+      radial-gradient(ellipse 80% 50% at 50% 110%, rgba(212,240,0,.05), transparent 70%),
+      var(--bg);
   }
-  .stage img{
-    max-width:100%;
-    max-height:100%;
-    height:100vh;
-    width:auto;
-    object-fit:contain;
-    display:block;
-  }
+  .head{text-align:center;flex-shrink:0;}
+  .brand{font-family:var(--display);font-size:2.2vh;letter-spacing:.4vw;color:var(--yellow);text-transform:uppercase;margin-bottom:.6vh;}
+  .title{font-family:var(--display);font-style:italic;font-size:7vh;line-height:.9;text-transform:uppercase;color:var(--yellow);transform:skewX(-6deg);text-shadow:0 0 4vh rgba(212,240,0,.25);}
+  .dates{display:inline-block;margin-top:1.4vh;background:var(--yellow);color:#0a0d0f;font-weight:800;font-size:2.4vh;letter-spacing:.1vw;text-transform:uppercase;padding:.7vh 1.6vw;transform:skewX(-6deg);}
+  .dates span{display:inline-block;transform:skewX(6deg);}
+  .cost{display:flex;align-items:center;justify-content:center;gap:2vw;margin-top:1.8vh;flex-shrink:0;}
+  .cost .price{font-family:var(--display);font-size:3.4vh;color:var(--yellow);}
+  .cost .price small{font-size:.4em;color:var(--muted);}
+  .cost .sep{width:1px;height:4vh;background:var(--line);}
+  .cost .inc{text-align:left;}
+  .cost .inc .lbl{font-size:1.4vh;letter-spacing:.15vw;text-transform:uppercase;color:var(--yellow);}
+  .cost .inc .val{font-size:1.9vh;font-weight:700;}
+  .cats{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:2vw;margin-top:2.2vh;min-height:0;}
+  .col{display:flex;flex-direction:column;min-height:0;}
+  .col-head{background:var(--yellow);color:#0a0d0f;font-family:var(--display);font-size:2.8vh;text-transform:uppercase;text-align:center;padding:.8vh;letter-spacing:.1vw;flex-shrink:0;}
+  .col-body{flex:1;border:1px solid var(--line);border-top:none;display:flex;flex-direction:column;justify-content:space-around;padding:1vh 1.6vw;}
+  .cat{display:flex;align-items:baseline;justify-content:space-between;gap:1vw;padding:.7vh 0;border-bottom:1px solid rgba(255,255,255,.05);}
+  .cat:last-child{border-bottom:none;}
+  .cat .name{font-family:var(--display);font-size:2.3vh;color:var(--yellow);text-transform:uppercase;letter-spacing:.05vw;white-space:nowrap;}
+  .cat .prizes{display:flex;gap:1.6vw;}
+  .cat .prize{text-align:right;}
+  .cat .prize .pos{display:block;font-size:1.1vh;letter-spacing:.1vw;text-transform:uppercase;color:var(--muted);}
+  .cat .prize .amt{font-size:2vh;font-weight:800;}
+  .bottom{display:flex;align-items:center;justify-content:space-between;gap:2vw;margin-top:2vh;flex-shrink:0;}
+  .mixto{display:flex;align-items:center;gap:1.2vw;background:linear-gradient(135deg, rgba(212,240,0,.1), rgba(26,58,74,.15));border:1px solid var(--line);padding:1.2vh 1.8vw;}
+  .mixto .tag{background:var(--yellow);color:#0a0d0f;font-family:var(--display);font-size:2.2vh;text-transform:uppercase;padding:.4vh 1vw;letter-spacing:.05vw;}
+  .mixto .combo{font-family:var(--display);font-size:2.8vh;text-transform:uppercase;}
+  .mixto .note{font-size:1.4vh;color:var(--muted);text-transform:uppercase;letter-spacing:.15vw;}
+  .contact{text-align:right;}
+  .contact .lbl{font-family:var(--display);font-size:1.5vh;color:var(--yellow);text-transform:uppercase;letter-spacing:.1vw;}
+  .contact .wa{font-size:2.4vh;font-weight:800;margin-top:.3vh;}
+  .contact .addr{font-size:1.4vh;color:var(--muted);margin-top:.3vh;}
 </style>
 </head>
 <body>
   <div class="stage">
-    <img src="/assets/torneo-inaugural.jpeg" alt="Torneo Inaugural Somos Pádel">
+    <div class="head">
+      <div class="brand">Somos Pádel · Monterrey</div>
+      <div class="title">Torneo Inaugural</div>
+      <div class="dates"><span>13 al 21 de Agosto</span></div>
+    </div>
+    <div class="cost">
+      <div class="price">$1,500 <small>MXN</small></div>
+      <div class="sep"></div>
+      <div class="inc">
+        <div class="lbl">Incluye</div>
+        <div class="val">Playera personalizada + Kit de jugador</div>
+      </div>
+    </div>
+    <div class="cats">
+      <div class="col">
+        <div class="col-head">Varonil</div>
+        <div class="col-body">
+          <div class="cat"><div class="name">Suma 5</div><div class="prizes"><div class="prize"><span class="pos">1er</span><span class="amt">$12,000</span></div><div class="prize"><span class="pos">2do</span><span class="amt">$6,000</span></div></div></div>
+          <div class="cat"><div class="name">4ta</div><div class="prizes"><div class="prize"><span class="pos">1er</span><span class="amt">$12,000</span></div><div class="prize"><span class="pos">2do</span><span class="amt">$6,000</span></div></div></div>
+          <div class="cat"><div class="name">5ta</div><div class="prizes"><div class="prize"><span class="pos">1er</span><span class="amt">$12,000</span></div><div class="prize"><span class="pos">2do</span><span class="amt">$6,000</span></div></div></div>
+          <div class="cat"><div class="name">6ta</div><div class="prizes"><div class="prize"><span class="pos">1er</span><span class="amt">$12,000</span></div><div class="prize"><span class="pos">2do</span><span class="amt">$6,000</span></div></div></div>
+          <div class="cat"><div class="name">7ma</div><div class="prizes"><div class="prize"><span class="pos">1er</span><span class="amt">$12,000</span></div><div class="prize"><span class="pos">2do</span><span class="amt">$6,000</span></div></div></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="col-head">Femenil</div>
+        <div class="col-body">
+          <div class="cat"><div class="name">3era</div><div class="prizes"><div class="prize"><span class="pos">1er</span><span class="amt">$12,000</span></div><div class="prize"><span class="pos">2do</span><span class="amt">$6,000</span></div></div></div>
+          <div class="cat"><div class="name">4ta</div><div class="prizes"><div class="prize"><span class="pos">1er</span><span class="amt">$12,000</span></div><div class="prize"><span class="pos">2do</span><span class="amt">$6,000</span></div></div></div>
+          <div class="cat"><div class="name">5ta</div><div class="prizes"><div class="prize"><span class="pos">1er</span><span class="amt">$12,000</span></div><div class="prize"><span class="pos">2do</span><span class="amt">$6,000</span></div></div></div>
+          <div class="cat"><div class="name">6ta</div><div class="prizes"><div class="prize"><span class="pos">1er</span><span class="amt">$12,000</span></div><div class="prize"><span class="pos">2do</span><span class="amt">$6,000</span></div></div></div>
+          <div class="cat"><div class="name">7ma</div><div class="prizes"><div class="prize"><span class="pos">1er</span><span class="amt">$12,000</span></div><div class="prize"><span class="pos">2do</span><span class="amt">$6,000</span></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom">
+      <div class="mixto">
+        <div class="tag">Mixto</div>
+        <div class="combo">5ta + 6ta</div>
+        <div class="note">Premios</div>
+      </div>
+      <div class="contact">
+        <div class="lbl">Separa tu lugar</div>
+        <div class="wa">WhatsApp · 811 379 1451</div>
+        <div class="addr">Av. Lázaro Cárdenas 4208, Las Torres · Monterrey, N.L.</div>
+      </div>
+    </div>
   </div>
 </body>
 </html>
