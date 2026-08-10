@@ -344,7 +344,7 @@ COURTS.forEach(function(c){
       '<div class="cn">Cancha '+c.n+'</div>'+
       '<div class="st" id="st-'+c.n+'">—</div>'+
     '</div>';
-  card.onclick = function(){ window.open(CLOUD.replace('api.','')+'/clubs.html','_blank'); };
+  card.onclick = function(){ window.location.href = 'somos-cancha.html?n=' + c.n; };
   card.style.cursor='pointer';
   courtsEl.appendChild(card);
 
@@ -533,15 +533,60 @@ renderBracket(cats[0]);
   function verCancha(n){return function(){document.getElementById('brackets').scrollIntoView();close();};}
   function irCanchas(){document.getElementById('canchas').scrollIntoView();close();}
 
+  var COURT_UUID={1:'6bc0621c-f99a-4e1f-8971-d70155ea3383',2:'e1dc778e-831f-4fa4-bc86-d6a31a7de1d1',3:'fc8bbc6d-e21b-466d-92e6-a2beefe6bd38',4:'2d54ad6f-895f-4f6c-b985-95b431fe03b3',5:'28b6283d-dacf-428d-a3fb-fc0015d5f6aa',6:'519bbd5d-b2f5-4a84-a257-6d327bebf9a8',7:'28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512',8:'35c16c54-f31e-4397-922b-044722d06524'};
+
+  // Muestra los clips de una cancha dentro del chat
+  function mostrarClips(n){
+    var uuid=COURT_UUID[n];
+    if(!uuid){bot('No encontré esa cancha.');return;}
+    typing(function(){
+      fetch('https://api.picalereplay.com/api/v1/clips/?court_id='+uuid+'&limit=4')
+        .then(function(r){return r.json();})
+        .then(function(d){
+          var clips=(d.clips||[]);
+          if(!clips.length){
+            add('🎬 Aún no hay replays de la <b>Cancha '+n+'</b>. Aparecen conforme se juega.','in',{label:'Ver Cancha '+n+' en vivo',action:function(){location.href='somos-cancha.html?n='+n;}});
+            return;
+          }
+          var html='🎬 <b>Replays · Cancha '+n+'</b><div class="divider"></div>';
+          clips.forEach(function(c){
+            var vurl='https://api.picalereplay.com'+c.url;
+            html+='<span class="line" style="margin:6px 0;">▶ <a href="'+vurl+'" target="_blank" style="color:var(--yellow);font-weight:600;">Jugada — '+fmtWhen(c.created_at)+'</a></span>';
+          });
+          add(html,'in',{label:'Ver todos los replays',action:function(){location.href='somos-cancha.html?n='+n;}});
+        })
+        .catch(function(){add('No pude cargar los replays ahorita.','in');});
+    });
+  }
+  function fmtWhen(ts){var d=new Date(ts*1000),diff=(Date.now()-d)/1000;if(diff<3600)return 'hace '+Math.floor(diff/60)+' min';if(diff<86400)return 'hace '+Math.floor(diff/3600)+' h';return d.toLocaleDateString('es-MX',{day:'numeric',month:'short'});}
+
   function respond(text){
     var t=text.toLowerCase();
-    if(/(hola|buenas|hey|menu|menú|ayuda)/.test(t)){bot('¡Hola! 👋 Pregúntame qué se juega en vivo, la tabla, próximos partidos o cuándo juega un jugador.');return;}
+    // clips / replays de una cancha específica
+    if(/(clip|replay|jugada|video|repetici|mejores)/.test(t)){
+      var mc=t.match(/cancha\s*(\d)/);
+      if(mc){mostrarClips(parseInt(mc[1]));return;}
+      // si mencionó un jugador que está en vivo, mostrar clips de su cancha
+      var jugC=['gerardo','paul','juanjo','daniel'];
+      if(jugC.some(function(j){return t.includes(j);})){mostrarClips(T.enVivo.cancha);return;}
+      bot('🎬 ¿De qué cancha quieres ver los replays? Dime "clips de la cancha 3", por ejemplo.');return;
+    }
+    // pregunta por una cancha específica
+    var mCancha=t.match(/cancha\s*(\d)/);
+    if(mCancha && /(cancha)/.test(t)){
+      var cn=parseInt(mCancha[1]);
+      typing(function(){
+        add('🏟 <b>Cancha '+cn+'</b><div class="divider"></div>Puedes ver su transmisión en vivo y sus replays.','in',{label:'Ir a Cancha '+cn,action:function(){location.href='somos-cancha.html?n='+cn;}});
+      });
+      return;
+    }
+    if(/(hola|buenas|hey|menu|menú|ayuda)/.test(t)){bot('¡Hola! 👋 Pregúntame qué se juega en vivo, la tabla, próximos partidos, o los <b>clips</b> de una cancha.');return;}
     if(/(vivo|ahorita|ahora|jugando|se juega)/.test(t)){
       bot('🔴 <b>EN VIVO</b> · '+T.enVivo.fase+'<div class="divider"></div>'+
         '<span class="line">🏟 <b>Cancha '+T.enVivo.cancha+'</b></span>'+
         '<span class="line">'+T.enVivo.local+'</span><span class="line">vs</span><span class="line">'+T.enVivo.visitante+'</span>'+
         '<div class="divider"></div>Marcador: <b>'+T.enVivo.marcador+'</b>',
-        {label:'▶ Ver en vivo',action:irCanchas});return;}
+        {label:'▶ Ver Cancha '+T.enVivo.cancha,action:function(){location.href='somos-cancha.html?n='+T.enVivo.cancha;}});return;}
     if(/(tabla|standing|posici|cómo va|como va|van|lugar|ranking)/.test(t)){
       var r=T.standings.map(function(s){return '<span class="line">'+(s.pos===1?'🥇':s.pos===2?'🥈':s.pos===3?'🥉':'　')+' <b>'+s.pos+'.</b> '+s.eq+' — '+s.pg+'</span>';}).join('');
       bot('📊 <b>Tabla · 4ta Varonil</b><div class="divider"></div>'+r,{label:'Ver brackets',action:verCancha()});return;}
@@ -561,7 +606,7 @@ renderBracket(cats[0]);
   document.getElementById('botSend').onclick=function(){send(input.value);};
   input.addEventListener('keydown',function(e){if(e.key==='Enter')send(input.value);});
 
-  var chips=['🔴 En vivo','📊 Tabla','📅 Próximos','📝 Inscripción'];
+  var chips=['🔴 En vivo','📊 Tabla','🎬 Clips','📅 Próximos','📝 Inscripción'];
   var q=document.getElementById('botQuick');
   chips.forEach(function(c){var el=document.createElement('div');el.className='bchip';el.textContent=c;el.onclick=function(){send(c.replace(/^[^ ]+ /,''));};q.appendChild(el);});
 

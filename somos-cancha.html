@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cancha · Somos Pádel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
+<style>
+  :root{
+    --bg:#070a0c;--bg2:#0e1418;--bg3:#141c21;
+    --yellow:#d4f000;--yellow-dim:rgba(212,240,0,.5);
+    --text:#f2f5f0;--muted:#7c8b90;--line:rgba(212,240,0,.14);--live:#ff3b3b;
+    --display:'Archivo Black',sans-serif;--body:'Archivo',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:1.5;}
+  a{color:inherit;text-decoration:none;}
+  img{max-width:100%;display:block;}
+
+  .nav{position:sticky;top:0;z-index:100;background:rgba(7,10,12,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:14px 24px;}
+  .nav .back{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;font-weight:600;transition:color .15s;}
+  .nav .back:hover{color:var(--yellow);}
+  .nav .brand{font-family:var(--display);font-size:16px;letter-spacing:1px;text-transform:uppercase;color:var(--yellow);}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:32px 24px 80px;}
+
+  .court-title{display:flex;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+  .court-title h1{font-family:var(--display);font-size:clamp(32px,7vw,56px);text-transform:uppercase;}
+  .court-title .status{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:6px 14px;border-radius:16px;background:var(--bg3);color:var(--muted);}
+  .court-title .status.libre{color:var(--yellow);background:rgba(212,240,0,.1);}
+  .court-title .status.ocupada{color:#ff9b3b;background:rgba(255,155,59,.1);}
+  .court-title .status.reta{color:#53bdeb;background:rgba(83,189,235,.1);}
+
+  /* LIVE PLAYER */
+  .live-box{position:relative;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-bottom:12px;}
+  .live-box video{width:100%;height:100%;object-fit:cover;}
+  .live-box .badge{position:absolute;top:14px;left:14px;display:none;align-items:center;gap:6px;background:rgba(0,0,0,.65);padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;z-index:2;}
+  .live-box.is-live .badge{display:inline-flex;}
+  .live-box.is-live .ph{display:none;}
+  .live-box .badge .d{width:7px;height:7px;border-radius:50%;background:var(--live);animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .live-box .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);background:linear-gradient(135deg,#0e1418,#070a0c);}
+  .live-box .ph .ic{font-size:40px;opacity:.35;}
+  .live-box .ph .t{font-size:13px;letter-spacing:1px;text-transform:uppercase;}
+
+  .sec-head{margin:48px 0 24px;}
+  .sec-head .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--yellow);margin-bottom:12px;}
+  .sec-head .eyebrow::before{content:'';width:28px;height:1px;background:var(--yellow-dim);}
+  .sec-head h2{font-family:var(--display);font-size:clamp(24px,5vw,36px);text-transform:uppercase;}
+  .sec-head .count{color:var(--muted);font-size:14px;margin-top:6px;}
+
+  /* CLIPS GRID */
+  .clips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+  .clip-card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;overflow:hidden;transition:transform .15s,border-color .15s;}
+  .clip-card:hover{transform:translateY(-3px);border-color:var(--yellow-dim);}
+  .clip-video{position:relative;aspect-ratio:16/9;background:#000;cursor:pointer;}
+  .clip-video video{width:100%;height:100%;object-fit:cover;}
+  .clip-video .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25);transition:background .15s;}
+  .clip-video:hover .play{background:rgba(0,0,0,.1);}
+  .clip-video .play .ic{width:52px;height:52px;border-radius:50%;background:rgba(212,240,0,.9);color:#070a0c;display:flex;align-items:center;justify-content:center;font-size:22px;padding-left:3px;}
+  .clip-video .dur{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.75);color:#fff;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;}
+  .clip-info{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;}
+  .clip-info .when{font-size:13px;font-weight:600;}
+  .clip-info .meta{font-size:11px;color:var(--muted);}
+
+  .empty{text-align:center;padding:60px 24px;color:var(--muted);}
+  .empty .ic{font-size:44px;opacity:.3;margin-bottom:12px;}
+  .loading{text-align:center;padding:40px;color:var(--muted);}
+
+  /* MODAL */
+  .modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;padding:24px;}
+  .modal.open{display:flex;}
+  .modal-inner{width:100%;max-width:900px;}
+  .modal video{width:100%;border-radius:12px;background:#000;}
+  .modal .close{position:absolute;top:20px;right:24px;color:#fff;font-size:32px;cursor:pointer;background:none;border:none;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="back" href="/somos.html">← Somos Pádel</a>
+  <div class="brand" id="nav-court">Cancha</div>
+  <a class="brand" href="/somos.html" style="color:var(--muted);font-size:12px;">PÍCALE</a>
+</nav>
+
+<div class="wrap">
+  <div class="court-title">
+    <h1 id="title">Cancha</h1>
+    <span class="status" id="status">—</span>
+  </div>
+
+  <!-- LIVE -->
+  <div class="live-box" id="liveBox">
+    <div class="badge"><span class="d"></span> En vivo</div>
+    <video id="liveVideo" muted playsinline autoplay></video>
+    <div class="ph"><div class="ic">🎾</div><div class="t">Cargando transmisión...</div></div>
+  </div>
+
+  <!-- CLIPS -->
+  <div class="sec-head">
+    <div class="eyebrow">Replays</div>
+    <h2>Mejores jugadas</h2>
+    <div class="count" id="clip-count">Cargando replays...</div>
+  </div>
+  <div class="clips-grid" id="clips"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <button class="close" id="modalClose">✕</button>
+  <div class="modal-inner">
+    <video id="modalVideo" controls autoplay></video>
+  </div>
+</div>
+
+<script>
+var CLOUD='https://api.picalereplay.com';
+var COURTS={
+  1:{rtmp:'2111bf2250a5751d',uuid:'6bc0621c-f99a-4e1f-8971-d70155ea3383'},
+  2:{rtmp:'e6835934e7a68e22',uuid:'e1dc778e-831f-4fa4-bc86-d6a31a7de1d1'},
+  3:{rtmp:'c776bfbbe6618fe4',uuid:'fc8bbc6d-e21b-466d-92e6-a2beefe6bd38'},
+  4:{rtmp:'f132a6e907de3361',uuid:'2d54ad6f-895f-4f6c-b985-95b431fe03b3'},
+  5:{rtmp:'e4df4f9f11a4b00d',uuid:'28b6283d-dacf-428d-a3fb-fc0015d5f6aa'},
+  6:{rtmp:'e1f8c1f9fa4ea04f',uuid:'519bbd5d-b2f5-4a84-a257-6d327bebf9a8'},
+  7:{rtmp:'872566c01554f2e7',uuid:'28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512'},
+  8:{rtmp:'410266125aa0e463',uuid:'35c16c54-f31e-4397-922b-044722d06524'},
+};
+
+var n=parseInt(new URLSearchParams(location.search).get('n')||'1');
+var court=COURTS[n];
+document.getElementById('title').textContent='Cancha '+n;
+document.getElementById('nav-court').textContent='Cancha '+n;
+document.title='Cancha '+n+' · Somos Pádel';
+
+// ── LIVE HLS ──
+(function(){
+  if(!court)return;
+  var url=CLOUD+'/hls/'+court.rtmp+'/index.m3u8';
+  var v=document.getElementById('liveVideo'), box=document.getElementById('liveBox');
+  try{
+    if(typeof Hls!=='undefined'&&Hls.isSupported()){
+      var hls=new Hls({maxBufferLength:10});
+      hls.loadSource(url);hls.attachMedia(v);
+      hls.on(Hls.Events.MANIFEST_PARSED,function(){v.play().then(function(){box.classList.add('is-live');}).catch(function(){});});
+      hls.on(Hls.Events.ERROR,function(e,d){if(d.fatal){try{hls.destroy();}catch(x){}box.querySelector('.t').textContent='Sin transmisión ahora';}});
+    }else if(v.canPlayType('application/vnd.apple.mpegurl')){
+      v.src=url;v.addEventListener('loadedmetadata',function(){v.play();box.classList.add('is-live');});
+    }
+  }catch(err){box.querySelector('.t').textContent='Sin transmisión ahora';}
+})();
+
+// ── ESTADO (Playtomic) ──
+fetch(CLOUD+'/api/v1/playtomic/today').then(function(r){return r.json();}).then(function(d){
+  if(!d.by_court)return;
+  var arr=d.by_court[String(n)]||[];
+  var live=arr.find(function(b){return b.status==='IN_PROGRESS';});
+  var st=document.getElementById('status');
+  if(!live){st.textContent='Libre';st.className='status libre';return;}
+  if(live.booking_type==='TOURNAMENT'){st.textContent='Reta';st.className='status reta';}
+  else if(live.display_type==='clase'){st.textContent='Clase';st.className='status ocupada';}
+  else{st.textContent='Ocupada';st.className='status ocupada';}
+}).catch(function(){});
+
+// ── CLIPS ──
+function fmtDur(s){if(!s)return '';var m=Math.floor(s/60),ss=Math.round(s%60);return m+':'+String(ss).padStart(2,'0');}
+function fmtWhen(ts){
+  var d=new Date(ts*1000), now=new Date();
+  var diff=(now-d)/1000;
+  if(diff<60)return 'hace un momento';
+  if(diff<3600)return 'hace '+Math.floor(diff/60)+' min';
+  if(diff<86400)return 'hace '+Math.floor(diff/3600)+' h';
+  return d.toLocaleDateString('es-MX',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+}
+
+var clipsEl=document.getElementById('clips');
+var countEl=document.getElementById('clip-count');
+
+function loadClips(){
+  if(!court){countEl.textContent='Cancha no válida';return;}
+  fetch(CLOUD+'/api/v1/clips/?court_id='+court.uuid+'&limit=40')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var clips=data.clips||[];
+      if(!clips.length){
+        clipsEl.innerHTML='';
+        countEl.textContent='';
+        clipsEl.innerHTML='<div class="empty" style="grid-column:1/-1;"><div class="ic">🎬</div>Aún no hay replays de esta cancha.<br>Los clips aparecen aquí conforme se juega.</div>';
+        return;
+      }
+      countEl.textContent=clips.length+' replay'+(clips.length!==1?'s':'');
+      clipsEl.innerHTML='';
+      clips.forEach(function(c){
+        var vurl=CLOUD+c.url;
+        var card=document.createElement('div');
+        card.className='clip-card';
+        card.innerHTML=
+          '<div class="clip-video">'+
+            '<video preload="metadata" muted src="'+vurl+'#t=0.5"></video>'+
+            '<div class="play"><div class="ic">▶</div></div>'+
+            (c.duration_s?'<div class="dur">'+fmtDur(c.duration_s)+'</div>':'')+
+          '</div>'+
+          '<div class="clip-info">'+
+            '<span class="when">'+fmtWhen(c.created_at)+'</span>'+
+            '<span class="meta">'+(c.size_mb?c.size_mb+' MB':'')+'</span>'+
+          '</div>';
+        card.querySelector('.clip-video').onclick=function(){openModal(vurl);};
+        clipsEl.appendChild(card);
+      });
+    })
+    .catch(function(){
+      countEl.textContent='';
+      clipsEl.innerHTML='<div class="empty" style="grid-column:1/-1;"><div class="ic">⚠️</div>No se pudieron cargar los replays.</div>';
+    });
+}
+loadClips();
+setInterval(loadClips,30000); // refresca cada 30s por si hay clips nuevos
+
+// ── MODAL ──
+var modal=document.getElementById('modal'), mv=document.getElementById('modalVideo');
+function openModal(url){mv.src=url;modal.classList.add('open');}
+function closeModal(){modal.classList.remove('open');mv.pause();mv.src='';}
+document.getElementById('modalClose').onclick=closeModal;
+modal.onclick=function(e){if(e.target===modal)closeModal();};
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+</script>
+</body>
+</html>
