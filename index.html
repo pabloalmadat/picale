@@ -109,6 +109,50 @@ nav{
 }
 .club-av:first-child{margin-left:0;}
 
+/* ── SOMOS TORNEO BANNER ── */
+.somos-torneo{
+  --somos-y:#d4f000;
+  padding:0 24px;margin:-40px 0 40px;position:relative;z-index:5;
+}
+.somos-torneo-inner{
+  max-width:var(--max);margin:0 auto;
+  background:linear-gradient(135deg,#0d1114 0%,#111a10 100%);
+  border:1px solid rgba(212,240,0,.25);border-radius:24px;
+  padding:36px 40px;overflow:hidden;position:relative;
+  display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center;
+}
+.somos-torneo-inner::before{
+  content:'';position:absolute;top:-60%;right:-10%;width:400px;height:400px;
+  background:radial-gradient(circle,rgba(212,240,0,.1),transparent 70%);pointer-events:none;
+}
+.st-live{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,59,59,.14);border:1px solid rgba(255,59,59,.4);color:#ff6b6b;
+  font-size:11px;font-weight:700;letter-spacing:1.5px;padding:5px 12px;border-radius:16px;margin-bottom:16px;
+}
+.st-live .d{width:7px;height:7px;border-radius:50%;background:#ff3b3b;animation:pulse 1.4s infinite;}
+.st-club{font-size:12px;color:var(--somos-y);letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:6px;}
+.st-title{font-family:var(--display);font-size:clamp(30px,5vw,52px);letter-spacing:2px;line-height:.92;color:#fff;margin-bottom:8px;}
+.st-title span{color:var(--somos-y);}
+.st-meta{font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.5;}
+.st-meta b{color:var(--text);}
+.st-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.st-btn{padding:13px 26px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:8px;}
+.st-btn-y{background:var(--somos-y);color:#0a0d0f;}
+.st-btn-y:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(212,240,0,.3);}
+.st-btn-g{background:rgba(255,255,255,.06);border:1px solid rgba(212,240,0,.3);color:var(--somos-y);}
+.st-btn-g:hover{background:rgba(212,240,0,.1);}
+.st-prizes{
+  text-align:right;padding-left:32px;border-left:1px solid rgba(212,240,0,.2);
+}
+.st-prizes .pz-lbl{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.st-prizes .pz-amt{font-family:var(--display);font-size:44px;letter-spacing:1px;color:var(--somos-y);line-height:1;}
+.st-prizes .pz-sub{font-size:12px;color:var(--muted);margin-top:6px;}
+@media(max-width:720px){
+  .somos-torneo-inner{grid-template-columns:1fr;gap:20px;}
+  .st-prizes{text-align:left;padding-left:0;border-left:none;border-top:1px solid rgba(212,240,0,.2);padding-top:20px;}
+}
+
 /* ── SECTION BASE ── */
 section{padding:80px 24px;}
 .section-inner{max-width:var(--max);margin:0 auto;}
@@ -263,6 +307,7 @@ footer{
   <a href="/" class="nav-logo">PÍCALE<span>.</span></a>
   <div class="nav-links">
     <a href="#features">Funciones</a>
+    <a href="somos.html" style="color:#d4f000;">Torneo Somos</a>
     <a href="rivals.html">Rivals</a>
     <a href="clubs.html">Clubes</a>
     <a href="#para-clubes">Para clubes</a>
@@ -280,7 +325,7 @@ footer{
 
   <div class="hero-eyebrow">
     <div class="hero-dot"></div>
-    2 clubes activos en México
+    3 clubes activos en México
   </div>
 
   <h1 class="hero-title">
@@ -300,10 +345,32 @@ footer{
     <div class="club-avatars">
       <div class="club-av">D</div>
       <div class="club-av">C</div>
+      <div class="club-av">S</div>
     </div>
-    DUO Padel Park · Cuatro Pádel Sur — ya transmiten en vivo
+    DUO Padel Park · Cuatro Pádel Sur · Somos Pádel — ya transmiten en vivo
   </div>
 </section>
+
+<!-- SOMOS TORNEO BANNER -->
+<div class="somos-torneo">
+  <div class="somos-torneo-inner">
+    <div>
+      <div class="st-live"><span class="d"></span> EN VIVO ESTE FIN</div>
+      <div class="st-club">Somos Pádel · Monterrey</div>
+      <div class="st-title">TORNEO <span>INAUGURAL</span></div>
+      <div class="st-meta"><b>13 al 21 de agosto</b> · 8 canchas transmitiendo en vivo · brackets y clips en tiempo real</div>
+      <div class="st-actions">
+        <a href="somos.html" class="st-btn st-btn-y">Ver torneo en vivo →</a>
+        <a href="https://wa.me/528113791451?text=Hola%2C%20quiero%20inscribirme%20al%20Torneo%20Inaugural" target="_blank" rel="noopener" class="st-btn st-btn-g">Inscríbete</a>
+      </div>
+    </div>
+    <div class="st-prizes">
+      <div class="pz-lbl">Premio al 1er lugar</div>
+      <div class="pz-amt">$12,000</div>
+      <div class="pz-sub">por categoría</div>
+    </div>
+  </div>
+</div>
 
 
 
