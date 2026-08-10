@@ -151,6 +151,66 @@
   footer b{color:var(--yellow);}
 
   .wa-svg{width:18px;height:18px;fill:currentColor;}
+
+  /* ── CHAT BOT WIDGET ── */
+  .bot-fab{
+    position:fixed;bottom:24px;right:24px;z-index:200;
+    width:64px;height:64px;border-radius:50%;
+    background:var(--yellow);color:#070a0c;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 30px rgba(212,240,0,.35);
+    transition:transform .2s;font-size:26px;
+  }
+  .bot-fab:hover{transform:scale(1.08);}
+  .bot-fab .badge{position:absolute;top:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:var(--live);border:2px solid var(--bg);}
+  .bot-fab.open{transform:scale(0);pointer-events:none;}
+
+  .bot-panel{
+    position:fixed;bottom:24px;right:24px;z-index:201;
+    width:min(380px,calc(100vw - 32px));height:min(600px,calc(100vh - 48px));
+    background:var(--bg2);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    display:none;flex-direction:column;
+    box-shadow:0 24px 80px rgba(0,0,0,.6);
+    transform-origin:bottom right;
+  }
+  .bot-panel.open{display:flex;animation:botIn .25s ease;}
+  @keyframes botIn{from{opacity:0;transform:scale(.9) translateY(20px);}to{opacity:1;transform:scale(1) translateY(0);}}
+
+  .bot-head{background:#0b3d31;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+  .bot-head .av{width:40px;height:40px;border-radius:50%;background:#070a0c;border:1.5px solid var(--yellow);display:flex;align-items:center;justify-content:center;font-family:var(--display);color:var(--yellow);font-size:14px;flex-shrink:0;}
+  .bot-head .info{flex:1;}
+  .bot-head .nm{font-weight:700;font-size:15px;color:#fff;}
+  .bot-head .sub{font-size:11px;color:rgba(255,255,255,.6);}
+  .bot-head .close{background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;cursor:pointer;padding:0 4px;}
+
+  .bot-chat{flex:1;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:8px;background:var(--bg);}
+  .bot-chat::-webkit-scrollbar{width:0;}
+  .bmsg{max-width:85%;padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.4;animation:pop .2s ease;}
+  @keyframes pop{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .bmsg.in{align-self:flex-start;background:var(--bg3);color:var(--text);border-bottom-left-radius:3px;}
+  .bmsg.out{align-self:flex-end;background:var(--yellow);color:#070a0c;border-bottom-right-radius:3px;font-weight:500;}
+  .bmsg b{color:var(--yellow);font-weight:700;}
+  .bmsg.out b{color:#070a0c;}
+  .bmsg .line{display:block;}
+  .bmsg .divider{height:1px;background:rgba(255,255,255,.1);margin:8px 0;}
+  .bmsg .bbtn{display:block;width:100%;margin-top:8px;background:rgba(212,240,0,.12);border:1px solid var(--yellow-dim);color:var(--yellow);font-weight:700;font-size:13px;padding:9px;border-radius:8px;cursor:pointer;text-align:center;transition:background .15s;}
+  .bmsg .bbtn:hover{background:rgba(212,240,0,.2);}
+
+  .bot-typing{align-self:flex-start;background:var(--bg3);padding:12px 16px;border-radius:12px;border-bottom-left-radius:3px;}
+  .bot-typing span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--muted);margin:0 2px;animation:blink 1.2s infinite;}
+  .bot-typing span:nth-child(2){animation-delay:.2s;}
+  .bot-typing span:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,60%,100%{opacity:.3;}30%{opacity:1;}}
+
+  .bot-quick{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;flex-shrink:0;background:var(--bg2);border-top:1px solid var(--line);}
+  .bot-quick::-webkit-scrollbar{height:0;}
+  .bchip{white-space:nowrap;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:6px 12px;font-size:12px;cursor:pointer;flex-shrink:0;}
+  .bchip:hover{border-color:var(--yellow);}
+
+  .bot-input{background:var(--bg2);padding:10px 12px;display:flex;gap:8px;flex-shrink:0;border-top:1px solid var(--line);}
+  .bot-input input{flex:1;background:var(--bg3);border:1px solid var(--line);outline:none;color:var(--text);font-size:14px;padding:10px 14px;border-radius:20px;font-family:inherit;}
+  .bot-input input::placeholder{color:var(--muted);}
+  .bot-input .snd{width:40px;height:40px;border-radius:50%;border:none;background:var(--yellow);color:#070a0c;font-size:16px;cursor:pointer;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -414,6 +474,99 @@ cats.forEach(function(cat,i){
   tabsEl.appendChild(t);
 });
 renderBracket(cats[0]);
+</script>
+<!-- ═══ CHAT BOT WIDGET ═══ -->
+<button class="bot-fab" id="botFab" aria-label="Abrir chat del torneo">
+  💬<span class="badge"></span>
+</button>
+<div class="bot-panel" id="botPanel">
+  <div class="bot-head">
+    <div class="av">PÍ</div>
+    <div class="info">
+      <div class="nm">Asistente del Torneo</div>
+      <div class="sub">Somos Pádel · en línea</div>
+    </div>
+    <button class="close" id="botClose">✕</button>
+  </div>
+  <div class="bot-chat" id="botChat"></div>
+  <div class="bot-quick" id="botQuick"></div>
+  <div class="bot-input">
+    <input id="botInput" type="text" placeholder="Pregunta por el torneo..." autocomplete="off">
+    <button class="snd" id="botSend">➤</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Datos de ejemplo del torneo (reemplazar por reales)
+  var T = {
+    enVivo:{cancha:3, local:'Gerardo T. / Paul T.', visitante:'Juanjo L. / Daniel A.', marcador:'6-4 · 3-2', fase:'Semifinal'},
+    standings:[
+      {pos:1,eq:'Gerardo T. / Paul T.',pg:'3/3'},
+      {pos:2,eq:'Juanjo L. / Daniel A.',pg:'2/3'},
+      {pos:3,eq:'Alberto B. / Roberto A.',pg:'1/3'},
+      {pos:4,eq:'Diego G. / Ian F.',pg:'0/3'},
+    ],
+    proximos:[
+      {hora:'20:30',cancha:5,txt:'Eugenio C. / Jesus G. vs Alex R. / Paulo M.'},
+      {hora:'21:00',cancha:6,txt:'Lalo G. / Jorge A. vs Jose A. / Ian F.'},
+    ],
+  };
+
+  var fab=document.getElementById('botFab'), panel=document.getElementById('botPanel'),
+      chat=document.getElementById('botChat'), input=document.getElementById('botInput');
+  var opened=false;
+
+  function open(){panel.classList.add('open');fab.classList.add('open');if(!opened){opened=true;setTimeout(welcome,300);}}
+  function close(){panel.classList.remove('open');fab.classList.remove('open');}
+  fab.onclick=open; document.getElementById('botClose').onclick=close;
+
+  function now(){var d=new Date();return d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');}
+  function add(html,side,btn){
+    var m=document.createElement('div');m.className='bmsg '+side;m.innerHTML=html;
+    if(btn){var b=document.createElement('button');b.className='bbtn';b.innerHTML=btn.label;b.onclick=btn.action;m.appendChild(b);}
+    chat.appendChild(m);chat.scrollTop=chat.scrollHeight;
+  }
+  function typing(cb){var t=document.createElement('div');t.className='bot-typing';t.innerHTML='<span></span><span></span><span></span>';chat.appendChild(t);chat.scrollTop=chat.scrollHeight;setTimeout(function(){t.remove();cb();},800);}
+  function bot(html,btn){typing(function(){add(html,'in',btn);});}
+
+  function verCancha(n){return function(){document.getElementById('brackets').scrollIntoView();close();};}
+  function irCanchas(){document.getElementById('canchas').scrollIntoView();close();}
+
+  function respond(text){
+    var t=text.toLowerCase();
+    if(/(hola|buenas|hey|menu|menú|ayuda)/.test(t)){bot('¡Hola! 👋 Pregúntame qué se juega en vivo, la tabla, próximos partidos o cuándo juega un jugador.');return;}
+    if(/(vivo|ahorita|ahora|jugando|se juega)/.test(t)){
+      bot('🔴 <b>EN VIVO</b> · '+T.enVivo.fase+'<div class="divider"></div>'+
+        '<span class="line">🏟 <b>Cancha '+T.enVivo.cancha+'</b></span>'+
+        '<span class="line">'+T.enVivo.local+'</span><span class="line">vs</span><span class="line">'+T.enVivo.visitante+'</span>'+
+        '<div class="divider"></div>Marcador: <b>'+T.enVivo.marcador+'</b>',
+        {label:'▶ Ver en vivo',action:irCanchas});return;}
+    if(/(tabla|standing|posici|cómo va|como va|van|lugar|ranking)/.test(t)){
+      var r=T.standings.map(function(s){return '<span class="line">'+(s.pos===1?'🥇':s.pos===2?'🥈':s.pos===3?'🥉':'　')+' <b>'+s.pos+'.</b> '+s.eq+' — '+s.pg+'</span>';}).join('');
+      bot('📊 <b>Tabla · 4ta Varonil</b><div class="divider"></div>'+r,{label:'Ver brackets',action:verCancha()});return;}
+    if(/(próximo|proximo|siguiente|sigue|después|despues|cuándo|cuando|horario|enfrenta)/.test(t)){
+      var jug=['gerardo','paul','juanjo','daniel','alberto','roberto','diego','ian','eugenio','jesus','lalo','jorge','jose','alex','paulo'];
+      var men=jug.find(function(j){return t.includes(j);});
+      if(men){bot('🔎 <b>'+men.charAt(0).toUpperCase()+men.slice(1)+'</b> está jugando <b>AHORITA</b> en Cancha '+T.enVivo.cancha+' ('+T.enVivo.marcador+')',{label:'▶ Ver en vivo',action:irCanchas});return;}
+      var p=T.proximos.map(function(x){return '<span class="line">⏰ <b>'+x.hora+'</b> · Cancha '+x.cancha+'</span><span class="line">'+x.txt+'</span>';}).join('<div class="divider"></div>');
+      bot('📅 <b>Próximos</b><div class="divider"></div>'+p);return;}
+    if(/(inscri|costo|precio|registr|apunt)/.test(t)){
+      bot('📝 Inscripción: <b>$1,500 MXN</b><div class="divider"></div>Incluye playera + kit de jugador.',
+        {label:'Inscribirme por WhatsApp',action:function(){window.open('https://wa.me/528113791451?text=Hola%2C%20quiero%20inscribirme%20al%20Torneo%20Inaugural','_blank');}});return;}
+    bot('🤔 Puedo ayudarte con:<div class="divider"></div><span class="line">• Qué se juega <b>en vivo</b></span><span class="line">• La <b>tabla</b></span><span class="line">• <b>Próximos</b> partidos</span><span class="line">• <b>Inscripción</b></span>');
+  }
+
+  function send(text){if(!text.trim())return;add(text.replace(/</g,'&lt;'),'out');input.value='';setTimeout(function(){respond(text);},150);}
+  document.getElementById('botSend').onclick=function(){send(input.value);};
+  input.addEventListener('keydown',function(e){if(e.key==='Enter')send(input.value);});
+
+  var chips=['🔴 En vivo','📊 Tabla','📅 Próximos','📝 Inscripción'];
+  var q=document.getElementById('botQuick');
+  chips.forEach(function(c){var el=document.createElement('div');el.className='bchip';el.textContent=c;el.onclick=function(){send(c.replace(/^[^ ]+ /,''));};q.appendChild(el);});
+
+  function welcome(){bot('¡Hola! 👋 Soy el asistente del <b>Torneo Inaugural</b>. Pregúntame qué se juega en vivo, cómo van las categorías o cuándo juega alguien.');}
+})();
 </script>
 </body>
 </html>
