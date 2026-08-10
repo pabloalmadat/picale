@@ -70,6 +70,19 @@
   .empty .ic{font-size:44px;opacity:.3;margin-bottom:12px;}
   .loading{text-align:center;padding:40px;color:var(--muted);}
 
+  /* GRUPOS DE CLIPS */
+  .group{margin-bottom:8px;}
+  .group-head{display:flex;align-items:center;gap:12px;padding:16px 0 12px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:16px;}
+  .group-head .gtype{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:6px;background:var(--bg3);color:var(--muted);}
+  .group-head .gtype.reserva{color:#ff9b3b;background:rgba(255,155,59,.12);}
+  .group-head .gtype.clase{color:#53bdeb;background:rgba(83,189,235,.12);}
+  .group-head .gtype.reta{color:var(--yellow);background:rgba(212,240,0,.12);}
+  .group-head .gtype.otros{color:var(--muted);background:var(--bg3);}
+  .group-head .gname{font-family:var(--display);font-size:18px;text-transform:uppercase;}
+  .group-head .ghora{color:var(--muted);font-size:14px;}
+  .group-head .gcount{margin-left:auto;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px;}
+  .group-clips{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+
   /* MODAL */
   .modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;padding:24px;}
   .modal.open{display:flex;}
@@ -178,42 +191,122 @@ function fmtWhen(ts){
 var clipsEl=document.getElementById('clips');
 var countEl=document.getElementById('clip-count');
 
+// Formatea la hora de un ISO de Playtomic (viene sin TZ, hora local del club)
+function fmtHora(iso){
+  if(!iso)return '';
+  var d=new Date(iso.replace('Z',''));
+  return d.toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'});
+}
+
+// Construye el título de un grupo a partir de un booking de Playtomic
+function tituloGrupo(b){
+  var hora=fmtHora(b.start);
+  var jugadores=(b.participants||[]).filter(function(p){return p && p!=='Participante 1';});
+  if(b.booking_type==='TOURNAMENT'){
+    var reta=(b.activity_name||'Reta').split(/\s*[-–|]\s*/)[0].trim();
+    return {tipo:'RETA', nombre:reta, hora:hora, cls:'reta'};
+  }
+  if(b.display_type==='clase'){
+    var quien = jugadores.length ? jugadores.slice(0,2).join(' & ') : 'Clase';
+    return {tipo:'CLASE', nombre:quien, hora:hora, cls:'clase'};
+  }
+  // reserva normal
+  var nombres = jugadores.length ? jugadores.slice(0,2).join(' & ') : 'Reserva';
+  return {tipo:'RESERVA', nombre:nombres, hora:hora, cls:'reserva'};
+}
+
+// ¿el timestamp del clip cae dentro del booking?
+function clipEnBooking(clipTs, b){
+  var s=new Date(b.start.replace('Z','')).getTime()/1000;
+  var e=new Date(b.end.replace('Z','')).getTime()/1000;
+  return clipTs>=s && clipTs<=e;
+}
+
+function cardHTML(c){
+  var vurl=CLOUD+c.url;
+  return '<div class="clip-card">'+
+    '<div class="clip-video" data-url="'+vurl+'">'+
+      '<video preload="metadata" muted src="'+vurl+'#t=0.5"></video>'+
+      '<div class="play"><div class="ic">▶</div></div>'+
+      (c.duration_s?'<div class="dur">'+fmtDur(c.duration_s)+'</div>':'')+
+    '</div>'+
+    '<div class="clip-info">'+
+      '<span class="when">'+fmtWhen(c.created_at)+'</span>'+
+      '<span class="meta">'+(c.size_mb?c.size_mb+' MB':'')+'</span>'+
+    '</div></div>';
+}
+
 function loadClips(){
   if(!court){countEl.textContent='Cancha no válida';return;}
-  fetch(CLOUD+'/api/v1/clips/?court_id='+court.uuid+'&limit=40')
-    .then(function(r){return r.json();})
-    .then(function(data){
-      var clips=data.clips||[];
-      if(!clips.length){
-        clipsEl.innerHTML='';
-        countEl.textContent='';
-        clipsEl.innerHTML='<div class="empty" style="grid-column:1/-1;"><div class="ic">🎬</div>Aún no hay replays de esta cancha.<br>Los clips aparecen aquí conforme se juega.</div>';
-        return;
-      }
-      countEl.textContent=clips.length+' replay'+(clips.length!==1?'s':'');
-      clipsEl.innerHTML='';
-      clips.forEach(function(c){
-        var vurl=CLOUD+c.url;
-        var card=document.createElement('div');
-        card.className='clip-card';
-        card.innerHTML=
-          '<div class="clip-video">'+
-            '<video preload="metadata" muted src="'+vurl+'#t=0.5"></video>'+
-            '<div class="play"><div class="ic">▶</div></div>'+
-            (c.duration_s?'<div class="dur">'+fmtDur(c.duration_s)+'</div>':'')+
-          '</div>'+
-          '<div class="clip-info">'+
-            '<span class="when">'+fmtWhen(c.created_at)+'</span>'+
-            '<span class="meta">'+(c.size_mb?c.size_mb+' MB':'')+'</span>'+
-          '</div>';
-        card.querySelector('.clip-video').onclick=function(){openModal(vurl);};
-        clipsEl.appendChild(card);
-      });
-    })
-    .catch(function(){
+  // pedir clips y bookings en paralelo
+  Promise.all([
+    fetch(CLOUD+'/api/v1/clips/?court_id='+court.uuid+'&limit=60').then(function(r){return r.json();}),
+    fetch(CLOUD+'/api/v1/playtomic/today').then(function(r){return r.json();}).catch(function(){return {};})
+  ]).then(function(res){
+    var clips=(res[0].clips)||[];
+    var bookings=(res[1].by_court && res[1].by_court[String(n)])||[];
+
+    if(!clips.length){
       countEl.textContent='';
-      clipsEl.innerHTML='<div class="empty" style="grid-column:1/-1;"><div class="ic">⚠️</div>No se pudieron cargar los replays.</div>';
+      clipsEl.innerHTML='<div class="empty" style="grid-column:1/-1;"><div class="ic">🎬</div>Aún no hay replays de esta cancha.<br>Los clips aparecen aquí conforme se juega.</div>';
+      return;
+    }
+    countEl.textContent=clips.length+' replay'+(clips.length!==1?'s':'');
+
+    // agrupar clips por booking
+    var grupos=[]; // {info, clips:[]}
+    var otros=[];
+    var mapa={}; // booking_id -> índice en grupos
+
+    clips.forEach(function(c){
+      var b=bookings.find(function(bk){return clipEnBooking(c.created_at, bk);});
+      if(b){
+        if(mapa[b.booking_id]===undefined){
+          mapa[b.booking_id]=grupos.length;
+          grupos.push({info:tituloGrupo(b), start:b.start, clips:[]});
+        }
+        grupos[mapa[b.booking_id]].clips.push(c);
+      }else{
+        otros.push(c);
+      }
     });
+
+    // ordenar grupos por hora (más reciente arriba)
+    grupos.sort(function(a,b){return new Date(b.start.replace('Z',''))-new Date(a.start.replace('Z',''));});
+
+    // render
+    var html='';
+    grupos.forEach(function(g){
+      html+='<div class="group" style="grid-column:1/-1;">'+
+        '<div class="group-head">'+
+          '<span class="gtype '+g.info.cls+'">'+g.info.tipo+'</span>'+
+          '<span class="gname">'+g.info.nombre+'</span>'+
+          '<span class="ghora">'+g.info.hora+'</span>'+
+          '<span class="gcount">'+g.clips.length+' clip'+(g.clips.length!==1?'s':'')+'</span>'+
+        '</div>'+
+        '<div class="group-clips">'+g.clips.map(cardHTML).join('')+'</div>'+
+      '</div>';
+    });
+    if(otros.length){
+      html+='<div class="group" style="grid-column:1/-1;">'+
+        '<div class="group-head">'+
+          '<span class="gtype otros">OTROS</span>'+
+          '<span class="gname">Sin reserva asociada</span>'+
+          '<span class="gcount">'+otros.length+' clip'+(otros.length!==1?'s':'')+'</span>'+
+        '</div>'+
+        '<div class="group-clips">'+otros.map(cardHTML).join('')+'</div>'+
+      '</div>';
+    }
+    clipsEl.innerHTML=html;
+
+    // enganchar clicks para el modal
+    clipsEl.querySelectorAll('.clip-video').forEach(function(el){
+      el.onclick=function(){openModal(el.getAttribute('data-url'));};
+    });
+  }).catch(function(){
+    countEl.textContent='';
+    clipsEl.innerHTML='<div class="empty" style="grid-column:1/-1;"><div class="ic">⚠️</div>No se pudieron cargar los replays.</div>';
+  });
 }
 loadClips();
 setInterval(loadClips,30000); // refresca cada 30s por si hay clips nuevos
