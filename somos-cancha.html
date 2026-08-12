@@ -42,15 +42,28 @@
   .live-box.is-live .ph{display:none;}
   .live-box .badge .d{width:7px;height:7px;border-radius:50%;background:var(--live);animation:pulse 1.4s infinite;}
 
-  /* Overlay de nombres (jugadores de Playtomic) sobre el video */
-  .name-ovl{position:absolute;left:0;right:0;bottom:0;z-index:2;display:none;
-    padding:14px 16px;background:linear-gradient(transparent,rgba(0,0,0,.85));}
-  .name-ovl.show{display:block;}
-  .name-ovl .no-type{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-    color:var(--yellow);margin-bottom:6px;}
-  .name-ovl .no-teams{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-  .name-ovl .no-team{font-size:15px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);}
-  .name-ovl .no-vs{font-size:11px;font-weight:800;color:var(--yellow);letter-spacing:1px;}
+  /* ── SCOREBUG tipo transmision deportiva ── */
+  .scorebug{position:absolute;left:16px;bottom:16px;z-index:2;display:none;
+    font-family:var(--body);border-radius:8px;overflow:hidden;
+    box-shadow:0 6px 24px rgba(0,0,0,.5);min-width:280px;
+    backdrop-filter:blur(6px);}
+  .scorebug.show{display:block;}
+  .sb-head{background:var(--yellow);color:#070a0c;
+    font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+    padding:4px 12px;display:flex;justify-content:space-between;align-items:center;}
+  .sb-head .live-tag{display:flex;align-items:center;gap:5px;}
+  .sb-head .live-tag .d{width:6px;height:6px;border-radius:50%;background:var(--live);animation:pulse 1.4s infinite;}
+  .sb-row{display:flex;align-items:center;background:rgba(10,13,15,.92);
+    border-left:3px solid var(--yellow);}
+  .sb-row+.sb-row{border-top:1px solid rgba(255,255,255,.08);}
+  .sb-row .team{flex:1;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px;}
+  .sb-row .pts{width:44px;text-align:center;font-family:var(--display);font-size:20px;
+    color:var(--yellow);background:rgba(0,0,0,.35);padding:6px 0;
+    border-left:1px solid rgba(255,255,255,.08);}
+  .sb-row.serving .team::before{content:'●';color:var(--yellow);font-size:9px;margin-right:6px;vertical-align:middle;}
+  /* variante reta: solo el nombre del evento, sin puntos */
+  .scorebug.reta .sb-row .pts{display:none;}
 
   /* Botones de accion sobre el video (fullscreen + airplay) */
   .live-actions{position:absolute;top:12px;right:12px;display:flex;gap:8px;z-index:3;}
@@ -133,9 +146,12 @@
       <button id="btnFull" title="Pantalla completa">⛶</button>
     </div>
     <video id="liveVideo" muted playsinline autoplay x-webkit-airplay="allow"></video>
-    <div class="name-ovl" id="nameOvl">
-      <div class="no-type" id="noType">EN VIVO</div>
-      <div class="no-teams" id="noTeams"></div>
+    <div class="scorebug" id="scorebug">
+      <div class="sb-head">
+        <span id="sbType">EN VIVO</span>
+        <span class="live-tag"><span class="d"></span> PÍCALE</span>
+      </div>
+      <div id="sbBody"></div>
     </div>
     <div class="ph"><div class="ic">🎾</div><div class="t">Cargando transmisión...</div></div>
   </div>
@@ -221,39 +237,49 @@ document.title='Cancha '+n+' · Somos Pádel';
   }
 })();
 
-// ── ESTADO + NOMBRES (Playtomic) ──
+// ── ESTADO + SCOREBUG (Playtomic) ──
 function pintarNombres(b){
-  var ovl=document.getElementById('nameOvl');
-  var teams=document.getElementById('noTeams');
-  var typeEl=document.getElementById('noType');
-  if(!b){ ovl.classList.remove('show'); return; }
+  var sb=document.getElementById('scorebug');
+  var body=document.getElementById('sbBody');
+  var typeEl=document.getElementById('sbType');
+  if(!b){ sb.classList.remove('show'); return; }
 
-  var parts=(b.participants||[]).filter(function(p){return p && p!=='Participante 1';});
+  sb.classList.remove('reta');
 
   if(b.booking_type==='TOURNAMENT'){
-    // Reta: Playtomic no da el cruce por cancha, solo el nombre del evento
+    // Reta: Playtomic no da el cruce por cancha -> solo nombre del evento, sin puntos
     typeEl.textContent='RETA EN CURSO';
     var reta=(b.activity_name||'Reta').split(/\s*[-–|]\s*/)[0].trim();
-    teams.innerHTML='<span class="no-team">'+reta+'</span>';
-    ovl.classList.add('show');
+    sb.classList.add('reta');
+    body.innerHTML='<div class="sb-row"><span class="team">'+reta+'</span></div>';
+    sb.classList.add('show');
     return;
   }
 
-  // Reserva o clase: mostrar equipos
+  typeEl.textContent = (b.display_type==='clase') ? 'CLASE' : 'EN VIVO';
   var left=(b.team_left||[]).filter(function(p){return p && p!=='Participante 1';});
   var right=(b.team_right||[]).filter(function(p){return p && p!=='Participante 1';});
-  typeEl.textContent = (b.display_type==='clase') ? 'CLASE' : 'EN VIVO';
+  var parts=(b.participants||[]).filter(function(p){return p && p!=='Participante 1';});
+
+  function corto(arr){
+    // "Carlos Espinosa / Beatriz Quiroga" -> apellidos o primer nombre para que quepa
+    return arr.map(function(nm){
+      var t=nm.trim().split(/\s+/);
+      return t.length>1 ? t[0]+' '+t[t.length-1].charAt(0)+'.' : t[0];
+    }).join(' / ');
+  }
 
   if(left.length && right.length){
-    teams.innerHTML='<span class="no-team">'+left.join(' / ')+'</span>'+
-                    '<span class="no-vs">VS</span>'+
-                    '<span class="no-team">'+right.join(' / ')+'</span>';
-    ovl.classList.add('show');
+    body.innerHTML=
+      '<div class="sb-row serving"><span class="team">'+corto(left)+'</span><span class="pts">0</span></div>'+
+      '<div class="sb-row"><span class="team">'+corto(right)+'</span><span class="pts">0</span></div>';
+    sb.classList.add('show');
   } else if(parts.length){
-    teams.innerHTML='<span class="no-team">'+parts.slice(0,4).join(' / ')+'</span>';
-    ovl.classList.add('show');
+    // solo una lista de jugadores (partido de 1 equipo o datos parciales)
+    body.innerHTML='<div class="sb-row"><span class="team">'+corto(parts.slice(0,2))+'</span><span class="pts">0</span></div>';
+    sb.classList.add('show');
   } else {
-    ovl.classList.remove('show');
+    sb.classList.remove('show');
   }
 }
 
