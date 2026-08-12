@@ -42,6 +42,16 @@
   .live-box.is-live .ph{display:none;}
   .live-box .badge .d{width:7px;height:7px;border-radius:50%;background:var(--live);animation:pulse 1.4s infinite;}
 
+  /* Overlay de nombres (jugadores de Playtomic) sobre el video */
+  .name-ovl{position:absolute;left:0;right:0;bottom:0;z-index:2;display:none;
+    padding:14px 16px;background:linear-gradient(transparent,rgba(0,0,0,.85));}
+  .name-ovl.show{display:block;}
+  .name-ovl .no-type{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--yellow);margin-bottom:6px;}
+  .name-ovl .no-teams{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .name-ovl .no-team{font-size:15px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);}
+  .name-ovl .no-vs{font-size:11px;font-weight:800;color:var(--yellow);letter-spacing:1px;}
+
   /* Botones de accion sobre el video (fullscreen + airplay) */
   .live-actions{position:absolute;top:12px;right:12px;display:flex;gap:8px;z-index:3;}
   .live-actions button{
@@ -123,6 +133,10 @@
       <button id="btnFull" title="Pantalla completa">⛶</button>
     </div>
     <video id="liveVideo" muted playsinline autoplay x-webkit-airplay="allow"></video>
+    <div class="name-ovl" id="nameOvl">
+      <div class="no-type" id="noType">EN VIVO</div>
+      <div class="no-teams" id="noTeams"></div>
+    </div>
     <div class="ph"><div class="ic">🎾</div><div class="t">Cargando transmisión...</div></div>
   </div>
 
@@ -207,17 +221,57 @@ document.title='Cancha '+n+' · Somos Pádel';
   }
 })();
 
-// ── ESTADO (Playtomic) ──
-fetch(CLOUD+'/api/v1/playtomic/today').then(function(r){return r.json();}).then(function(d){
-  if(!d.by_court)return;
-  var arr=d.by_court[String(n)]||[];
-  var live=arr.find(function(b){return b.status==='IN_PROGRESS';});
-  var st=document.getElementById('status');
-  if(!live){st.textContent='Libre';st.className='status libre';return;}
-  if(live.booking_type==='TOURNAMENT'){st.textContent='Reta';st.className='status reta';}
-  else if(live.display_type==='clase'){st.textContent='Clase';st.className='status ocupada';}
-  else{st.textContent='Ocupada';st.className='status ocupada';}
-}).catch(function(){});
+// ── ESTADO + NOMBRES (Playtomic) ──
+function pintarNombres(b){
+  var ovl=document.getElementById('nameOvl');
+  var teams=document.getElementById('noTeams');
+  var typeEl=document.getElementById('noType');
+  if(!b){ ovl.classList.remove('show'); return; }
+
+  var parts=(b.participants||[]).filter(function(p){return p && p!=='Participante 1';});
+
+  if(b.booking_type==='TOURNAMENT'){
+    // Reta: Playtomic no da el cruce por cancha, solo el nombre del evento
+    typeEl.textContent='RETA EN CURSO';
+    var reta=(b.activity_name||'Reta').split(/\s*[-–|]\s*/)[0].trim();
+    teams.innerHTML='<span class="no-team">'+reta+'</span>';
+    ovl.classList.add('show');
+    return;
+  }
+
+  // Reserva o clase: mostrar equipos
+  var left=(b.team_left||[]).filter(function(p){return p && p!=='Participante 1';});
+  var right=(b.team_right||[]).filter(function(p){return p && p!=='Participante 1';});
+  typeEl.textContent = (b.display_type==='clase') ? 'CLASE' : 'EN VIVO';
+
+  if(left.length && right.length){
+    teams.innerHTML='<span class="no-team">'+left.join(' / ')+'</span>'+
+                    '<span class="no-vs">VS</span>'+
+                    '<span class="no-team">'+right.join(' / ')+'</span>';
+    ovl.classList.add('show');
+  } else if(parts.length){
+    teams.innerHTML='<span class="no-team">'+parts.slice(0,4).join(' / ')+'</span>';
+    ovl.classList.add('show');
+  } else {
+    ovl.classList.remove('show');
+  }
+}
+
+function pollEstado(){
+  fetch(CLOUD+'/api/v1/playtomic/today').then(function(r){return r.json();}).then(function(d){
+    var st=document.getElementById('status');
+    if(!d.by_court){ pintarNombres(null); return; }
+    var arr=d.by_court[String(n)]||[];
+    var live=arr.find(function(b){return b.status==='IN_PROGRESS';});
+    if(!live){ st.textContent='Libre'; st.className='status libre'; pintarNombres(null); return; }
+    if(live.booking_type==='TOURNAMENT'){st.textContent='Reta';st.className='status reta';}
+    else if(live.display_type==='clase'){st.textContent='Clase';st.className='status ocupada';}
+    else{st.textContent='Ocupada';st.className='status ocupada';}
+    pintarNombres(live);
+  }).catch(function(){});
+}
+pollEstado();
+setInterval(pollEstado, 30000);
 
 // ── CLIPS ──
 function fmtDur(s){if(!s)return '';var m=Math.floor(s/60),ss=Math.round(s%60);return m+':'+String(ss).padStart(2,'0');}
