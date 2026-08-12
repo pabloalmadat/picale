@@ -41,6 +41,16 @@
   .live-box.is-live .badge{display:inline-flex;}
   .live-box.is-live .ph{display:none;}
   .live-box .badge .d{width:7px;height:7px;border-radius:50%;background:var(--live);animation:pulse 1.4s infinite;}
+
+  /* Botones de accion sobre el video (fullscreen + airplay) */
+  .live-actions{position:absolute;top:12px;right:12px;display:flex;gap:8px;z-index:3;}
+  .live-actions button{
+    background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);color:#fff;
+    width:42px;height:42px;border-radius:10px;cursor:pointer;font-size:18px;
+    display:flex;align-items:center;justify-content:center;transition:all .15s;backdrop-filter:blur(4px);
+  }
+  .live-actions button:hover{background:rgba(212,240,0,.9);color:#070a0c;border-color:var(--yellow);}
+  .live-actions button.hidden{display:none;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
   .live-box .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);background:linear-gradient(135deg,#0e1418,#070a0c);}
   .live-box .ph .ic{font-size:40px;opacity:.35;}
@@ -108,7 +118,11 @@
   <!-- LIVE -->
   <div class="live-box" id="liveBox">
     <div class="badge"><span class="d"></span> En vivo</div>
-    <video id="liveVideo" muted playsinline autoplay></video>
+    <div class="live-actions">
+      <button id="btnAirplay" class="hidden" title="Enviar a TV (AirPlay)">📺</button>
+      <button id="btnFull" title="Pantalla completa">⛶</button>
+    </div>
+    <video id="liveVideo" muted playsinline autoplay x-webkit-airplay="allow"></video>
     <div class="ph"><div class="ic">🎾</div><div class="t">Cargando transmisión...</div></div>
   </div>
 
@@ -163,6 +177,34 @@ document.title='Cancha '+n+' · Somos Pádel';
       v.src=url;v.addEventListener('loadedmetadata',function(){v.play();box.classList.add('is-live');});
     }
   }catch(err){box.querySelector('.t').textContent='Sin transmisión ahora';}
+})();
+
+// ── PANTALLA COMPLETA + AIRPLAY ──
+(function(){
+  var v=document.getElementById('liveVideo');
+  var box=document.getElementById('liveBox');
+  var btnFull=document.getElementById('btnFull');
+  var btnAir=document.getElementById('btnAirplay');
+
+  // Pantalla completa (funciona en todos los navegadores)
+  btnFull.onclick=function(){
+    var el=box; // pone en fullscreen el contenedor del video
+    if(el.requestFullscreen) el.requestFullscreen();
+    else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if(v.webkitEnterFullscreen) v.webkitEnterFullscreen(); // iPhone
+  };
+
+  // AirPlay — solo aparece en Safari/dispositivos Apple compatibles
+  if(window.WebKitPlaybackTargetAvailabilityEvent){
+    v.addEventListener('webkitplaybacktargetavailabilitychanged', function(e){
+      if(e.availability==='available'){
+        btnAir.classList.remove('hidden'); // hay una TV AirPlay disponible
+      }else{
+        btnAir.classList.add('hidden');
+      }
+    });
+    btnAir.onclick=function(){ v.webkitShowPlaybackTargetPicker(); };
+  }
 })();
 
 // ── ESTADO (Playtomic) ──
