@@ -213,6 +213,31 @@ html,body{
 
 /* ── CLOCK ── */
 .clock{font-family:var(--mono);font-size:22px;color:var(--muted);}
+/* ── VISTA TORNEO (dentro de ads) ── */
+#tourney-view{position:absolute;inset:0;display:none;flex-direction:column;
+  background:radial-gradient(ellipse 60% 45% at 50% 18%,rgba(22,64,79,.5),transparent 70%),#070a0c;padding:3vh 3vw;z-index:5;}
+#tourney-view.on{display:flex;}
+.tv-hero{text-align:center;flex-shrink:0;margin-bottom:2vh;}
+.tv-hero .k{font-size:1.4vh;color:var(--yellow);letter-spacing:.4vw;font-weight:700;text-transform:uppercase;margin-bottom:.8vh;}
+.tv-hero h1{font-family:var(--display);font-style:italic;font-size:6vh;line-height:.9;text-transform:uppercase;color:var(--yellow);transform:skewX(-5deg);text-shadow:0 0 4vh rgba(212,240,0,.25);}
+.tv-hero .dates{display:inline-block;margin-top:1vh;background:var(--yellow);color:#070a0c;font-weight:800;font-size:1.7vh;letter-spacing:.1vw;text-transform:uppercase;padding:.6vh 1.4vw;transform:skewX(-5deg);}
+.tv-hero .dates span{display:inline-block;transform:skewX(5deg);}
+.tv-title{display:flex;align-items:center;gap:.8vw;font-size:1.4vh;font-weight:800;letter-spacing:.2vw;text-transform:uppercase;color:var(--yellow);margin-bottom:1.4vh;flex-shrink:0;}
+.tv-title::before{content:'';width:2vw;height:2px;background:var(--yellow-dim);}
+.tv-matches{flex:1;display:flex;flex-direction:column;gap:1.1vh;overflow:hidden;transition:opacity .5s;}
+.tv-match{background:rgba(14,20,24,.9);border:1px solid var(--line);border-left:3px solid var(--yellow);border-radius:.8vh;padding:1.3vh 1.6vw;display:flex;align-items:center;gap:1.4vw;}
+.tv-match .time{text-align:center;flex-shrink:0;min-width:6vw;}
+.tv-match .time .h{font-family:var(--display);font-size:2.2vh;color:var(--yellow);line-height:1;}
+.tv-match .time .court{font-size:1.05vh;color:var(--muted);text-transform:uppercase;letter-spacing:.1vw;margin-top:.3vh;}
+.tv-match .info{flex:1;min-width:0;}
+.tv-match .cat{font-size:1.1vh;color:var(--muted);text-transform:uppercase;letter-spacing:.1vw;margin-bottom:.4vh;}
+.tv-match .teams{font-size:1.6vh;font-weight:700;color:#fff;line-height:1.3;}
+.tv-match .teams .vs{color:var(--yellow);font-size:1.1vh;font-weight:800;margin:0 .5vw;}
+.tv-foot{display:flex;align-items:center;justify-content:space-between;padding-top:1.4vh;margin-top:1vh;border-top:1px solid var(--line);flex-shrink:0;}
+.tv-foot .wa{font-size:1.4vh;color:var(--text);}
+.tv-foot .wa b{color:var(--yellow);}
+.tv-foot .by{font-size:1.2vh;color:var(--muted);letter-spacing:.15vw;text-transform:uppercase;}
+.tv-foot .by b{color:var(--yellow);font-family:var(--display);}
 </style>
 </head>
 <body>
@@ -229,6 +254,21 @@ html,body{
   <!-- Media (image or video) -->
   <img id="ad-image" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
   <video id="ad-video" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" muted loop></video>
+
+  <!-- VISTA TORNEO (rota junto con los anuncios) -->
+  <div id="tourney-view">
+    <div class="tv-hero">
+      <div class="k">Torneo destacado</div>
+      <h1>Torneo Inaugural</h1>
+      <div class="dates"><span>13 al 21 de Agosto</span></div>
+    </div>
+    <div class="tv-title">Próximos partidos</div>
+    <div class="tv-matches" id="tv-matches"></div>
+    <div class="tv-foot">
+      <div class="wa">Inscripciones · <b>WhatsApp 811 379 1451</b></div>
+      <div class="by">Transmisión por <b>PÍCALE</b></div>
+    </div>
+  </div>
 
   <!-- Logo bar -->
   <div class="ads-logo-bar">
@@ -464,6 +504,9 @@ function startAds() {
 }
 
 function showAd() {
+  // Alternar: cada 2 anuncios, mostrar la vista de torneo
+  if (shouldShowTourney()) { showTourney(); return; }
+
   if (!ADS.length) { showIdle(); return; }
   if (adFailCount >= ADS.length) {
     console.warn('[ADS] todas las imágenes fallaron -> idle');
@@ -475,9 +518,11 @@ function showAd() {
   var img = document.getElementById('ad-image');
   var vid = document.getElementById('ad-video');
   var idle = document.getElementById('ads-idle');
+  var tv = document.getElementById('tourney-view');
 
   console.log('[ADS] mostrando', adIndex % ADS.length, ad.src);
   idle.style.display = 'none';
+  if (tv) tv.classList.remove('on');
 
   if (ad.type === 'video') {
     img.style.display = 'none';
@@ -500,6 +545,61 @@ function showAd() {
   }
 }
 
+// ── VISTA TORNEO en el ciclo ──
+var slideCount = 0;
+var TOURNEY_EVERY = 2;   // muestra el torneo cada N slides
+var TOURNEY_DUR = 12;    // segundos que dura la vista de torneo
+var tvPage = 0;
+var TV_PAGE_SIZE = 5;
+
+function shouldShowTourney() {
+  // muestra torneo si toca por conteo, o si no hay anuncios
+  slideCount++;
+  if (!ADS.length) return true; // sin anuncios: solo rota torneo + idle
+  return (slideCount % TOURNEY_EVERY === 0);
+}
+
+function showTourney() {
+  document.getElementById('ads-idle').style.display = 'none';
+  document.getElementById('ad-image').style.display = 'none';
+  document.getElementById('ad-video').style.display = 'none';
+  var tv = document.getElementById('tourney-view');
+  tv.classList.add('on');
+  renderTourneyMatches();
+  clearTimeout(adTimer);
+  adTimer = setTimeout(nextAd, TOURNEY_DUR * 1000);
+}
+
+var TORNEO_PARTIDOS = [
+  {hora:'5:30PM', court:'P-20', cat:'7ma Femenil · Grupo B', a:'Mildred Ceballos / Erika Contreras', b:'Olivia Kim / Herly Castro'},
+  {hora:'6:45PM', court:'P-22', cat:'5ta Varonil · Grupo H', a:'José Juan Gonzalez / Toño Orozco', b:'Rodrigo De La Garza / Carlos Heredia'},
+  {hora:'6:45PM', court:'P-5',  cat:'6ta Femenil · Grupo B', a:'Vanessa Guerra / Marilu Gutierrez', b:'Marijose Diaz / Daniela Ríos'},
+  {hora:'6:45PM', court:'P-7',  cat:'6ta Varonil · Grupo B', a:'Oscar López / Luis Lambreton', b:'Emmanuel Rincon / Mauricio Fernandez'},
+  {hora:'8:00PM', court:'P-4',  cat:'4ta Varonil · Grupo A', a:'Armando Montoya / Jorge Chavez', b:'Lazaro Casas / Edu Cameras'},
+  {hora:'8:00PM', court:'P-1',  cat:'6ta Varonil · Grupo A', a:'Gerard Dueñas / Mario Arjona', b:'Luis Emilio López / Carlos Tanamachi'},
+  {hora:'8:00PM', court:'P-4',  cat:'Mixto D (5-6) · Grupo A', a:'Diana Lagunes / Luis Zamorano', b:'Carlos Ortiz / Lucero Farias'},
+  {hora:'9:15PM', court:'P-33', cat:'5ta Varonil · Grupo K', a:'Jesús Cavazos / Hugo Estrada', b:'Erick Cavazos / Marcelo Delgado'},
+  {hora:'9:15PM', court:'P-2',  cat:'7ma Varonil · Grupo A', a:'Adrián Palacios / Alex Guardado', b:'Santiago Lichter / Luis López'},
+  {hora:'9:15PM', court:'P-7',  cat:'Suma 5 Varonil · Grupo B', a:'Carlos Artigas / Héctor Díaz', b:'Adrián Contreras / Gerardo Guevara'},
+];
+
+function renderTourneyMatches() {
+  var cont = document.getElementById('tv-matches');
+  if (!cont) return;
+  var start = tvPage * TV_PAGE_SIZE;
+  var slice = TORNEO_PARTIDOS.slice(start, start + TV_PAGE_SIZE);
+  if (!slice.length) { tvPage = 0; slice = TORNEO_PARTIDOS.slice(0, TV_PAGE_SIZE); }
+  cont.innerHTML = slice.map(function(m){
+    return '<div class="tv-match">'+
+      '<div class="time"><div class="h">'+m.hora+'</div><div class="court">'+m.court+'</div></div>'+
+      '<div class="info"><div class="cat">'+m.cat+'</div>'+
+      '<div class="teams">'+m.a+' <span class="vs">VS</span> '+m.b+'</div></div>'+
+    '</div>';
+  }).join('');
+  tvPage++;
+  if (tvPage * TV_PAGE_SIZE >= TORNEO_PARTIDOS.length) tvPage = 0;
+}
+
 function nextAd() {
   adIndex++;
   showAd();
@@ -518,6 +618,11 @@ function showScreen(name) {
     var el = document.getElementById('screen-' + s);
     el.classList.toggle('active', s === name);
   });
+  // ocultar vista torneo si salimos de ads
+  if (name !== 'ads') {
+    var tv = document.getElementById('tourney-view');
+    if (tv) tv.classList.remove('on');
+  }
   if (name === 'ads') {
     clearTimeout(adTimer);
     clearTimeout(adInterruptTimer);
