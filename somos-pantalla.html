@@ -97,7 +97,6 @@
         </div>
       </div>
       <div class="live"><span class="d"></span> Torneo en vivo</div>
-      <div class="clock" id="clock">--:--</div>
     </div>
 
     <div class="hero">
@@ -145,14 +144,6 @@
   </div>
 
 <script>
-// Reloj
-function tick(){
-  var d=new Date();
-  document.getElementById('clock').textContent =
-    d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
-}
-tick(); setInterval(tick,10000);
-
 // ── PROXIMOS PARTIDOS (datos del torneo, se rotan) ──
 // Cuando conectemos PadelZap, esto se llena solo desde su API.
 var PARTIDOS = [
