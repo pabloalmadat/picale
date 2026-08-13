@@ -3,1049 +3,199 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Somos Pádel · Pantalla</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<title>Torneo Inaugural · Somos Pádel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-:root{
-  --yellow:#D4E000;
-  --black:#0A0A0A;
-  --white:#F0EDE6;
-  --muted:rgba(240,237,230,.5);
-  --display:'Bebas Neue',sans-serif;
-  --body:'DM Sans',sans-serif;
-  --mono:'JetBrains Mono',monospace;
-}
-html,body{
-  width:100vw;height:100vh;
-  background:var(--black);
-  color:var(--white);
-  font-family:var(--body);
-  overflow:hidden;
-}
+  :root{
+    --bg:#070a0c; --bg2:#0e1418; --bg3:#141c21;
+    --yellow:#d4f000; --yellow-dim:rgba(212,240,0,.5);
+    --text:#f2f5f0; --muted:#7c8b90; --line:rgba(212,240,0,.16); --live:#ff3b3b;
+    --display:'Archivo Black',sans-serif; --body:'Archivo',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--body);}
+  .stage{position:fixed;inset:0;display:flex;flex-direction:column;
+    background:
+      radial-gradient(ellipse 60% 45% at 50% 18%, rgba(22,64,79,.5), transparent 70%),
+      radial-gradient(ellipse 80% 50% at 50% 110%, rgba(212,240,0,.05), transparent 70%),
+      var(--bg);}
 
-/* ── SCREENS ── */
-.screen{position:absolute;inset:0;display:none;flex-direction:column;}
-.screen.active{display:flex;}
+  /* HEADER */
+  .top{display:flex;align-items:center;justify-content:space-between;padding:2.6vh 3vw;flex-shrink:0;
+    border-bottom:1px solid var(--line);}
+  .top .brand{display:flex;align-items:center;gap:1.4vw;}
+  .top .brand .logo{font-family:var(--display);font-size:2.4vh;letter-spacing:.3vw;color:var(--yellow);text-transform:uppercase;}
+  .top .brand .sub{font-size:1.3vh;color:var(--muted);letter-spacing:.2vw;text-transform:uppercase;}
+  .top .live{display:inline-flex;align-items:center;gap:.6vw;background:rgba(255,59,59,.14);
+    border:1px solid rgba(255,59,59,.4);color:#ff6b6b;font-size:1.3vh;font-weight:800;
+    letter-spacing:.15vw;text-transform:uppercase;padding:.6vh 1.2vw;border-radius:2vh;}
+  .top .live .d{width:1vh;height:1vh;border-radius:50%;background:var(--live);animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .top .clock{font-family:var(--display);font-size:2.6vh;color:var(--text);letter-spacing:.1vw;}
 
-/* ── ADS SCREEN ── */
-#screen-ads{background:#000;align-items:center;justify-content:center;}
-#ad-media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-.ads-logo-bar{
-  position:absolute;bottom:0;left:0;right:0;
-  padding:24px 40px;
-  background:linear-gradient(to top, rgba(0,0,0,.9) 0%, transparent 100%);
-  display:flex;align-items:center;justify-content:space-between;
-  z-index:10;
-}
-.ads-logos{display:flex;align-items:center;gap:16px;}
-.ads-logo-img{height:36px;width:auto;object-fit:contain;}
-.ads-logo-div{width:1px;height:28px;background:rgba(212,224,0,.3);}
-.ads-court{font-family:var(--display);font-size:22px;letter-spacing:3px;color:var(--yellow);}
-.ads-idle{
-  position:absolute;inset:0;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:24px;
-}
-.ads-idle-logo{height:120px;width:auto;object-fit:contain;}
-.ads-idle-name{font-family:var(--display);font-size:64px;letter-spacing:6px;color:var(--yellow);}
-.ads-idle-sub{font-size:18px;color:var(--muted);letter-spacing:2px;}
+  /* TITULO */
+  .hero{text-align:center;padding:3vh 3vw 2vh;flex-shrink:0;}
+  .hero .k{font-size:1.5vh;color:var(--yellow);letter-spacing:.4vw;font-weight:700;text-transform:uppercase;margin-bottom:1vh;}
+  .hero h1{font-family:var(--display);font-style:italic;font-size:7.5vh;line-height:.9;
+    text-transform:uppercase;color:var(--yellow);transform:skewX(-5deg);text-shadow:0 0 5vh rgba(212,240,0,.25);}
+  .hero .dates{display:inline-block;margin-top:1.4vh;background:var(--yellow);color:#070a0c;
+    font-weight:800;font-size:2vh;letter-spacing:.1vw;text-transform:uppercase;padding:.7vh 1.6vw;transform:skewX(-5deg);}
+  .hero .dates span{display:inline-block;transform:skewX(5deg);}
 
-/* ── MATCH SCREEN ── */
-#screen-match{
-  background:var(--black);
-  display:flex;flex-direction:column;
-}
+  /* BODY: 2 columnas */
+  .body{flex:1;display:grid;grid-template-columns:1.15fr .85fr;gap:2.5vw;padding:1vh 3vw 2vh;min-height:0;}
 
-/* Top bar */
-.match-topbar{
-  padding:20px 48px;
-  display:flex;align-items:center;justify-content:space-between;
-  border-bottom:2px solid rgba(212,224,0,.15);
-  flex-shrink:0;
-}
-.match-logos{display:flex;align-items:center;gap:16px;}
-.match-logo-img{height:40px;width:auto;object-fit:contain;}
-.match-logo-div{width:1px;height:32px;background:rgba(212,224,0,.25);}
-.match-court{font-family:var(--display);font-size:36px;letter-spacing:3px;color:var(--yellow);}
-.match-time{font-family:var(--mono);font-size:30px;color:var(--muted);}
-.live-pill{
-  display:flex;align-items:center;gap:8px;
-  padding:6px 16px;background:rgba(212,224,0,.1);
-  border:1px solid rgba(212,224,0,.3);border-radius:20px;
-  font-size:12px;font-weight:700;letter-spacing:2px;color:var(--yellow);
-}
-.live-dot{width:8px;height:8px;border-radius:50%;background:var(--yellow);animation:pulse 1.5s infinite;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.2;}}
+  /* PROXIMOS PARTIDOS (rotan) */
+  .col{display:flex;flex-direction:column;min-height:0;}
+  .col-title{display:flex;align-items:center;gap:.8vw;font-size:1.5vh;font-weight:800;
+    letter-spacing:.2vw;text-transform:uppercase;color:var(--yellow);margin-bottom:1.6vh;flex-shrink:0;}
+  .col-title::before{content:'';width:2vw;height:2px;background:var(--yellow-dim);}
 
-/* Score area */
-.match-body{
-  flex:1;display:flex;align-items:center;justify-content:center;
-  padding:32px 48px;
-}
+  .matches{flex:1;display:flex;flex-direction:column;gap:1.2vh;overflow:hidden;}
+  .match{background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--yellow);
+    border-radius:.8vh;padding:1.4vh 1.6vw;display:flex;align-items:center;gap:1.4vw;
+    transition:opacity .5s;}
+  .match .time{text-align:center;flex-shrink:0;min-width:5vw;}
+  .match .time .h{font-family:var(--display);font-size:2.4vh;color:var(--yellow);line-height:1;}
+  .match .time .court{font-size:1.1vh;color:var(--muted);text-transform:uppercase;letter-spacing:.1vw;margin-top:.4vh;}
+  .match .info{flex:1;min-width:0;}
+  .match .cat{font-size:1.2vh;color:var(--muted);text-transform:uppercase;letter-spacing:.1vw;margin-bottom:.5vh;}
+  .match .teams{font-size:1.7vh;font-weight:700;color:#fff;line-height:1.35;}
+  .match .teams .vs{color:var(--yellow);font-size:1.2vh;font-weight:800;margin:0 .5vw;}
 
-/* Scoreboard */
-.scoreboard{
-  width:100%;max-width:1560px;
-  background:rgba(255,255,255,.03);
-  border:1px solid rgba(212,224,0,.12);
-  border-radius:16px;overflow:hidden;
-}
+  /* CATEGORIAS Y PREMIOS */
+  .cats{flex:1;display:flex;flex-direction:column;gap:1.2vh;min-height:0;}
+  .cat-box{background:var(--bg2);border:1px solid var(--line);border-radius:.8vh;padding:1.4vh 1.6vw;flex:1;
+    display:flex;flex-direction:column;justify-content:center;}
+  .cat-box .cb-title{font-family:var(--display);font-size:2vh;text-transform:uppercase;color:var(--yellow);
+    letter-spacing:.1vw;margin-bottom:.8vh;}
+  .cat-box .cb-cats{font-size:1.5vh;color:var(--text);line-height:1.5;}
+  .prize-box{background:linear-gradient(135deg,rgba(212,240,0,.1),rgba(22,64,79,.15));
+    border:1px solid var(--line);border-radius:.8vh;padding:1.8vh 1.6vw;text-align:center;flex-shrink:0;}
+  .prize-box .pb-lbl{font-size:1.2vh;color:var(--muted);letter-spacing:.15vw;text-transform:uppercase;margin-bottom:.6vh;}
+  .prize-box .pb-amt{font-family:var(--display);font-size:4.5vh;color:var(--yellow);line-height:1;}
+  .prize-box .pb-sub{font-size:1.3vh;color:var(--muted);margin-top:.6vh;}
 
-/* Column headers */
-.sb-colheads{
-  display:flex;border-bottom:1px solid rgba(255,255,255,.06);
-  background:rgba(0,0,0,.4);
-}
-.sb-col-name{flex:1;padding:16px 40px;font-size:15px;color:var(--muted);letter-spacing:2px;font-weight:600;}
-.sb-col-set{width:112px;text-align:center;padding:16px 0;font-size:15px;color:var(--muted);letter-spacing:2px;border-left:1px solid rgba(255,255,255,.06);}
-.sb-col-game{width:150px;text-align:center;padding:16px 0;font-size:15px;color:var(--muted);letter-spacing:2px;border-left:1px solid rgba(255,255,255,.06);}
-.sb-col-pts{width:190px;text-align:center;padding:16px 0;font-size:15px;color:var(--muted);letter-spacing:2px;border-left:1px solid rgba(212,224,0,.1);}
-
-/* Team rows */
-.sb-row{display:flex;align-items:stretch;border-bottom:1px solid rgba(255,255,255,.04);}
-.sb-row:last-child{border-bottom:none;}
-.sb-row.serving .sb-name-cell::before{
-  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
-  width:5px;height:50%;background:var(--yellow);border-radius:0 3px 3px 0;
-}
-
-/* Name cell */
-.sb-name-cell{
-  flex:1;padding:34px 40px;
-  display:flex;align-items:center;gap:18px;
-  position:relative;
-}
-.sb-serve-dot{
-  width:13px;height:13px;border-radius:50%;
-  background:var(--yellow);flex-shrink:0;opacity:0;
-  box-shadow:0 0 10px var(--yellow);
-}
-.sb-row.serving .sb-serve-dot{opacity:1;}
-.sb-names{flex:1;}
-.sb-name1{
-  font-family:var(--display);font-size:62px;letter-spacing:2px;
-  color:var(--white);line-height:1.05;
-}
-.sb-name2{
-  font-family:var(--display);font-size:62px;letter-spacing:2px;
-  color:var(--white);line-height:1.05;
-}
-.sb-row.leading .sb-name1,
-.sb-row.leading .sb-name2{color:var(--yellow);}
-
-/* Score cells */
-.sb-set-cell{
-  width:112px;display:flex;align-items:center;justify-content:center;
-  font-family:var(--mono);font-size:52px;font-weight:700;
-  color:rgba(240,237,230,.4);
-  border-left:1px solid rgba(255,255,255,.06);
-}
-.sb-set-cell.won{color:var(--white);}
-.sb-set-cell.current{color:var(--yellow);}
-.sb-game-cell{
-  width:150px;display:flex;align-items:center;justify-content:center;
-  font-family:var(--mono);font-size:92px;font-weight:700;
-  color:var(--white);
-  border-left:1px solid rgba(255,255,255,.06);
-}
-.sb-game-cell.leading{color:var(--yellow);}
-.sb-pts-cell{
-  width:190px;display:flex;align-items:center;justify-content:center;
-  font-family:var(--mono);font-size:104px;font-weight:700;
-  color:var(--white);
-  background:rgba(212,224,0,.04);
-  border-left:1px solid rgba(212,224,0,.1);
-}
-.sb-pts-cell.adv{font-size:52px;color:var(--yellow);letter-spacing:2px;}
-.sb-pts-cell.leading{color:var(--yellow);}
-
-/* Tiebreak */
-.tb-banner{
-  background:rgba(212,224,0,.08);border-top:1px solid rgba(212,224,0,.2);
-  padding:14px;text-align:center;
-  font-family:var(--mono);font-size:20px;color:var(--yellow);letter-spacing:3px;
-}
-
-/* ── CLASE SCREEN ── */
-#screen-clase{
-  background:var(--black);
-  align-items:center;justify-content:center;
-  flex-direction:column;gap:0;
-}
-.clase-bg{
-  position:absolute;inset:0;
-  background:radial-gradient(ellipse 80% 60% at 50% 30%, rgba(91,158,232,.08) 0%, transparent 70%);
-}
-.clase-content{position:relative;text-align:center;z-index:1;}
-.clase-eyebrow{
-  font-size:14px;letter-spacing:4px;color:rgba(91,158,232,.7);
-  font-weight:600;margin-bottom:16px;
-}
-.clase-activity{
-  font-family:var(--display);font-size:clamp(48px,8vw,100px);
-  letter-spacing:4px;color:#5B9EE8;line-height:.9;margin-bottom:24px;
-}
-.clase-student{
-  font-family:var(--display);font-size:clamp(36px,6vw,72px);
-  letter-spacing:3px;color:var(--white);margin-bottom:12px;
-}
-.clase-coach{
-  font-size:22px;color:var(--muted);letter-spacing:1px;
-}
-.clase-logos{
-  margin-top:48px;display:flex;align-items:center;justify-content:center;gap:20px;
-}
-.clase-logo{height:40px;width:auto;object-fit:contain;}
-
-/* ── SET FLASH ── */
-#set-flash{
-  position:fixed;inset:0;
-  background:var(--yellow);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  z-index:200;
-  opacity:0;pointer-events:none;
-  transition:opacity .3s;
-}
-#set-flash.show{opacity:1;}
-.flash-title{font-family:var(--display);font-size:clamp(48px,10vw,120px);letter-spacing:6px;color:var(--black);}
-.flash-sub{font-family:var(--display);font-size:clamp(24px,5vw,56px);letter-spacing:4px;color:rgba(0,0,0,.6);margin-top:8px;}
-
-/* ── CLOCK ── */
-.clock{font-family:var(--mono);font-size:22px;color:var(--muted);}
-/* ── VISTA TORNEO (dentro de ads) ── */
-#tourney-view{position:absolute;inset:0;display:none;flex-direction:column;
-  background:radial-gradient(ellipse 60% 45% at 50% 18%,rgba(22,64,79,.5),transparent 70%),#070a0c;padding:3vh 3vw;z-index:5;}
-#tourney-view.on{display:flex;}
-.tv-hero{text-align:center;flex-shrink:0;margin-bottom:2vh;}
-.tv-hero .k{font-size:1.4vh;color:var(--yellow);letter-spacing:.4vw;font-weight:700;text-transform:uppercase;margin-bottom:.8vh;}
-.tv-hero h1{font-family:var(--display);font-style:italic;font-size:6vh;line-height:.9;text-transform:uppercase;color:var(--yellow);transform:skewX(-5deg);text-shadow:0 0 4vh rgba(212,240,0,.25);}
-.tv-hero .dates{display:inline-block;margin-top:1vh;background:var(--yellow);color:#070a0c;font-weight:800;font-size:1.7vh;letter-spacing:.1vw;text-transform:uppercase;padding:.6vh 1.4vw;transform:skewX(-5deg);}
-.tv-hero .dates span{display:inline-block;transform:skewX(5deg);}
-.tv-title{display:flex;align-items:center;gap:.8vw;font-size:1.4vh;font-weight:800;letter-spacing:.2vw;text-transform:uppercase;color:var(--yellow);margin-bottom:1.4vh;flex-shrink:0;}
-.tv-title::before{content:'';width:2vw;height:2px;background:var(--yellow-dim);}
-.tv-matches{flex:1;display:flex;flex-direction:column;gap:1.1vh;overflow:hidden;transition:opacity .5s;}
-.tv-match{background:rgba(14,20,24,.9);border:1px solid var(--line);border-left:3px solid var(--yellow);border-radius:.8vh;padding:1.3vh 1.6vw;display:flex;align-items:center;gap:1.4vw;}
-.tv-match .time{text-align:center;flex-shrink:0;min-width:6vw;}
-.tv-match .time .h{font-family:var(--display);font-size:2.2vh;color:var(--yellow);line-height:1;}
-.tv-match .time .court{font-size:1.05vh;color:var(--muted);text-transform:uppercase;letter-spacing:.1vw;margin-top:.3vh;}
-.tv-match .info{flex:1;min-width:0;}
-.tv-match .cat{font-size:1.1vh;color:var(--muted);text-transform:uppercase;letter-spacing:.1vw;margin-bottom:.4vh;}
-.tv-match .teams{font-size:1.6vh;font-weight:700;color:#fff;line-height:1.3;}
-.tv-match .teams .vs{color:var(--yellow);font-size:1.1vh;font-weight:800;margin:0 .5vw;}
-.tv-foot{display:flex;align-items:center;justify-content:space-between;padding-top:1.4vh;margin-top:1vh;border-top:1px solid var(--line);flex-shrink:0;}
-.tv-foot .wa{font-size:1.4vh;color:var(--text);}
-.tv-foot .wa b{color:var(--yellow);}
-.tv-foot .by{font-size:1.2vh;color:var(--muted);letter-spacing:.15vw;text-transform:uppercase;}
-.tv-foot .by b{color:var(--yellow);font-family:var(--display);}
+  /* FOOTER */
+  .foot{display:flex;align-items:center;justify-content:space-between;padding:1.6vh 3vw;flex-shrink:0;
+    border-top:1px solid var(--line);}
+  .foot .wa{font-size:1.5vh;color:var(--text);}
+  .foot .wa b{color:var(--yellow);}
+  .foot .by{font-size:1.3vh;color:var(--muted);letter-spacing:.15vw;text-transform:uppercase;}
+  .foot .by b{color:var(--yellow);font-family:var(--display);}
 </style>
 </head>
 <body>
+  <div class="stage">
+    <div class="top">
+      <div class="brand">
+        <div>
+          <div class="logo">Somos Pádel</div>
+          <div class="sub">Monterrey · 8 Canchas</div>
+        </div>
+      </div>
+      <div class="live"><span class="d"></span> Torneo en vivo</div>
+      <div class="clock" id="clock">--:--</div>
+    </div>
 
-<!-- ADS SCREEN -->
-<div class="screen active" id="screen-ads">
-  <!-- Idle state (no media) -->
-  <div class="ads-idle" id="ads-idle">
-    <img src="/assets/somos_padel.jpg" class="ads-idle-logo" onerror="this.style.display='none'">
-    <div class="ads-idle-name">SOMOS PÁDEL</div>
-    <div class="ads-idle-sub">MONTERREY · 8 CANCHAS</div>
-  </div>
-
-  <!-- Media (image or video) -->
-  <img id="ad-image" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
-  <video id="ad-video" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" muted loop></video>
-
-  <!-- VISTA TORNEO (rota junto con los anuncios) -->
-  <div id="tourney-view">
-    <div class="tv-hero">
+    <div class="hero">
       <div class="k">Torneo destacado</div>
       <h1>Torneo Inaugural</h1>
       <div class="dates"><span>13 al 21 de Agosto</span></div>
     </div>
-    <div class="tv-title">Próximos partidos</div>
-    <div class="tv-matches" id="tv-matches"></div>
-    <div class="tv-foot">
+
+    <div class="body">
+      <!-- PROXIMOS PARTIDOS -->
+      <div class="col">
+        <div class="col-title">Próximos partidos</div>
+        <div class="matches" id="matches"></div>
+      </div>
+
+      <!-- CATEGORIAS + PREMIOS -->
+      <div class="col">
+        <div class="col-title">Categorías &amp; Premios</div>
+        <div class="cats">
+          <div class="cat-box">
+            <div class="cb-title">Varonil</div>
+            <div class="cb-cats">Suma 5 · 4ta · 5ta · 6ta · 7ma</div>
+          </div>
+          <div class="cat-box">
+            <div class="cb-title">Femenil</div>
+            <div class="cb-cats">3era · 4ta · 5ta · 6ta · 7ma</div>
+          </div>
+          <div class="cat-box">
+            <div class="cb-title">Mixto</div>
+            <div class="cb-cats">5ta + 6ta</div>
+          </div>
+          <div class="prize-box">
+            <div class="pb-lbl">Premio al 1er lugar</div>
+            <div class="pb-amt">$12,000</div>
+            <div class="pb-sub">por categoría · $6,000 al 2do</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
       <div class="wa">Inscripciones · <b>WhatsApp 811 379 1451</b></div>
-      <div class="by">Transmisión por <b>PÍCALE</b></div>
+      <div class="by">Transmisión en vivo por <b>PÍCALE</b></div>
     </div>
   </div>
-
-  <!-- Logo bar -->
-  <div class="ads-logo-bar">
-    <div class="ads-logos">
-      <img src="/assets/somos_padel.jpg" class="ads-logo-img" onerror="this.style.display='none'">
-      <div class="ads-logo-div"></div>
-      <img src="/assets/picale_logo.png" class="ads-logo-img" onerror="this.style.display='none'">
-    </div>
-    <div class="ads-court" id="ads-court-label">CANCHA —</div>
-    <div class="clock" id="clock-ads">--:--</div>
-  </div>
-</div>
-
-<!-- MATCH SCREEN -->
-<div class="screen" id="screen-match">
-  <div class="match-topbar">
-    <div class="match-logos">
-      <img src="/assets/somos_padel.jpg" class="match-logo-img" onerror="this.style.display='none'">
-      <div class="match-logo-div"></div>
-      <img src="/assets/picale_logo.png" class="match-logo-img" onerror="this.style.display='none'">
-    </div>
-    <div class="match-court" id="match-court-label">CANCHA —</div>
-    <div style="display:flex;align-items:center;gap:16px;">
-      <div class="clock" id="clock-match">--:--</div>
-      <div class="live-pill"><div class="live-dot"></div>EN VIVO</div>
-    </div>
-  </div>
-
-  <div class="match-body">
-    <div class="scoreboard">
-      <!-- Column headers -->
-      <div class="sb-colheads">
-        <div class="sb-col-name">JUGADORES</div>
-        <div class="sb-col-set" id="sh-col-1">SET 1</div>
-        <div class="sb-col-set" id="sh-col-2">SET 2</div>
-        <div class="sb-col-set" id="sh-col-3">SET 3</div>
-        <div class="sb-col-game">JUEGOS</div>
-        <div class="sb-col-pts">PUNTOS</div>
-      </div>
-
-      <!-- Left team -->
-      <div class="sb-row" id="row-left">
-        <div class="sb-name-cell">
-          <div class="sb-serve-dot"></div>
-          <div class="sb-names">
-            <div class="sb-name1" id="name-l1">—</div>
-            <div class="sb-name2" id="name-l2">—</div>
-          </div>
-        </div>
-        <div class="sb-set-cell" id="sh-l-1">-</div>
-        <div class="sb-set-cell" id="sh-l-2">-</div>
-        <div class="sb-set-cell" id="sh-l-3">-</div>
-        <div class="sb-game-cell" id="game-left">0</div>
-        <div class="sb-pts-cell" id="pts-left">0</div>
-      </div>
-
-      <!-- Right team -->
-      <div class="sb-row" id="row-right">
-        <div class="sb-name-cell">
-          <div class="sb-serve-dot"></div>
-          <div class="sb-names">
-            <div class="sb-name1" id="name-r1">—</div>
-            <div class="sb-name2" id="name-r2">—</div>
-          </div>
-        </div>
-        <div class="sb-set-cell" id="sh-r-1">-</div>
-        <div class="sb-set-cell" id="sh-r-2">-</div>
-        <div class="sb-set-cell" id="sh-r-3">-</div>
-        <div class="sb-game-cell" id="game-right">0</div>
-        <div class="sb-pts-cell" id="pts-right">0</div>
-      </div>
-
-      <!-- Tiebreak banner -->
-      <div class="tb-banner" id="tb-banner" style="display:none;">TIE-BREAK</div>
-    </div>
-  </div>
-</div>
-
-<!-- CLASE SCREEN -->
-<div class="screen" id="screen-clase">
-  <div class="clase-bg"></div>
-  <div class="clase-content">
-    <div class="clase-eyebrow">CLASE EN CURSO</div>
-    <div class="clase-activity" id="clase-activity">CLASE PARTICULAR</div>
-    <div class="clase-student" id="clase-student">—</div>
-    <div class="clase-coach" id="clase-coach"></div>
-    <div class="clase-logos">
-      <img src="/assets/somos_padel.jpg" class="clase-logo" onerror="this.style.display='none'">
-      <img src="/assets/picale_logo.png" class="clase-logo" onerror="this.style.display='none'">
-    </div>
-  </div>
-  <!-- Court label bottom right -->
-  <div style="position:absolute;bottom:32px;right:48px;display:flex;align-items:center;gap:16px;">
-    <div class="clock" id="clock-clase">--:--</div>
-    <div style="font-family:var(--display);font-size:22px;letter-spacing:3px;color:rgba(212,224,0,.5);" id="clase-court-label">CANCHA —</div>
-  </div>
-</div>
-
-<!-- RETA / TORNEO EN CURSO -->
-<div class="screen" id="screen-reta" style="background:#0a0a0a;z-index:50;align-items:center;justify-content:center;">
-  <div class="clase-bg"></div>
-  <div class="clase-content">
-    <div class="clase-eyebrow">RETA EN CURSO</div>
-    <div class="clase-activity" id="reta-activity">RETA</div>
-    <div class="clase-logos" style="margin-top:40px;">
-      <img src="/assets/somos_padel.jpg" class="clase-logo" onerror="this.style.display='none'">
-      <img src="/assets/picale_logo.png" class="clase-logo" onerror="this.style.display='none'">
-    </div>
-  </div>
-  <div style="position:absolute;bottom:32px;right:48px;display:flex;align-items:center;gap:16px;">
-    <div class="clock" id="clock-reta">--:--</div>
-    <div style="font-family:var(--display);font-size:22px;letter-spacing:3px;color:rgba(212,224,0,.5);" id="reta-court-label">CANCHA —</div>
-  </div>
-</div>
-
-<!-- MID-MATCH AD OVERLAY -->
-<div id="mid-match-ad" style="
-  position:fixed;inset:0;z-index:150;
-  background:#000;
-  display:none;align-items:center;justify-content:center;
-">
-  <img id="mid-ad-image" style="display:none;width:100%;height:100%;object-fit:cover;">
-  <video id="mid-ad-video" style="display:none;width:100%;height:100%;object-fit:cover;" muted></video>
-  <!-- Logo bar -->
-  <div style="position:absolute;bottom:0;left:0;right:0;padding:24px 40px;background:linear-gradient(to top,rgba(0,0,0,.9),transparent);display:flex;align-items:center;justify-content:space-between;">
-    <div style="display:flex;align-items:center;gap:16px;">
-      <img src="/assets/somos_padel.jpg" style="height:36px;object-fit:contain;" onerror="this.style.display='none'">
-      <div style="width:1px;height:28px;background:rgba(212,224,0,.3);"></div>
-      <img src="/assets/picale_logo.png" style="height:36px;object-fit:contain;" onerror="this.style.display='none'">
-    </div>
-    <div id="mid-ad-court" style="font-family:var(--display);font-size:22px;letter-spacing:3px;color:var(--yellow);">CANCHA —</div>
-    <div id="mid-ad-countdown" style="font-family:var(--mono);font-size:16px;color:rgba(212,224,0,.5);"></div>
-  </div>
-</div>
-
-<!-- SET FLASH -->
-<div id="set-flash">
-  <div class="flash-title" id="flash-title">SET GANADO</div>
-  <div class="flash-sub" id="flash-sub"></div>
-</div>
-
-<!-- ADS MANAGER (hidden) -->
-<div id="ads-manager" style="display:none;">
-  <!-- List of ad files - edit this to add ads -->
-  <!-- Format: <div class="ad" data-type="image|video" data-src="/assets/somos/anuncios/ad1.jpg" data-duration="8"></div> -->
-</div>
 
 <script>
-var CLOUD = 'https://api.picalereplay.com';
-var courtNum = parseInt(new URLSearchParams(window.location.search).get('cancha') || '1');
-
-// Mapa cancha (1-8) -> court_id UUID de Somos Pádel en la BD del VPS
-var SOMOS_COURT_IDS = {
-  1: '6bc0621c-f99a-4e1f-8971-d70155ea3383',
-  2: 'e1dc778e-831f-4fa4-bc86-d6a31a7de1d1',
-  3: 'fc8bbc6d-e21b-466d-92e6-a2beefe6bd38',
-  4: '2d54ad6f-895f-4f6c-b985-95b431fe03b3',
-  5: '28b6283d-dacf-428d-a3fb-fc0015d5f6aa',
-  6: '519bbd5d-b2f5-4a84-a257-6d327bebf9a8',
-  7: '28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512',
-  8: '35c16c54-f31e-4397-922b-044722d06524'
-};
-var courtId = SOMOS_COURT_IDS[courtNum] || null;
-
-var matchId = new URLSearchParams(window.location.search).get('match_id');
-var manualMatch = !!matchId;  // true si vino en la URL (?match_id=X); no hacer polling en ese caso
-var ws = null;
-var prevState = null;
-var currentScreen = 'ads';
-var adList = [];
-var adIndex = 0;
-var adTimer = null;
-var pollTimer = null;
-var adInterruptTimer = null;  // Timer to show mid-match ad
-var midMatchAdTimer = null;   // Timer to hide mid-match ad
-var _adSec = parseInt(new URLSearchParams(window.location.search).get('ad'), 10);
-var AD_INTERVAL = (_adSec > 0 ? _adSec : 60) * 1000;  // ?ad=15 -> cada 15s (default 60s)
-var AD_DURATION = 15000;      // Duracion del anuncio (15s)
-var CUT_AD_ON_POINT = false;  // true = corta el anuncio si cae un punto durante el partido
-var DEMO = new URLSearchParams(window.location.search).get('demo') === '1';
-var inMidMatchAd = false;     // Currently showing mid-match ad
-var pendingState = null;      // State received during ad
-
-// ── SETUP ─────────────────────────────────────────────────────────────────────
-document.getElementById('ads-court-label').textContent = 'CANCHA ' + courtNum;
-document.getElementById('match-court-label').textContent = 'CANCHA ' + courtNum;
-document.getElementById('clase-court-label').textContent = 'CANCHA ' + courtNum;
-document.getElementById('reta-court-label').textContent = 'CANCHA ' + courtNum;
-
-// ── CLOCK ─────────────────────────────────────────────────────────────────────
-function updateClock() {
-  var now = new Date();
-  var h = String(now.getHours()).padStart(2,'0');
-  var m = String(now.getMinutes()).padStart(2,'0');
-  var time = h + ':' + m;
-  ['clock-ads','clock-match','clock-clase','clock-reta'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = time;
-  });
+// Reloj
+function tick(){
+  var d=new Date();
+  document.getElementById('clock').textContent =
+    d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
 }
-updateClock();
-setInterval(updateClock, 10000);
+tick(); setInterval(tick,10000);
 
-// ── ADS ───────────────────────────────────────────────────────────────────────
-// Load ads from /assets/somos/anuncios/
-// Tries to load ads.json manifest, fallback to idle screen
-var ADS = [];
-var adFailCount = 0;
-
-function loadAds() {
-  fetch('/assets/somos/anuncios/ads.json')
-    .then(function(r) {
-      if (!r.ok) throw new Error('ads.json HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function(data) {
-      ADS = Array.isArray(data) ? data : (data.ads || []);
-      console.log('[ADS] cargados:', ADS.length, ADS);
-      if (currentScreen === 'ads') startAds();
-    })
-    .catch(function(err) {
-      console.warn('[ADS] no se pudieron cargar:', err);
-      showIdle();
-    });
-}
-
-function startAds() {
-  console.log('[ADS] startAds, count=', ADS.length);
-  if (!ADS.length) { showIdle(); return; }
-  adIndex = 0;
-  adFailCount = 0;
-  showAd();
-}
-
-function showAd() {
-  // Alternar: cada 2 anuncios, mostrar la vista de torneo
-  if (shouldShowTourney()) { showTourney(); return; }
-
-  if (!ADS.length) { showIdle(); return; }
-  if (adFailCount >= ADS.length) {
-    console.warn('[ADS] todas las imágenes fallaron -> idle');
-    adFailCount = 0;
-    showIdle();
-    return;
-  }
-  var ad = ADS[adIndex % ADS.length];
-  var img = document.getElementById('ad-image');
-  var vid = document.getElementById('ad-video');
-  var idle = document.getElementById('ads-idle');
-  var tv = document.getElementById('tourney-view');
-
-  console.log('[ADS] mostrando', adIndex % ADS.length, ad.src);
-  idle.style.display = 'none';
-  if (tv) tv.classList.remove('on');
-
-  if (ad.type === 'video') {
-    img.style.display = 'none';
-    vid.style.display = 'block';
-    vid.onerror = function(){ console.warn('[ADS] video roto:', ad.src); adFailCount++; clearTimeout(adTimer); setTimeout(nextAd, 300); };
-    vid.src = ad.src;
-    vid.play();
-    var dur = ad.duration || 15;
-    clearTimeout(adTimer);
-    adTimer = setTimeout(nextAd, dur * 1000);
-  } else {
-    vid.style.display = 'none';
-    img.style.display = 'block';
-    img.onload = function(){ adFailCount = 0; };
-    img.onerror = function(){ console.warn('[ADS] imagen rota:', ad.src); adFailCount++; img.style.display='none'; clearTimeout(adTimer); setTimeout(nextAd, 300); };
-    img.src = ad.src;
-    var dur = ad.duration || 8;
-    clearTimeout(adTimer);
-    adTimer = setTimeout(nextAd, dur * 1000);
-  }
-}
-
-// ── VISTA TORNEO en el ciclo ──
-var slideCount = 0;
-var TOURNEY_EVERY = 2;   // muestra el torneo cada N slides
-var TOURNEY_DUR = 12;    // segundos que dura la vista de torneo
-var tvPage = 0;
-var TV_PAGE_SIZE = 5;
-
-function shouldShowTourney() {
-  // muestra torneo si toca por conteo, o si no hay anuncios
-  slideCount++;
-  if (!ADS.length) return true; // sin anuncios: solo rota torneo + idle
-  return (slideCount % TOURNEY_EVERY === 0);
-}
-
-function showTourney() {
-  document.getElementById('ads-idle').style.display = 'none';
-  document.getElementById('ad-image').style.display = 'none';
-  document.getElementById('ad-video').style.display = 'none';
-  var tv = document.getElementById('tourney-view');
-  tv.classList.add('on');
-  renderTourneyMatches();
-  clearTimeout(adTimer);
-  adTimer = setTimeout(nextAd, TOURNEY_DUR * 1000);
-}
-
-var TORNEO_PARTIDOS = [
-  {hora:'5:30PM', court:'P-20', cat:'7ma Femenil · Grupo B', a:'Mildred Ceballos / Erika Contreras', b:'Olivia Kim / Herly Castro'},
-  {hora:'6:45PM', court:'P-22', cat:'5ta Varonil · Grupo H', a:'José Juan Gonzalez / Toño Orozco', b:'Rodrigo De La Garza / Carlos Heredia'},
-  {hora:'6:45PM', court:'P-5',  cat:'6ta Femenil · Grupo B', a:'Vanessa Guerra / Marilu Gutierrez', b:'Marijose Diaz / Daniela Ríos'},
-  {hora:'6:45PM', court:'P-7',  cat:'6ta Varonil · Grupo B', a:'Oscar López / Luis Lambreton', b:'Emmanuel Rincon / Mauricio Fernandez'},
-  {hora:'8:00PM', court:'P-4',  cat:'4ta Varonil · Grupo A', a:'Armando Montoya / Jorge Chavez', b:'Lazaro Casas / Edu Cameras'},
-  {hora:'8:00PM', court:'P-1',  cat:'6ta Varonil · Grupo A', a:'Gerard Dueñas / Mario Arjona', b:'Luis Emilio López / Carlos Tanamachi'},
-  {hora:'8:00PM', court:'P-4',  cat:'Mixto D (5-6) · Grupo A', a:'Diana Lagunes / Luis Zamorano', b:'Carlos Ortiz / Lucero Farias'},
-  {hora:'9:15PM', court:'P-33', cat:'5ta Varonil · Grupo K', a:'Jesús Cavazos / Hugo Estrada', b:'Erick Cavazos / Marcelo Delgado'},
-  {hora:'9:15PM', court:'P-2',  cat:'7ma Varonil · Grupo A', a:'Adrián Palacios / Alex Guardado', b:'Santiago Lichter / Luis López'},
-  {hora:'9:15PM', court:'P-7',  cat:'Suma 5 Varonil · Grupo B', a:'Carlos Artigas / Héctor Díaz', b:'Adrián Contreras / Gerardo Guevara'},
+// ── PROXIMOS PARTIDOS (datos del torneo, se rotan) ──
+// Cuando conectemos PadelZap, esto se llena solo desde su API.
+var PARTIDOS = [
+  {hora:'5:30 PM', court:'P-20', cat:'7ma Femenil · Grupo B', a:'Mildred Ceballos / Erika Contreras', b:'Olivia Kim / Herly Castro'},
+  {hora:'6:45 PM', court:'P-22', cat:'5ta Varonil · Grupo H', a:'José Juan Gonzalez / Toño Orozco', b:'Rodrigo De La Garza / Carlos Heredia'},
+  {hora:'6:45 PM', court:'P-5',  cat:'6ta Femenil · Grupo B', a:'Vanessa Guerra / Marilu Gutierrez', b:'Marijose Diaz / Daniela Ríos'},
+  {hora:'6:45 PM', court:'P-7',  cat:'6ta Varonil · Grupo B', a:'Oscar López / Luis Lambreton', b:'Emmanuel Rincon / Mauricio Fernandez'},
+  {hora:'8:00 PM', court:'P-4',  cat:'4ta Varonil · Grupo A', a:'Armando Montoya / Jorge Chavez', b:'Lazaro Casas / Edu Cameras'},
+  {hora:'8:00 PM', court:'P-1',  cat:'6ta Varonil · Grupo A', a:'Gerard Dueñas / Mario Arjona', b:'Luis Emilio López / Carlos Tanamachi'},
+  {hora:'8:00 PM', court:'P-4',  cat:'Mixto D (5ta-6ta) · Grupo A', a:'Diana Lagunes / Luis Zamorano', b:'Carlos Ortiz / Lucero Farias'},
+  {hora:'9:15 PM', court:'P-33', cat:'5ta Varonil · Grupo K', a:'Jesús Cavazos / Hugo Estrada', b:'Erick Cavazos / Marcelo Delgado'},
+  {hora:'9:15 PM', court:'P-2',  cat:'7ma Varonil · Grupo A', a:'Adrián Palacios / Alex Guardado', b:'Santiago Lichter / Luis López'},
+  {hora:'9:15 PM', court:'P-7',  cat:'Suma 5 Varonil · Grupo B', a:'Carlos Artigas / Héctor Díaz', b:'Adrián Contreras / Gerardo Guevara'},
 ];
 
-function renderTourneyMatches() {
-  var cont = document.getElementById('tv-matches');
-  if (!cont) return;
-  var start = tvPage * TV_PAGE_SIZE;
-  var slice = TORNEO_PARTIDOS.slice(start, start + TV_PAGE_SIZE);
-  if (!slice.length) { tvPage = 0; slice = TORNEO_PARTIDOS.slice(0, TV_PAGE_SIZE); }
-  cont.innerHTML = slice.map(function(m){
-    return '<div class="tv-match">'+
-      '<div class="time"><div class="h">'+m.hora+'</div><div class="court">'+m.court+'</div></div>'+
-      '<div class="info"><div class="cat">'+m.cat+'</div>'+
-      '<div class="teams">'+m.a+' <span class="vs">VS</span> '+m.b+'</div></div>'+
-    '</div>';
-  }).join('');
-  tvPage++;
-  if (tvPage * TV_PAGE_SIZE >= TORNEO_PARTIDOS.length) tvPage = 0;
+var PAGE_SIZE = 5;
+var page = 0;
+
+function renderMatches(){
+  var cont=document.getElementById('matches');
+  var start=page*PAGE_SIZE;
+  var slice=PARTIDOS.slice(start, start+PAGE_SIZE);
+  if(!slice.length){ page=0; slice=PARTIDOS.slice(0,PAGE_SIZE); }
+
+  cont.style.opacity='0';
+  setTimeout(function(){
+    cont.innerHTML=slice.map(function(m){
+      return '<div class="match">'+
+        '<div class="time"><div class="h">'+m.hora.replace(' ','')+'</div><div class="court">'+m.court+'</div></div>'+
+        '<div class="info">'+
+          '<div class="cat">'+m.cat+'</div>'+
+          '<div class="teams">'+m.a+' <span class="vs">VS</span> '+m.b+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+    cont.style.opacity='1';
+  }, 500);
+
+  page++;
+  if(page*PAGE_SIZE >= PARTIDOS.length) page=0;
 }
-
-function nextAd() {
-  adIndex++;
-  showAd();
-}
-
-function showIdle() {
-  document.getElementById('ads-idle').style.display = 'flex';
-  document.getElementById('ad-image').style.display = 'none';
-  document.getElementById('ad-video').style.display = 'none';
-}
-
-// ── SCREENS ───────────────────────────────────────────────────────────────────
-function showScreen(name) {
-  currentScreen = name;
-  ['ads','match','clase','reta'].forEach(function(s) {
-    var el = document.getElementById('screen-' + s);
-    el.classList.toggle('active', s === name);
-  });
-  // ocultar vista torneo si salimos de ads
-  if (name !== 'ads') {
-    var tv = document.getElementById('tourney-view');
-    if (tv) tv.classList.remove('on');
-  }
-  if (name === 'ads') {
-    clearTimeout(adTimer);
-    clearTimeout(adInterruptTimer);
-    startAds();
-  } else if (name === 'match') {
-    clearTimeout(adTimer);
-  } else {
-    clearTimeout(adTimer);
-    clearTimeout(adInterruptTimer);
-  }
-}
-
-// ── WEBSOCKET ─────────────────────────────────────────────────────────────────
-function connectWS(mid) {
-  if (ws) { ws.close(); ws = null; }
-  var wsUrl = CLOUD.replace('https://','wss://').replace('http://','ws://') + '/api/v1/score/' + mid + '/ws';
-  ws = new WebSocket(wsUrl);
-  ws.onmessage = function(e) {
-    var msg = JSON.parse(e.data);
-    if (msg.type === 'state_update' && msg.state) renderState(msg.state);
-  };
-  ws.onclose = function() { setTimeout(function(){ if(matchId) connectWS(matchId); }, 3000); };
-
-  // Also get current state
-  fetch(CLOUD + '/api/v1/score/' + mid)
-    .then(function(r){return r.json();})
-    .then(function(d){if(d.state) renderState(d.state);})
-    .catch(function(){});
-}
-
-// ── POLL FOR ACTIVE MATCH ─────────────────────────────────────────────────────
-function pollActiveMatch() {
-  if (manualMatch) return; // match_id fijo en la URL: no auto-descubrir
-
-  fetch(CLOUD + '/api/v1/playtomic/court/' + courtNum + '/now')
-    .then(function(r){return r.json();})
-    .then(function(d) {
-      var booking = d.booking;
-      if (!booking) {
-        showScreen('ads');
-        return;
-      }
-
-      if (booking.display_type === 'clase') {
-        showScreen('clase');
-        document.getElementById('clase-activity').textContent = (booking.activity_name || 'CLASE').toUpperCase();
-        document.getElementById('clase-student').textContent = (booking.participants[0] || '—').toUpperCase();
-        document.getElementById('clase-coach').textContent = booking.coach_id ? 'Coach #' + booking.coach_id : '';
-      } else {
-        // partido / reserva / torneo - ¿ya hay marcador activo?
-        if (!courtId) { console.warn('[PANTALLA] cancha', courtNum, 'sin court_id configurado en SOMOS_COURT_IDS'); showScreen('ads'); return; }
-        fetch(CLOUD + '/api/v1/score/court/' + courtId + '/active')
-          .then(function(r){return r.json();})
-          .then(function(sd) {
-            if (sd.match_id) {
-              // Hay marcador activo: conectar solo si es uno nuevo (evita reconectar en cada poll)
-              if (sd.match_id !== matchId) {
-                matchId = sd.match_id;
-                connectWS(matchId);
-                if (currentScreen !== 'match') showScreen('ads'); // mientras llega el score real
-              }
-            } else {
-              // No hay marcador activo en la BD.
-              // Si teniamos uno pegado (se borro/termino), soltarlo.
-              if (matchId) { if (ws) { ws.close(); ws = null; } matchId = null; }
-              // En RETAS/TORNEOS Playtomic NO da el cruce por cancha (manda los mismos
-              // 24 inscritos a todas las canchas), asi que NO auto-creamos marcador con
-              // los primeros 4 (saldria mal). Solo mostramos que hay reta y anuncios.
-              // El marcador real solo aparece si alguien lo arranca manual desde el setup.
-              if (booking.booking_type === 'TOURNAMENT') {
-                showReta(booking);
-              } else {
-                // Reserva normal 2v2: si, auto-crear desde Playtomic
-                autoStartMatch(booking);
-              }
-            }
-          })
-          .catch(function(){ showScreen('ads'); });
-      }
-    })
-    .catch(function(){ showScreen('ads'); });
-}
-
-// Muestra la vista de reta/torneo (sin nombres: Playtomic no da el cruce por cancha).
-function showReta(booking) {
-  var name = (booking.activity_name || 'RETA');
-  // Quitar el sufijo del club: "RETAS 4TA VARONIL - SOMOS PADEL" -> "RETAS 4TA VARONIL"
-  name = name.split(/\s*[-–|]\s*/)[0].trim().toUpperCase();
-  document.getElementById('reta-activity').textContent = name;
-  showScreen('reta');
-}
-
-// Crea el marcador automáticamente desde la reserva de Playtomic (sin tocar el setup).
-// El setup sigue sirviendo para modificar (saque, punto de oro, editar nombres).
-var AUTO_SCORING_MODE = 'traditional';  // 'traditional' (ventaja) o 'golden_point' (punto de oro)
-var autoStarting = false;
-function autoStartMatch(booking) {
-  if (matchId || autoStarting) return;   // ya hay marcador o ya se está creando
-  autoStarting = true;
-
-  function clean(x){ return (x || '').trim(); }
-  function isReal(x){ return x && !/^(jugador|participante)\s*\d*$/i.test(clean(x)); }
-
-  var L = (booking.team_left || []).filter(isReal);
-  var R = (booking.team_right || []).filter(isReal);
-  // Respaldo: si no vienen equipos, parte la lista de participantes en dos
-  if (!L.length || !R.length) {
-    var p = (booking.participants || []).filter(isReal);
-    if (!L.length) L = p.slice(0, 2);
-    if (!R.length) R = p.slice(2, 4);
-  }
-
-  var l1 = clean(L[0]) || 'Equipo A', l2 = clean(L[1]);
-  var r1 = clean(R[0]) || 'Equipo B', r2 = clean(R[1]);
-
-  console.log('[AUTO] creando marcador para cancha', courtNum, l1, l2, 'vs', r1, r2);
-
-  fetch(CLOUD + '/api/v1/score/', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      court_id: courtId,
-      court_name: 'Cancha ' + courtNum,
-      club_name: 'Somos Pádel',
-      left_p1: l1, left_p2: l2,
-      right_p1: r1, right_p2: r2,
-      current_server: 'left',
-      scoring_mode: AUTO_SCORING_MODE
-    })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d){
-    autoStarting = false;
-    var mid = d.match_id || d.id || (d.match && d.match.id);
-    if (!mid && d.overlay_url) {
-      var m = d.overlay_url.match(/match_id=([^&]+)/);
-      if (m) mid = m[1];
-    }
-    if (mid) { matchId = mid; connectWS(matchId); }
-    else { showScreen('ads'); }   // no se pudo, seguimos en anuncios
-  })
-  .catch(function(){ autoStarting = false; showScreen('ads'); });
-}
-
-// ── RENDER STATE ──────────────────────────────────────────────────────────────
-function renderState(s) {
-  if (!s.overlay_visible) { showScreen('ads'); return; }
-
-  // If mid-match ad is showing and a point was scored, cut the ad
-  if (inMidMatchAd && prevState) {
-    var pointScored = (s.pts_left !== prevState.pts_left || s.pts_right !== prevState.pts_right ||
-                       s.games_left !== prevState.games_left || s.games_right !== prevState.games_right ||
-                       (s.sets_history||[]).length !== (prevState.sets_history||[]).length);
-    if (pointScored && CUT_AD_ON_POINT) {
-      clearTimeout(midMatchAdTimer);
-      hideMidMatchAd();
-    } else {
-      // Guarda el estado para aplicarlo cuando termine el anuncio
-      pendingState = s;
-      return;
-    }
-  }
-
-  showScreen('match');
-  scheduleMidMatchAd(); // Reset timer on any state update
-
-  // Names
-  document.getElementById('name-l1').textContent = (s.left_p1 || '—').toUpperCase();
-  document.getElementById('name-l2').textContent = (s.left_p2 || '').toUpperCase();
-  document.getElementById('name-r1').textContent = (s.right_p1 || '—').toUpperCase();
-  document.getElementById('name-r2').textContent = (s.right_p2 || '').toUpperCase();
-
-  // Server
-  document.getElementById('row-left').classList.toggle('serving', s.current_server === 'left');
-  document.getElementById('row-right').classList.toggle('serving', s.current_server === 'right');
-
-  // Sets history
-  var hist = s.sets_history || [];
-  for (var i = 1; i <= 3; i++) {
-    var lEl = document.getElementById('sh-l-' + i);
-    var rEl = document.getElementById('sh-r-' + i);
-    var colEl = document.getElementById('sh-col-' + i);
-    if (i - 1 < hist.length) {
-      var sl = hist[i-1][0], sr = hist[i-1][1];
-      lEl.textContent = sl; lEl.className = 'sb-set-cell' + (sl > sr ? ' won' : '');
-      rEl.textContent = sr; rEl.className = 'sb-set-cell' + (sr > sl ? ' won' : '');
-      colEl.textContent = 'SET ' + i;
-    } else if (i - 1 === hist.length) {
-      lEl.textContent = s.sets_left; lEl.className = 'sb-set-cell current';
-      rEl.textContent = s.sets_right; rEl.className = 'sb-set-cell current';
-      colEl.textContent = 'SET ' + i;
-    } else {
-      lEl.textContent = '-'; lEl.className = 'sb-set-cell';
-      rEl.textContent = '-'; rEl.className = 'sb-set-cell';
-    }
-  }
-
-  // Games
-  var gl = s.games_left, gr = s.games_right;
-  var glEl = document.getElementById('game-left');
-  var grEl = document.getElementById('game-right');
-  glEl.textContent = gl; glEl.className = 'sb-game-cell' + (gl > gr ? ' leading' : '');
-  grEl.textContent = gr; grEl.className = 'sb-game-cell' + (gr > gl ? ' leading' : '');
-
-  // Leading row highlight
-  document.getElementById('row-left').classList.toggle('leading', s.sets_left > s.sets_right);
-  document.getElementById('row-right').classList.toggle('leading', s.sets_right > s.sets_left);
-
-  // Points
-  var pl = s.pts_left, pr = s.pts_right;
-  var plEl = document.getElementById('pts-left');
-  var prEl = document.getElementById('pts-right');
-  plEl.textContent = pl;
-  prEl.textContent = pr;
-  plEl.className = 'sb-pts-cell' + (pl === 'ADV' ? ' adv' : '');
-  prEl.className = 'sb-pts-cell' + (pr === 'ADV' ? ' adv' : '');
-
-  // Tiebreak
-  document.getElementById('tb-banner').style.display = s.in_tiebreak ? 'block' : 'none';
-
-  // Set flash
-  if (prevState) {
-    var ph = (prevState.sets_history||[]).length;
-    var nh = (s.sets_history||[]).length;
-    if (nh > ph) {
-      var last = s.sets_history[s.sets_history.length - 1];
-      var wname = last[0] > last[1]
-        ? (s.left_p1 + (s.left_p2 ? ' / ' + s.left_p2 : ''))
-        : (s.right_p1 + (s.right_p2 ? ' / ' + s.right_p2 : ''));
-      showFlash('SET ' + nh, wname.toUpperCase());
-      // Anuncio al terminar el set (despues del flash de ~4s)
-      clearTimeout(adInterruptTimer);
-      setTimeout(function(){ if (currentScreen === 'match' && !inMidMatchAd) showMidMatchAd(); }, 4200);
-    }
-    if (s.status === 'finished' && prevState.status !== 'finished') {
-      var wn = s.sets_left > s.sets_right
-        ? (s.left_p1 + (s.left_p2 ? ' / ' + s.left_p2 : ''))
-        : (s.right_p1 + (s.right_p2 ? ' / ' + s.right_p2 : ''));
-      showFlash('PARTIDO GANADO', wn.toUpperCase(), 6000);
-      // Soltar el match para que el polling vuelva a detectar reta/nuevos partidos
-      if (ws) { ws.close(); ws = null; }
-      matchId = null;
-      setTimeout(function(){ showScreen('ads'); }, 8000);
-    }
-  }
-
-  prevState = s;
-}
-
-function showFlash(title, sub, dur) {
-  dur = dur || 4000;
-  var f = document.getElementById('set-flash');
-  document.getElementById('flash-title').textContent = title;
-  document.getElementById('flash-sub').textContent = sub || '';
-  f.classList.add('show');
-  setTimeout(function(){ f.classList.remove('show'); }, dur);
-}
-
-// ── MID-MATCH ADS ────────────────────────────────────────────────────────────
-function scheduleMidMatchAd() {
-  clearTimeout(adInterruptTimer);
-  if (currentScreen !== 'match') return;
-  adInterruptTimer = setTimeout(showMidMatchAd, AD_INTERVAL);
-}
-
-function showMidMatchAd() {
-  if (currentScreen !== 'match' || !ADS.length) {
-    scheduleMidMatchAd();
-    return;
-  }
-  inMidMatchAd = true;
-  var ad = ADS[Math.floor(Math.random() * ADS.length)];
-  var overlay = document.getElementById('mid-match-ad');
-  var img = document.getElementById('mid-ad-image');
-  var vid = document.getElementById('mid-ad-video');
-  document.getElementById('mid-ad-court').textContent = 'CANCHA ' + courtNum;
-  overlay.style.display = 'flex';
-
-  if (ad.type === 'video') {
-    img.style.display = 'none';
-    vid.style.display = 'block';
-    vid.src = ad.src;
-    vid.play();
-  } else {
-    vid.style.display = 'none';
-    img.style.display = 'block';
-    img.src = ad.src;
-  }
-
-  // Countdown
-  var remaining = Math.ceil(AD_DURATION / 1000);
-  document.getElementById('mid-ad-countdown').textContent = remaining + 's';
-  var countEl = document.getElementById('mid-ad-countdown');
-  var countInterval = setInterval(function() {
-    remaining--;
-    if (remaining <= 0) { clearInterval(countInterval); }
-    else { countEl.textContent = remaining + 's'; }
-  }, 1000);
-
-  // Auto-hide after duration
-  clearTimeout(midMatchAdTimer);
-  midMatchAdTimer = setTimeout(hideMidMatchAd, AD_DURATION);
-}
-
-function hideMidMatchAd() {
-  inMidMatchAd = false;
-  var overlay = document.getElementById('mid-match-ad');
-  overlay.style.display = 'none';
-  var vid = document.getElementById('mid-ad-video');
-  vid.pause(); vid.src = '';
-  document.getElementById('mid-ad-countdown').textContent = '';
-  clearTimeout(midMatchAdTimer);
-
-  // Apply any pending state that arrived during the ad
-  if (pendingState) {
-    renderState(pendingState);
-    pendingState = null;
-  }
-
-  // Schedule next ad
-  scheduleMidMatchAd();
-}
-
-// ── START ─────────────────────────────────────────────────────────────────────
-// ── DEMO (simula un partido para probar la TV sin hardware) ──────────────────
-function startDemo() {
-  console.log('[DEMO] partido simulado iniciado');
-  var PTS = ['0','15','30','40'];
-  var st = {
-    overlay_visible: true,
-    left_p1: 'JUGADOR 1', left_p2: 'JUGADOR 2',
-    right_p1: 'JUGADOR 3', right_p2: 'JUGADOR 4',
-    current_server: 'left',
-    pts_left: '0', pts_right: '0',
-    games_left: 6, games_right: 6,   // arranca en tie-break para verlo de inmediato
-    sets_left: 0, sets_right: 0,
-    sets_history: [],
-    in_tiebreak: true,
-    status: 'live'
-  };
-  var pi = 0, ri = 0;
-
-  function labels() {
-    if (pi > 3 || ri > 3) {
-      if (pi === ri) { pi = 3; ri = 3; st.pts_left = '40'; st.pts_right = '40'; }
-      else if (pi > ri) { st.pts_left = 'ADV'; st.pts_right = '40'; }
-      else { st.pts_left = '40'; st.pts_right = 'ADV'; }
-    } else {
-      st.pts_left = PTS[pi];
-      st.pts_right = PTS[ri];
-    }
-  }
-
-  function tick() {
-    if (st.status === 'finished') return;
-    if (inMidMatchAd) { setTimeout(tick, 1000); return; } // no marcar puntos durante el anuncio
-
-    var scorer = Math.random() < 0.5 ? 'L' : 'R';
-
-    if (st.in_tiebreak) {
-      // Tie-break: primero a 7 puntos con diferencia de 2
-      if (scorer === 'L') pi++; else ri++;
-      var tbWon = (pi >= 7 && pi - ri >= 2) ? 'L' : (ri >= 7 && ri - pi >= 2) ? 'R' : null;
-      if (tbWon) {
-        if (tbWon === 'L') st.games_left = 7; else st.games_right = 7; // set 7-6
-        st.sets_history.push([st.games_left, st.games_right]);
-        if (tbWon === 'L') st.sets_left++; else st.sets_right++;
-        st.games_left = 0; st.games_right = 0;
-        pi = 0; ri = 0;
-        st.in_tiebreak = false;
-        if (st.sets_left === 2 || st.sets_right === 2) st.status = 'finished';
-      }
-      st.pts_left = String(pi);   // en tie-break los puntos son numericos
-      st.pts_right = String(ri);
-    } else {
-      // Juego normal (15/30/40/ADV)
-      if (scorer === 'L') pi++; else ri++;
-      var gameWon = (pi >= 4 && pi - ri >= 2) ? 'L' : (ri >= 4 && ri - pi >= 2) ? 'R' : null;
-      if (gameWon) {
-        if (gameWon === 'L') st.games_left++; else st.games_right++;
-        pi = 0; ri = 0;
-        st.current_server = st.current_server === 'left' ? 'right' : 'left';
-
-        if (st.games_left === 6 && st.games_right === 6) {
-          st.in_tiebreak = true;              // 6-6 -> tie-break
-          st.pts_left = '0'; st.pts_right = '0';
-        } else {
-          var setWon = (st.games_left >= 6 && st.games_left - st.games_right >= 2) ? 'L'
-                     : (st.games_right >= 6 && st.games_right - st.games_left >= 2) ? 'R' : null;
-          if (setWon) {
-            st.sets_history.push([st.games_left, st.games_right]);
-            if (setWon === 'L') st.sets_left++; else st.sets_right++;
-            st.games_left = 0; st.games_right = 0;
-            if (st.sets_left === 2 || st.sets_right === 2) st.status = 'finished';
-          }
-        }
-      }
-      if (!st.in_tiebreak) labels();          // etiquetas 15/30/40/ADV
-    }
-
-    renderState(JSON.parse(JSON.stringify(st)));
-
-    if (st.status === 'finished') { setTimeout(startDemo, 15000); return; }
-    setTimeout(tick, 1500);
-  }
-
-  showScreen('match');
-  renderState(JSON.parse(JSON.stringify(st)));
-  setTimeout(tick, 1500);
-}
-
-// ── START ─────────────────────────────────────────────────────────────────────
-loadAds();
-
-if (DEMO) {
-  startDemo();
-} else if (matchId) {
-  showScreen('match');
-  connectWS(matchId);
-} else {
-  pollActiveMatch();
-  pollTimer = setInterval(pollActiveMatch, 30000); // check every 30s
-}
+renderMatches();
+setInterval(renderMatches, 8000); // rota cada 8s
 </script>
 </body>
 </html>
