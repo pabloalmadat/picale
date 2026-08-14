@@ -4,7 +4,9 @@
 //  Estructura real confirmada del API.
 // ═══════════════════════════════════════════════════════════
 window.PadelZap = (function(){
-  var API = 'https://api.padelzap.com/api/v1/public';
+  // Usamos el PROXY de tu VPS para evitar CORS (tu web -> tu VPS -> PadelZap)
+  var PROXY = 'https://api.picalereplay.com/api/v1/padelzap';
+  var API = 'https://api.padelzap.com/api/v1/public';  // (referencia, ya no se usa directo)
   var TOURNAMENT = '98785af6-5ed7-4bfd-c912-08def727a813';
 
   // Las 9 categorias del torneo con su ID real.
@@ -24,7 +26,8 @@ window.PadelZap = (function(){
   // category.nombre, asi que usamos ESE como fuente de verdad al vuelo.
 
   function urlView(catId, view){
-    return API + '/tournaments/' + TOURNAMENT + '/categories/' + catId + '/views/' + view;
+    // apunta al proxy del VPS: /api/v1/padelzap/{catId}/{view}
+    return PROXY + '/' + catId + '/' + view;
   }
 
   // Trae una vista (partidos, grupos, tabla-general, llaves) de una categoria
