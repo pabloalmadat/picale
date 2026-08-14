@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Torneo Inaugural · Somos Pádel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070a0c; --bg2:#0e1418; --bg3:#141c21;
+    --yellow:#d4f000; --yellow-dim:rgba(212,240,0,.5);
+    --text:#f2f5f0; --muted:#7c8b90; --line:rgba(212,240,0,.14); --live:#ff3b3b;
+    --display:'Archivo Black',sans-serif; --body:'Archivo',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:1.5;}
+  a{color:inherit;text-decoration:none;}
+
+  .nav{position:sticky;top:0;z-index:100;background:rgba(7,10,12,.92);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:14px 24px;}
+  .nav .back{color:var(--muted);font-size:14px;font-weight:600;}
+  .nav .back:hover{color:var(--yellow);}
+  .nav .brand{font-family:var(--display);font-size:15px;letter-spacing:1px;color:var(--yellow);text-transform:uppercase;}
+
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 20px 80px;}
+
+  .hero{text-align:center;margin-bottom:28px;}
+  .hero .k{font-size:12px;color:var(--yellow);letter-spacing:3px;font-weight:700;text-transform:uppercase;margin-bottom:8px;}
+  .hero h1{font-family:var(--display);font-style:italic;font-size:clamp(32px,7vw,54px);text-transform:uppercase;color:var(--yellow);transform:skewX(-4deg);}
+  .hero .dates{display:inline-block;margin-top:10px;background:var(--yellow);color:#070a0c;font-weight:800;font-size:14px;letter-spacing:1px;text-transform:uppercase;padding:5px 14px;transform:skewX(-4deg);}
+  .hero .dates span{display:inline-block;transform:skewX(4deg);}
+
+  .cat-select{display:flex;justify-content:center;margin-bottom:22px;}
+  .cat-select select{background:var(--bg2);border:1px solid var(--line);color:var(--text);
+    font-family:inherit;font-size:15px;font-weight:700;padding:12px 40px 12px 18px;border-radius:10px;cursor:pointer;
+    appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23d4f000' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;}
+  .cat-select select:focus{outline:none;border-color:var(--yellow);}
+
+  .tabs{display:flex;gap:6px;justify-content:center;margin-bottom:24px;flex-wrap:wrap;}
+  .tab{background:var(--bg2);border:1px solid var(--line);color:var(--muted);
+    font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:1px;padding:10px 20px;border-radius:20px;cursor:pointer;transition:all .15s;}
+  .tab:hover{border-color:var(--yellow-dim);}
+  .tab.active{background:var(--yellow);color:#070a0c;border-color:var(--yellow);}
+
+  .view{display:none;}
+  .view.active{display:block;}
+  .loading{text-align:center;padding:50px;color:var(--muted);}
+
+  .grupo{background:var(--bg2);border:1px solid var(--line);border-radius:12px;margin-bottom:16px;overflow:hidden;}
+  .grupo-head{background:var(--bg3);padding:12px 18px;display:flex;align-items:center;gap:10px;}
+  .grupo-head .g-tag{font-family:var(--display);font-size:16px;color:var(--yellow);}
+  .grupo-head .g-cat{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  table.tbl{width:100%;border-collapse:collapse;}
+  table.tbl th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:10px 8px;text-align:center;font-weight:700;}
+  table.tbl th.pareja-col{text-align:left;padding-left:18px;}
+  table.tbl td{padding:12px 8px;text-align:center;border-top:1px solid var(--line);font-size:14px;}
+  table.tbl td.pareja-col{text-align:left;padding-left:18px;font-weight:600;}
+  .pos-badge{display:inline-block;width:22px;height:22px;line-height:22px;border-radius:50%;background:var(--bg3);color:var(--muted);font-size:12px;font-weight:700;margin-right:10px;}
+  tr.clasifica .pos-badge{background:rgba(212,240,0,.15);color:var(--yellow);}
+  tr.clasifica{background:rgba(212,240,0,.03);}
+  td.stat{color:var(--muted);}
+  td.dif-pos{color:var(--yellow);}
+  td.dif-neg{color:#ff6b6b;}
+
+  .fase{margin-bottom:24px;}
+  .fase-title{font-family:var(--display);font-size:18px;color:var(--yellow);text-transform:uppercase;margin-bottom:12px;letter-spacing:1px;}
+  .bracket-match{background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--yellow);border-radius:10px;padding:14px 18px;margin-bottom:10px;}
+  .bracket-match .bm-meta{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;}
+  .bracket-match .bm-team{font-size:15px;font-weight:600;padding:4px 0;display:flex;justify-content:space-between;gap:10px;}
+  .bracket-match .bm-team.win{color:var(--yellow);font-weight:800;}
+  .bracket-match .bm-vs{font-size:11px;color:var(--muted);text-align:center;padding:2px 0;}
+  .por-definir{color:var(--muted);font-style:italic;}
+
+  .empty{text-align:center;padding:40px;color:var(--muted);}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="back" href="/somos.html">← Somos Pádel</a>
+  <div class="brand">Torneo Inaugural</div>
+  <a class="brand" href="/" style="color:var(--muted);font-size:12px;">PÍCALE</a>
+</nav>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="k">Somos Pádel · Monterrey</div>
+    <h1>Torneo Inaugural</h1>
+    <div class="dates"><span>13 al 21 de Agosto</span></div>
+  </div>
+
+  <div class="cat-select">
+    <select id="catSelect"></select>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-view="grupos">Grupos</div>
+    <div class="tab" data-view="tabla">Tabla</div>
+    <div class="tab" data-view="llaves">Llaves</div>
+    <div class="tab" data-view="partidos">Partidos</div>
+  </div>
+
+  <div class="view active" id="view-grupos"><div class="loading">Cargando grupos...</div></div>
+  <div class="view" id="view-tabla"><div class="loading">Cargando tabla...</div></div>
+  <div class="view" id="view-llaves"><div class="loading">Cargando llaves...</div></div>
+  <div class="view" id="view-partidos"><div class="loading">Cargando partidos...</div></div>
+</div>
+
+<script src="padelzap.js"></script>
+<script>
+var PZ = window.PadelZap;
+var catActual = PZ.CATEGORIAS[0].id;
+var vistaActual = 'grupos';
+
+var sel = document.getElementById('catSelect');
+PZ.CATEGORIAS.forEach(function(c){
+  var o = document.createElement('option');
+  o.value = c.id; o.textContent = c.nombre;
+  sel.appendChild(o);
+});
+sel.onchange = function(){ catActual = this.value; cargarVistaActual(); };
+
+document.querySelectorAll('.tab').forEach(function(t){
+  t.onclick = function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+    document.querySelectorAll('.view').forEach(function(x){x.classList.remove('active');});
+    t.classList.add('active');
+    vistaActual = t.getAttribute('data-view');
+    document.getElementById('view-'+vistaActual).classList.add('active');
+    cargarVistaActual();
+  };
+});
+
+function esc(s){ return (s||'').replace(/</g,'&lt;'); }
+function fmtFecha(iso){
+  if(!iso) return '';
+  var d=new Date(iso.replace('Z',''));
+  return d.toLocaleDateString('es-MX',{day:'numeric',month:'short'})+' · '+
+    d.toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'});
+}
+
+function cargarVistaActual(){
+  if(vistaActual==='grupos' || vistaActual==='tabla') renderGruposTabla();
+  else if(vistaActual==='llaves') renderLlaves();
+  else if(vistaActual==='partidos') renderPartidos();
+}
+
+function renderGruposTabla(){
+  var cont = document.getElementById('view-'+vistaActual);
+  cont.innerHTML = '<div class="loading">Cargando...</div>';
+  PZ.getGrupos(catActual).then(function(res){
+    if(!res || !res.grupos.length){ cont.innerHTML='<div class="empty">Sin información de grupos.</div>'; return; }
+    var esTabla = (vistaActual==='tabla');
+    var html='';
+    res.grupos.forEach(function(g){
+      html += '<div class="grupo"><div class="grupo-head"><span class="g-tag">Grupo '+esc(g.nombre)+'</span><span class="g-cat">'+esc(res.categoria)+'</span></div>';
+      html += '<table class="tbl"><thead><tr><th class="pareja-col">Pareja</th>';
+      if(esTabla) html += '<th>PJ</th><th>PG</th><th>DS</th><th>DJ</th>';
+      html += '</tr></thead><tbody>';
+      g.parejas.forEach(function(p){
+        html += '<tr class="'+(p.clasifica?'clasifica':'')+'">'+
+          '<td class="pareja-col"><span class="pos-badge">'+(p.pos||'–')+'</span>'+esc(p.nombre)+'</td>';
+        if(esTabla){
+          html += '<td class="stat">'+(p.pj||0)+'</td><td class="stat">'+(p.pg||0)+'</td>'+
+            '<td class="'+(p.difSets>0?'dif-pos':p.difSets<0?'dif-neg':'stat')+'">'+(p.difSets>0?'+':'')+p.difSets+'</td>'+
+            '<td class="'+(p.difJuegos>0?'dif-pos':p.difJuegos<0?'dif-neg':'stat')+'">'+(p.difJuegos>0?'+':'')+p.difJuegos+'</td>';
+        }
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    });
+    cont.innerHTML = html;
+  }).catch(function(){ cont.innerHTML='<div class="empty">Error al cargar.</div>'; });
+}
+
+function renderLlaves(){
+  var cont = document.getElementById('view-llaves');
+  cont.innerHTML = '<div class="loading">Cargando llaves...</div>';
+  PZ.getLlaves(catActual).then(function(res){
+    if(!res || !res.fases.length){ cont.innerHTML='<div class="empty">Sin llaves definidas aún.</div>'; return; }
+    var html='';
+    res.fases.forEach(function(f){
+      html += '<div class="fase"><div class="fase-title">'+esc(f.fase)+'</div>';
+      f.partidos.forEach(function(m){
+        var aDef = m.parejaA==='Por definir';
+        var bDef = m.parejaB==='Por definir';
+        html += '<div class="bracket-match">'+
+          '<div class="bm-meta"><span>'+esc(m.cancha||'')+'</span><span>'+fmtFecha(m.fecha)+'</span></div>'+
+          '<div class="bm-team '+(m.ganadorA?'win':'')+'"><span class="'+(aDef?'por-definir':'')+'">'+esc(m.parejaA)+'</span><span>'+(m.marcador||'')+'</span></div>'+
+          '<div class="bm-vs">vs</div>'+
+          '<div class="bm-team '+(m.ganadorB?'win':'')+'"><span class="'+(bDef?'por-definir':'')+'">'+esc(m.parejaB)+'</span></div>'+
+        '</div>';
+      });
+      html += '</div>';
+    });
+    cont.innerHTML = html;
+  }).catch(function(){ cont.innerHTML='<div class="empty">Error al cargar.</div>'; });
+}
+
+function renderPartidos(){
+  var cont = document.getElementById('view-partidos');
+  cont.innerHTML = '<div class="loading">Cargando partidos...</div>';
+  PZ.getVista(catActual,'partidos').then(function(res){
+    if(!res || !res.success || !res.data){ cont.innerHTML='<div class="empty">Sin partidos.</div>'; return; }
+    var partidos = (res.data.partidos||[]).map(function(p){
+      return {
+        fase: p.tipo?p.tipo.displayName:'', grupo:p.grupoNombre||'',
+        cancha:p.cancha||'', fecha:p.fecha,
+        parejaA:p.pareja1Nombre||p.pareja1Descripcion||'Por definir',
+        parejaB:p.pareja2Nombre||p.pareja2Descripcion||'Por definir',
+        marcador:p.marcadorResumen||'', estado:p.estadoPublicoTexto||'', enVivo:!!p.esEnVivo,
+      };
+    });
+    partidos = partidos.filter(function(p){ return p.parejaA!=='Por definir'; })
+      .sort(function(a,b){ return new Date(a.fecha)-new Date(b.fecha); });
+    if(!partidos.length){ cont.innerHTML='<div class="empty">Sin partidos programados.</div>'; return; }
+    var html='';
+    partidos.forEach(function(m){
+      html += '<div class="bracket-match" style="border-left-color:'+(m.enVivo?'var(--live)':'var(--yellow)')+'">'+
+        '<div class="bm-meta"><span>'+esc(m.cancha)+' · '+esc(m.fase)+(m.grupo?' '+esc(m.grupo):'')+'</span><span>'+(m.enVivo?'🔴 EN VIVO':fmtFecha(m.fecha))+'</span></div>'+
+        '<div class="bm-team"><span>'+esc(m.parejaA)+'</span><span>'+(m.marcador||'')+'</span></div>'+
+        '<div class="bm-vs">vs</div>'+
+        '<div class="bm-team"><span>'+esc(m.parejaB)+'</span></div>'+
+      '</div>';
+    });
+    cont.innerHTML = html;
+  }).catch(function(){ cont.innerHTML='<div class="empty">Error al cargar.</div>'; });
+}
+
+cargarVistaActual();
+</script>
+</body>
+</html>
