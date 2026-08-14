@@ -25,6 +25,10 @@
     font-weight:800;font-size:1.6vh;letter-spacing:.15vw;text-transform:uppercase;padding:.6vh 1.4vw;border-radius:.6vh;}
   .board-head .cat{font-size:1.6vh;color:var(--muted);text-transform:uppercase;letter-spacing:.2vw;}
   .board-head .brand{font-family:var(--display);font-size:2vh;color:var(--yellow);letter-spacing:.15vw;}
+  .board-head .brand-logo{height:4.5vh;width:auto;object-fit:contain;}
+  .board-watermark{position:absolute;bottom:3vh;left:50%;transform:translateX(-50%);
+    height:6vh;width:auto;opacity:.15;display:none;pointer-events:none;}
+  body.project .board-watermark{display:block;}
 
   table.score{width:100%;border-collapse:collapse;}
   table.score th{font-size:1.4vh;color:var(--muted);text-transform:uppercase;letter-spacing:.15vw;
@@ -88,10 +92,11 @@
 
 <!-- ══ MARCADOR ══ -->
 <div class="board">
+  <img src="assets/picale_logo_white.png" class="board-watermark" alt="">
   <div class="board-head">
     <span class="tag" id="live-tag">● En vivo</span>
     <span class="cat" id="cat-label">Torneo Inaugural</span>
-    <span class="brand">PÍCALE</span>
+    <img src="assets/picale_logo_white.png" class="brand-logo" alt="PÍCALE">
   </div>
   <table class="score">
     <thead>
