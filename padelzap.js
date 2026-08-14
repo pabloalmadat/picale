@@ -35,27 +35,25 @@ window.PadelZap = (function(){
   function getVista(catId, view, intento){
     view = view || 'partidos';
     intento = intento || 0;
-    // ?t= evita cache del navegador; cada intento pide fresco
-    var url = urlView(catId, view) + '?t=' + Date.now();
+    var url = urlView(catId, view);
     return fetch(url, { headers:{'Accept':'application/json'}, cache:'no-store' })
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(res){
         if (!res || !res.success || !res.data) {
-          // respuesta mala: reintenta hasta 3 veces
-          if (intento < 3) return _wait(400).then(function(){ return getVista(catId, view, intento+1); });
+          if (intento < 3) return _wait(500).then(function(){ return getVista(catId, view, intento+1); });
           return res;
         }
         // para grupos/tabla: si vino sin grupos, reintenta (dato incompleto)
         if ((view === 'grupos' || view === 'tabla-general')) {
           var g = res.data.grupos;
           if ((!g || g.length === 0) && intento < 3) {
-            return _wait(400).then(function(){ return getVista(catId, view, intento+1); });
+            return _wait(500).then(function(){ return getVista(catId, view, intento+1); });
           }
         }
         return res;
       })
       .catch(function(){
-        if (intento < 3) return _wait(400).then(function(){ return getVista(catId, view, intento+1); });
+        if (intento < 3) return _wait(500).then(function(){ return getVista(catId, view, intento+1); });
         return null;
       });
   }
