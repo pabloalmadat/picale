@@ -30,32 +30,13 @@ window.PadelZap = (function(){
     return PROXY + '/' + catId + '/' + view;
   }
 
-  // Trae una vista (partidos, grupos, tabla-general, llaves) de una categoria.
-  // Reintenta si la respuesta viene incompleta (PadelZap a veces responde vacio).
-  function getVista(catId, view, intento){
+  // Trae una vista. El PROXY del VPS ya reintenta hasta traer datos completos,
+  // asi que aqui solo pedimos una vez, simple y directo.
+  function getVista(catId, view){
     view = view || 'partidos';
-    intento = intento || 0;
-    var url = urlView(catId, view);
-    return fetch(url, { headers:{'Accept':'application/json'}, cache:'no-store' })
+    return fetch(urlView(catId, view), { headers:{'Accept':'application/json'} })
       .then(function(r){ return r.ok ? r.json() : null; })
-      .then(function(res){
-        if (!res || !res.success || !res.data) {
-          if (intento < 3) return _wait(500).then(function(){ return getVista(catId, view, intento+1); });
-          return res;
-        }
-        // para grupos/tabla: si vino sin grupos, reintenta (dato incompleto)
-        if ((view === 'grupos' || view === 'tabla-general')) {
-          var g = res.data.grupos;
-          if ((!g || g.length === 0) && intento < 3) {
-            return _wait(500).then(function(){ return getVista(catId, view, intento+1); });
-          }
-        }
-        return res;
-      })
-      .catch(function(){
-        if (intento < 3) return _wait(500).then(function(){ return getVista(catId, view, intento+1); });
-        return null;
-      });
+      .catch(function(){ return null; });
   }
 
   function _wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
