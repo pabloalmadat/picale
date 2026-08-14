@@ -30,12 +30,37 @@ window.PadelZap = (function(){
     return PROXY + '/' + catId + '/' + view;
   }
 
-  // Trae una vista (partidos, grupos, tabla-general, llaves) de una categoria
-  function getVista(catId, view){
-    return fetch(urlView(catId, view || 'partidos'), { headers:{'Accept':'application/json'} })
+  // Trae una vista (partidos, grupos, tabla-general, llaves) de una categoria.
+  // Reintenta si la respuesta viene incompleta (PadelZap a veces responde vacio).
+  function getVista(catId, view, intento){
+    view = view || 'partidos';
+    intento = intento || 0;
+    // ?t= evita cache del navegador; cada intento pide fresco
+    var url = urlView(catId, view) + '?t=' + Date.now();
+    return fetch(url, { headers:{'Accept':'application/json'}, cache:'no-store' })
       .then(function(r){ return r.ok ? r.json() : null; })
-      .catch(function(){ return null; });
+      .then(function(res){
+        if (!res || !res.success || !res.data) {
+          // respuesta mala: reintenta hasta 3 veces
+          if (intento < 3) return _wait(400).then(function(){ return getVista(catId, view, intento+1); });
+          return res;
+        }
+        // para grupos/tabla: si vino sin grupos, reintenta (dato incompleto)
+        if ((view === 'grupos' || view === 'tabla-general')) {
+          var g = res.data.grupos;
+          if ((!g || g.length === 0) && intento < 3) {
+            return _wait(400).then(function(){ return getVista(catId, view, intento+1); });
+          }
+        }
+        return res;
+      })
+      .catch(function(){
+        if (intento < 3) return _wait(400).then(function(){ return getVista(catId, view, intento+1); });
+        return null;
+      });
   }
+
+  function _wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
 
   // Normaliza un partido crudo del API a formato simple
   function normPartido(p, categoriaNombre){
@@ -127,7 +152,7 @@ window.PadelZap = (function(){
   // Devuelve [{nombre:'A', parejas:[{nombre, corto, pos, clasifica, pj, pg, sg, sp, jg, jp}]}]
   function getGrupos(catId){
     return getVista(catId, 'grupos').then(function(res){
-      if (!res || !res.success || !res.data) return null;
+      if (!res || !res.success || !res.data) return { categoria:'', grupos:[] };
       var cat = (res.data.category && res.data.category.nombre) || '';
       var grupos = (res.data.grupos||[]).map(function(g){
         return {
