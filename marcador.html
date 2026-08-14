@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marcador · PÍCALE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070a0c; --bg2:#0e1418; --bg3:#141c21;
+    --yellow:#d4f000; --text:#f2f5f0; --muted:#7c8b90;
+    --line:rgba(212,240,0,.16); --red:#ff3b3b;
+    --display:'Archivo Black',sans-serif; --body:'Archivo',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;}
+
+  /* ══ MARCADOR (lo que se proyecta) ══ */
+  .board{background:linear-gradient(135deg,#0a0d0f,#0e1418);border-bottom:2px solid var(--yellow);
+    padding:3vh 4vw;position:relative;}
+  .board-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5vh;}
+  .board-head .tag{display:inline-flex;align-items:center;gap:.6vw;background:var(--yellow);color:#070a0c;
+    font-weight:800;font-size:1.6vh;letter-spacing:.15vw;text-transform:uppercase;padding:.6vh 1.4vw;border-radius:.6vh;}
+  .board-head .cat{font-size:1.6vh;color:var(--muted);text-transform:uppercase;letter-spacing:.2vw;}
+  .board-head .brand{font-family:var(--display);font-size:2vh;color:var(--yellow);letter-spacing:.15vw;}
+
+  table.score{width:100%;border-collapse:collapse;}
+  table.score th{font-size:1.4vh;color:var(--muted);text-transform:uppercase;letter-spacing:.15vw;
+    padding:1vh .5vw;text-align:center;font-weight:700;}
+  table.score th.name-col{text-align:left;padding-left:1vw;}
+  table.score td{padding:1.6vh .5vw;text-align:center;border-top:1px solid var(--line);}
+  .team-name{font-family:var(--display);font-size:3.4vh;text-align:left;padding-left:1vw;
+    text-transform:uppercase;line-height:1.1;}
+  .team-row.serving .team-name{color:var(--yellow);}
+  .team-row.serving .team-name::before{content:'●';color:var(--yellow);font-size:1.6vh;margin-right:.8vw;vertical-align:middle;}
+  .set-val{font-family:var(--display);font-size:3vh;color:var(--muted);}
+  .games-val{font-family:var(--display);font-size:4vh;color:var(--text);}
+  .points-val{font-family:var(--display);font-size:5vh;color:var(--yellow);
+    background:rgba(212,240,0,.08);border-radius:1vh;min-width:5vw;display:inline-block;}
+  .team-row.win-set .set-val.current{color:var(--yellow);}
+
+  /* ══ CONTROLES (abajo, para ti) ══ */
+  .controls{padding:24px;max-width:900px;margin:0 auto;}
+  .ctrl-section{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px;}
+  .ctrl-section h3{font-size:13px;color:var(--yellow);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;font-weight:800;}
+
+  .team-ctrl{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:12px;}
+  .team-ctrl input{background:var(--bg3);border:1px solid var(--line);border-radius:8px;
+    color:var(--text);font-size:16px;font-weight:700;padding:12px 14px;font-family:inherit;width:100%;}
+  .team-ctrl input:focus{outline:none;border-color:var(--yellow);}
+
+  .point-btns{display:flex;gap:8px;}
+  .btn{border:none;border-radius:10px;font-family:inherit;font-weight:800;cursor:pointer;
+    transition:transform .1s,filter .1s;user-select:none;}
+  .btn:active{transform:scale(.94);}
+  .btn-pt{background:var(--yellow);color:#070a0c;font-size:24px;width:64px;height:64px;}
+  .btn-pt.minus{background:var(--bg3);color:var(--text);border:1px solid var(--line);}
+  .btn-serve{background:var(--bg3);color:var(--muted);border:1px solid var(--line);font-size:12px;
+    text-transform:uppercase;letter-spacing:1px;padding:10px 16px;}
+  .btn-serve.active{background:rgba(212,240,0,.15);color:var(--yellow);border-color:var(--yellow);}
+
+  .row-btns{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn-action{background:var(--bg3);color:var(--text);border:1px solid var(--line);
+    font-size:13px;text-transform:uppercase;letter-spacing:1px;padding:12px 18px;font-weight:700;}
+  .btn-action:hover{border-color:var(--yellow);}
+  .btn-action.danger{color:#ff6b6b;}
+  .btn-action.danger:hover{border-color:var(--red);}
+
+  .meta-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .meta-row input{background:var(--bg3);border:1px solid var(--line);border-radius:8px;
+    color:var(--text);font-size:14px;padding:10px 12px;font-family:inherit;}
+  .meta-row input:focus{outline:none;border-color:var(--yellow);}
+
+  .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5;}
+
+  /* modo proyeccion: oculta controles con tecla F */
+  body.project .controls{display:none;}
+  body.project .board{min-height:100vh;display:flex;flex-direction:column;justify-content:center;}
+  .fs-btn{position:fixed;top:12px;right:12px;z-index:50;background:var(--bg3);border:1px solid var(--line);
+    color:var(--text);border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit;
+    text-transform:uppercase;letter-spacing:1px;}
+</style>
+</head>
+<body>
+<button class="fs-btn" onclick="toggleProject()">⛶ Proyectar</button>
+
+<!-- ══ MARCADOR ══ -->
+<div class="board">
+  <div class="board-head">
+    <span class="tag" id="live-tag">● En vivo</span>
+    <span class="cat" id="cat-label">Torneo Inaugural</span>
+    <span class="brand">PÍCALE</span>
+  </div>
+  <table class="score">
+    <thead>
+      <tr>
+        <th class="name-col">Jugadores</th>
+        <th>Set 1</th><th>Set 2</th><th>Set 3</th>
+        <th>Juegos</th><th>Puntos</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="team-row serving" id="row-a">
+        <td class="team-name" id="name-a">Equipo A</td>
+        <td class="set-val" id="a-s1">–</td>
+        <td class="set-val" id="a-s2">–</td>
+        <td class="set-val" id="a-s3">–</td>
+        <td class="games-val" id="a-games">0</td>
+        <td><span class="points-val" id="a-points">0</span></td>
+      </tr>
+      <tr class="team-row" id="row-b">
+        <td class="team-name" id="name-b">Equipo B</td>
+        <td class="set-val" id="b-s1">–</td>
+        <td class="set-val" id="b-s2">–</td>
+        <td class="set-val" id="b-s3">–</td>
+        <td class="games-val" id="b-games">0</td>
+        <td><span class="points-val" id="b-points">0</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══ CONTROLES ══ -->
+<div class="controls">
+
+  <div class="ctrl-section">
+    <h3>Nombres &amp; Categoría</h3>
+    <div class="meta-row" style="margin-bottom:12px;">
+      <input id="in-name-a" placeholder="Equipo A (ej. Pablo / Toño)" oninput="setName('a',this.value)">
+      <input id="in-name-b" placeholder="Equipo B (ej. Rival 1 / Rival 2)" oninput="setName('b',this.value)">
+    </div>
+    <div class="meta-row">
+      <input id="in-cat" placeholder="Categoría (ej. 4ta Varonil)" oninput="document.getElementById('cat-label').textContent=this.value||'Torneo Inaugural'">
+      <input id="in-tag" placeholder="Etiqueta (ej. Semifinal)" oninput="document.getElementById('live-tag').textContent='● '+(this.value||'En vivo')">
+    </div>
+  </div>
+
+  <div class="ctrl-section">
+    <h3>Puntos</h3>
+    <div class="team-ctrl">
+      <div style="font-weight:800;font-size:18px;" id="lbl-a">Equipo A</div>
+      <div class="point-btns">
+        <button class="btn btn-pt minus" onclick="point('a',-1)">−</button>
+        <button class="btn btn-pt" onclick="point('a',1)">+</button>
+        <button class="btn btn-serve active" id="serve-a" onclick="setServe('a')">Saque</button>
+      </div>
+    </div>
+    <div class="team-ctrl">
+      <div style="font-weight:800;font-size:18px;" id="lbl-b">Equipo B</div>
+      <div class="point-btns">
+        <button class="btn btn-pt minus" onclick="point('b',-1)">−</button>
+        <button class="btn btn-pt" onclick="point('b',1)">+</button>
+        <button class="btn btn-serve" id="serve-b" onclick="setServe('b')">Saque</button>
+      </div>
+    </div>
+    <div class="hint">El punto avanza solo: 0 → 15 → 30 → 40 → Ventaja → Juego. Al ganar el juego, suma automático a "Juegos" y reinicia puntos. Con 6 juegos gana el set.</div>
+  </div>
+
+  <div class="ctrl-section">
+    <h3>Ajustes manuales</h3>
+    <div class="row-btns">
+      <button class="btn-action" onclick="adjGame('a',1)">+ Juego A</button>
+      <button class="btn-action" onclick="adjGame('a',-1)">− Juego A</button>
+      <button class="btn-action" onclick="adjGame('b',1)">+ Juego B</button>
+      <button class="btn-action" onclick="adjGame('b',-1)">− Juego B</button>
+      <button class="btn-action" onclick="closeSet()">Cerrar set</button>
+    </div>
+    <div class="row-btns" style="margin-top:10px;">
+      <button class="btn-action danger" onclick="resetPoints()">Reiniciar puntos</button>
+      <button class="btn-action danger" onclick="resetAll()">Reiniciar TODO</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var S = {
+  names:{a:'Equipo A', b:'Equipo B'},
+  points:{a:0, b:0},      // indices: 0,1,2,3 = 0,15,30,40 ; 4 = ventaja
+  games:{a:0, b:0},
+  sets:{a:[null,null,null], b:[null,null,null]},
+  currentSet:0,
+  serve:'a',
+  goldenPoint:false,      // false = ventaja tradicional
+};
+var PT_LABELS = ['0','15','30','40','Ad'];
+
+function render(){
+  document.getElementById('name-a').textContent = S.names.a.toUpperCase();
+  document.getElementById('name-b').textContent = S.names.b.toUpperCase();
+  document.getElementById('lbl-a').textContent = S.names.a;
+  document.getElementById('lbl-b').textContent = S.names.b;
+
+  document.getElementById('a-points').textContent = ptLabel('a');
+  document.getElementById('b-points').textContent = ptLabel('b');
+  document.getElementById('a-games').textContent = S.games.a;
+  document.getElementById('b-games').textContent = S.games.b;
+
+  for(var s=0;s<3;s++){
+    document.getElementById('a-s'+(s+1)).textContent = S.sets.a[s]===null?'–':S.sets.a[s];
+    document.getElementById('b-s'+(s+1)).textContent = S.sets.b[s]===null?'–':S.sets.b[s];
+  }
+  document.getElementById('row-a').classList.toggle('serving', S.serve==='a');
+  document.getElementById('row-b').classList.toggle('serving', S.serve==='b');
+  document.getElementById('serve-a').classList.toggle('active', S.serve==='a');
+  document.getElementById('serve-b').classList.toggle('active', S.serve==='b');
+}
+
+function ptLabel(t){
+  // maneja deuce/ventaja visualmente
+  var pa=S.points.a, pb=S.points.b;
+  if(pa>=3 && pb>=3){
+    // deuce zone
+    if(S.points[t]===4) return 'Ad';
+    if(S.points[t]===3 && S.points[t=='a'?'b':'a']<4) return '40';
+    return '40';
+  }
+  return PT_LABELS[Math.min(S.points[t],3)];
+}
+
+function point(t, dir){
+  var o = t==='a'?'b':'a';
+  if(dir<0){ // restar punto
+    if(S.points[t]>0) S.points[t]--;
+    render(); return;
+  }
+  // sumar punto (logica padel/tenis)
+  var pt=S.points[t], po=S.points[o];
+  if(pt>=3 && po>=3){
+    // deuce / ventaja
+    if(S.goldenPoint){ winGame(t); return; }
+    if(pt===3 && po===3){ S.points[t]=4; }        // gana ventaja
+    else if(pt===4){ winGame(t); return; }         // tenia ventaja -> juego
+    else if(po===4){ S.points[o]=3; }              // rival tenia ventaja -> deuce
+    else { S.points[t]=4; }
+  } else {
+    if(pt>=3){ winGame(t); return; }               // 40 -> juego
+    S.points[t]=pt+1;
+  }
+  render();
+}
+
+function winGame(t){
+  S.games[t]++;
+  S.points.a=0; S.points.b=0;
+  // cambio de saque cada juego
+  S.serve = S.serve==='a'?'b':'a';
+  // ¿gana el set? (6 juegos con dif de 2, o 7)
+  var g=S.games[t], go=S.games[t==='a'?'b':'a'];
+  if((g>=6 && g-go>=2) || g===7){
+    S.sets[t][S.currentSet]=g;
+    S.sets[t==='a'?'b':'a'][S.currentSet]=go;
+    S.games.a=0; S.games.b=0;
+    S.currentSet=Math.min(S.currentSet+1,2);
+  }
+  render();
+}
+
+function setName(t,v){ S.names[t]=v||('Equipo '+t.toUpperCase()); render(); }
+function setServe(t){ S.serve=t; render(); }
+function adjGame(t,d){ S.games[t]=Math.max(0,S.games[t]+d); render(); }
+function resetPoints(){ S.points.a=0; S.points.b=0; render(); }
+function closeSet(){
+  S.sets.a[S.currentSet]=S.games.a;
+  S.sets.b[S.currentSet]=S.games.b;
+  S.games.a=0; S.games.b=0;
+  S.currentSet=Math.min(S.currentSet+1,2);
+  S.points.a=0; S.points.b=0;
+  render();
+}
+function resetAll(){
+  if(!confirm('¿Reiniciar todo el marcador?')) return;
+  S.points={a:0,b:0}; S.games={a:0,b:0};
+  S.sets={a:[null,null,null],b:[null,null,null]};
+  S.currentSet=0; S.serve='a';
+  render();
+}
+
+function toggleProject(){
+  document.body.classList.toggle('project');
+  var btn=document.querySelector('.fs-btn');
+  if(document.body.classList.contains('project')){
+    btn.textContent='✕ Salir';
+    if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  }else{
+    btn.textContent='⛶ Proyectar';
+    if(document.fullscreenElement && document.exitFullscreen) document.exitFullscreen();
+  }
+}
+
+// atajos de teclado: A/L = punto A/B ; Z/M = quitar ; S = cambia saque ; F = proyectar
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='INPUT') return;
+  var k=e.key.toLowerCase();
+  if(k==='a') point('a',1);
+  else if(k==='l') point('b',1);
+  else if(k==='z') point('a',-1);
+  else if(k==='m') point('b',-1);
+  else if(k==='s') setServe(S.serve==='a'?'b':'a');
+  else if(k==='f') toggleProject();
+});
+
+render();
+</script>
+</body>
+</html>
