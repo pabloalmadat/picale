@@ -20,7 +20,8 @@
   /* ══ MARCADOR (lo que se proyecta) ══ */
   .board{background:linear-gradient(135deg,#0a0d0f,#0e1418);border-bottom:2px solid var(--yellow);
     padding:3vh 4vw;position:relative;}
-  .board-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5vh;}
+  .board-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5vh;gap:2vw;}
+  .board-head .left{display:flex;align-items:center;gap:1.6vw;}
   .board-head .tag{display:inline-flex;align-items:center;gap:.6vw;background:var(--yellow);color:#070a0c;
     font-weight:800;font-size:2.6vh;letter-spacing:.15vw;text-transform:uppercase;padding:1vh 2vw;border-radius:.8vh;}
   .board-head .cat{font-size:2.8vh;color:var(--muted);text-transform:uppercase;letter-spacing:.2vw;}
@@ -30,10 +31,19 @@
     height:6vh;width:auto;opacity:.15;display:none;pointer-events:none;}
   body.project .board-watermark{display:block;}
 
+  /* chip de tiebreak */
+  .tb-chip{display:none;align-items:center;gap:.5vw;border:2px solid var(--yellow);color:var(--yellow);
+    font-weight:800;font-size:2.2vh;letter-spacing:.2vw;text-transform:uppercase;padding:.8vh 1.6vw;
+    border-radius:.8vh;animation:tbpulse 2s ease-in-out infinite;}
+  body.tb .tb-chip{display:inline-flex;}
+  @keyframes tbpulse{0%,100%{opacity:1}50%{opacity:.45}}
+  @media (prefers-reduced-motion:reduce){.tb-chip{animation:none}}
+
   table.score{width:100%;border-collapse:collapse;}
   table.score th{font-size:2.6vh;color:var(--muted);text-transform:uppercase;letter-spacing:.15vw;
     padding:1vh .5vw;text-align:center;font-weight:700;}
   table.score th.name-col{text-align:left;padding-left:1vw;}
+  body.tb table.score th#th-points{color:var(--yellow);}
   table.score td{padding:2.6vh .5vw;text-align:center;border-top:1px solid var(--line);}
   .team-name{font-family:var(--display);font-size:7vh;text-align:left;padding-left:1vw;
     text-transform:uppercase;line-height:1.1;}
@@ -43,7 +53,11 @@
   .games-val{font-family:var(--display);font-size:8vh;color:var(--text);}
   .points-val{font-family:var(--display);font-size:11vh;color:var(--yellow);
     background:rgba(212,240,0,.08);border-radius:1.5vh;min-width:9vw;display:inline-block;padding:0 1vw;}
+  body.tb .points-val{background:rgba(212,240,0,.16);box-shadow:inset 0 0 0 2px rgba(212,240,0,.35);}
   .team-row.win-set .set-val.current{color:var(--yellow);}
+
+  .board-note{text-align:center;margin-top:1.6vh;font-size:2.2vh;letter-spacing:.2vw;
+    text-transform:uppercase;color:var(--yellow);min-height:2.6vh;font-weight:700;}
 
   /* ══ CONTROLES (abajo, para ti) ══ */
   .controls{padding:24px;max-width:900px;margin:0 auto;}
@@ -59,6 +73,7 @@
   .btn{border:none;border-radius:10px;font-family:inherit;font-weight:800;cursor:pointer;
     transition:transform .1s,filter .1s;user-select:none;}
   .btn:active{transform:scale(.94);}
+  .btn:focus-visible,.btn-action:focus-visible,.fs-btn:focus-visible{outline:2px solid var(--yellow);outline-offset:2px;}
   .btn-pt{background:var(--yellow);color:#070a0c;font-size:24px;width:64px;height:64px;}
   .btn-pt.minus{background:var(--bg3);color:var(--text);border:1px solid var(--line);}
   .btn-serve{background:var(--bg3);color:var(--muted);border:1px solid var(--line);font-size:12px;
@@ -67,8 +82,10 @@
 
   .row-btns{display:flex;gap:10px;flex-wrap:wrap;}
   .btn-action{background:var(--bg3);color:var(--text);border:1px solid var(--line);
-    font-size:13px;text-transform:uppercase;letter-spacing:1px;padding:12px 18px;font-weight:700;}
+    font-size:13px;text-transform:uppercase;letter-spacing:1px;padding:12px 18px;font-weight:700;
+    border-radius:10px;font-family:inherit;cursor:pointer;}
   .btn-action:hover{border-color:var(--yellow);}
+  .btn-action.on{background:rgba(212,240,0,.15);color:var(--yellow);border-color:var(--yellow);}
   .btn-action.danger{color:#ff6b6b;}
   .btn-action.danger:hover{border-color:var(--red);}
 
@@ -78,6 +95,7 @@
   .meta-row input:focus{outline:none;border-color:var(--yellow);}
 
   .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5;}
+  .hint b{color:var(--text);}
 
   /* modo proyeccion: oculta controles con tecla F */
   body.project .controls{display:none;}
@@ -85,6 +103,11 @@
   .fs-btn{position:fixed;top:12px;right:12px;z-index:50;background:var(--bg3);border:1px solid var(--line);
     color:var(--text);border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit;
     text-transform:uppercase;letter-spacing:1px;}
+
+  @media (max-width:640px){
+    .meta-row{grid-template-columns:1fr;}
+    .team-ctrl{grid-template-columns:1fr;}
+  }
 </style>
 </head>
 <body>
@@ -94,8 +117,11 @@
 <div class="board">
   <img src="assets/picale_logo_white.png" class="board-watermark" alt="">
   <div class="board-head">
-    <span class="tag" id="live-tag">● En vivo</span>
-    <span class="cat" id="cat-label">Torneo Inaugural</span>
+    <div class="left">
+      <span class="tag" id="live-tag">● En vivo</span>
+      <span class="cat" id="cat-label">Torneo Inaugural</span>
+    </div>
+    <span class="tb-chip" id="tb-chip">Tie Break</span>
     <img src="assets/picale_logo_white.png" class="brand-logo" alt="PÍCALE">
   </div>
   <table class="score">
@@ -103,7 +129,7 @@
       <tr>
         <th class="name-col">Jugadores</th>
         <th>Set 1</th><th>Set 2</th><th>Set 3</th>
-        <th>Juegos</th><th>Puntos</th>
+        <th>Juegos</th><th id="th-points">Puntos</th>
       </tr>
     </thead>
     <tbody>
@@ -125,6 +151,7 @@
       </tr>
     </tbody>
   </table>
+  <div class="board-note" id="board-note"></div>
 </div>
 
 <!-- ══ CONTROLES ══ -->
@@ -139,6 +166,18 @@
     <div class="meta-row">
       <input id="in-cat" placeholder="Categoría (ej. 4ta Varonil)" oninput="document.getElementById('cat-label').textContent=this.value||'Torneo Inaugural'">
       <input id="in-tag" placeholder="Etiqueta (ej. Semifinal)" oninput="document.getElementById('live-tag').textContent='● '+(this.value||'En vivo')">
+    </div>
+  </div>
+
+  <div class="ctrl-section">
+    <h3>Reglas del partido</h3>
+    <div class="row-btns">
+      <button class="btn-action" id="btn-golden" onclick="toggleGolden()">Punto de oro</button>
+      <button class="btn-action" id="btn-supertb" onclick="toggleSuper()">Super tie break en 3er set</button>
+    </div>
+    <div class="hint">
+      <b>Punto de oro:</b> en 40–40 el siguiente punto define el juego (sin ventajas).<br>
+      <b>Super tie break:</b> si el partido llega 1–1 en sets, el tercero se juega a 10 puntos con diferencia de 2.
     </div>
   </div>
 
@@ -160,7 +199,7 @@
         <button class="btn btn-serve" id="serve-b" onclick="setServe('b')">Saque</button>
       </div>
     </div>
-    <div class="hint">El punto avanza solo: 0 → 15 → 30 → 40 → Ventaja → Juego. Al ganar el juego, suma automático a "Juegos" y reinicia puntos. Con 6 juegos gana el set.</div>
+    <div class="hint" id="hint-points"></div>
   </div>
 
   <div class="ctrl-section">
@@ -173,9 +212,11 @@
       <button class="btn-action" onclick="closeSet()">Cerrar set</button>
     </div>
     <div class="row-btns" style="margin-top:10px;">
+      <button class="btn-action" id="btn-tb" onclick="toggleTiebreak()">Iniciar tie break</button>
       <button class="btn-action danger" onclick="resetPoints()">Reiniciar puntos</button>
       <button class="btn-action danger" onclick="resetAll()">Reiniciar TODO</button>
     </div>
+    <div class="hint">Atajos: <b>A</b> punto Equipo A · <b>L</b> punto Equipo B · <b>Z</b> / <b>M</b> quitar punto · <b>S</b> cambia saque · <b>T</b> tie break · <b>F</b> proyectar.</div>
   </div>
 
 </div>
@@ -183,14 +224,22 @@
 <script>
 var S = {
   names:{a:'Equipo A', b:'Equipo B'},
-  points:{a:0, b:0},      // indices: 0,1,2,3 = 0,15,30,40 ; 4 = ventaja
+  points:{a:0, b:0},      // juego normal: 0,1,2,3 = 0,15,30,40 ; 4 = ventaja | tiebreak: puntos reales
   games:{a:0, b:0},
   sets:{a:[null,null,null], b:[null,null,null]},
   currentSet:0,
   serve:'a',
   goldenPoint:false,      // false = ventaja tradicional
+  superTB:false,          // super tie break a 10 en el 3er set
+  tiebreak:false,         // tie break en curso
+  isSuper:false,          // el tie break en curso es super tie break
+  tbServed:0,             // puntos jugados en el tie break (para rotar saque)
+  tbStarter:'a'           // quien abrio el saque del tie break
 };
 var PT_LABELS = ['0','15','30','40','Ad'];
+
+function other(t){ return t==='a'?'b':'a'; }
+function tbTarget(){ return S.isSuper?10:7; }
 
 function render(){
   document.getElementById('name-a').textContent = S.names.a.toUpperCase();
@@ -211,75 +260,187 @@ function render(){
   document.getElementById('row-b').classList.toggle('serving', S.serve==='b');
   document.getElementById('serve-a').classList.toggle('active', S.serve==='a');
   document.getElementById('serve-b').classList.toggle('active', S.serve==='b');
+
+  // estado tie break
+  document.body.classList.toggle('tb', S.tiebreak);
+  document.getElementById('tb-chip').textContent = S.isSuper?('Super Tie Break · a '+tbTarget()):('Tie Break · a '+tbTarget());
+  document.getElementById('th-points').textContent = S.tiebreak?'Tie break':'Puntos';
+  document.getElementById('btn-tb').textContent = S.tiebreak?'Salir del tie break':'Iniciar tie break';
+  document.getElementById('btn-tb').classList.toggle('on', S.tiebreak);
+  document.getElementById('btn-golden').classList.toggle('on', S.goldenPoint);
+  document.getElementById('btn-supertb').classList.toggle('on', S.superTB);
+
+  // aviso en pantalla: cambio de lado cada 6 puntos del tie break
+  var note='';
+  if(S.tiebreak){
+    var total=S.points.a+S.points.b;
+    if(total>0 && total%6===0) note='Cambio de lado';
+    else if(setPointTB()) note = setPointTB()+' tiene punto de set';
+  }
+  document.getElementById('board-note').textContent = note;
+
+  document.getElementById('hint-points').innerHTML = S.tiebreak
+    ? 'Tie break a <b>'+tbTarget()+'</b> puntos con diferencia de 2. El saque cambia después del primer punto y luego cada 2 puntos. Al cerrarse, el set se registra automático.'
+    : 'El punto avanza solo: 0 → 15 → 30 → 40 → '+(S.goldenPoint?'Punto de oro':'Ventaja')+' → Juego. Al ganar el juego suma a "Juegos" y reinicia puntos. Con 6 juegos y diferencia de 2 gana el set; en 6–6 arranca el tie break.';
+}
+
+function setPointTB(){
+  var t=tbTarget();
+  if(S.points.a>=t-1 && S.points.a>S.points.b) return S.names.a;
+  if(S.points.b>=t-1 && S.points.b>S.points.a) return S.names.b;
+  return '';
 }
 
 function ptLabel(t){
-  // maneja deuce/ventaja visualmente
-  var pa=S.points.a, pb=S.points.b;
-  if(pa>=3 && pb>=3){
-    // deuce zone
-    if(S.points[t]===4) return 'Ad';
-    if(S.points[t]===3 && S.points[t=='a'?'b':'a']<4) return '40';
+  if(S.tiebreak) return String(S.points[t]);
+  var o=other(t), pt=S.points[t], po=S.points[o];
+  if(pt>=3 && po>=3){
+    if(pt===4) return 'Ad';
     return '40';
   }
-  return PT_LABELS[Math.min(S.points[t],3)];
+  return PT_LABELS[Math.min(pt,3)];
 }
 
+/* ══ PUNTOS ══ */
 function point(t, dir){
-  var o = t==='a'?'b':'a';
-  if(dir<0){ // restar punto
+  if(S.tiebreak) return tbPoint(t,dir);
+  var o = other(t);
+  if(dir<0){
     if(S.points[t]>0) S.points[t]--;
     render(); return;
   }
-  // sumar punto (logica padel/tenis)
   var pt=S.points[t], po=S.points[o];
   if(pt>=3 && po>=3){
-    // deuce / ventaja
-    if(S.goldenPoint){ winGame(t); return; }
+    if(S.goldenPoint){ winGame(t); return; }      // punto de oro: 40-40 define
     if(pt===3 && po===3){ S.points[t]=4; }        // gana ventaja
-    else if(pt===4){ winGame(t); return; }         // tenia ventaja -> juego
-    else if(po===4){ S.points[o]=3; }              // rival tenia ventaja -> deuce
+    else if(pt===4){ winGame(t); return; }        // tenia ventaja -> juego
+    else if(po===4){ S.points[o]=3; }             // rival tenia ventaja -> deuce
     else { S.points[t]=4; }
   } else {
-    if(pt>=3){ winGame(t); return; }               // 40 -> juego
+    if(pt>=3){ winGame(t); return; }              // 40 -> juego
     S.points[t]=pt+1;
   }
   render();
 }
 
+function tbPoint(t, dir){
+  var o=other(t);
+  if(dir<0){
+    if(S.points[t]>0){
+      S.points[t]--;
+      S.tbServed=Math.max(0,S.tbServed-1);
+      tbServeSync();
+    }
+    render(); return;
+  }
+  S.points[t]++;
+  S.tbServed++;
+  if(S.points[t]>=tbTarget() && S.points[t]-S.points[o]>=2){ winTiebreak(t); return; }
+  tbServeSync();
+  render();
+}
+
+// saque del tie break: cambia después del punto 1 y luego cada 2 puntos
+function tbServeSync(){
+  var swaps = S.tbServed>0 ? Math.floor((S.tbServed+1)/2) : 0;
+  S.serve = (swaps%2===0) ? S.tbStarter : other(S.tbStarter);
+}
+
+function startTiebreak(isSuper){
+  S.tiebreak=true;
+  S.isSuper=!!isSuper;
+  S.points.a=0; S.points.b=0;
+  S.tbServed=0;
+  S.tbStarter=S.serve;
+  render();
+}
+
+function toggleTiebreak(){
+  if(S.tiebreak){
+    S.tiebreak=false; S.isSuper=false;
+    S.points.a=0; S.points.b=0;
+    render();
+  }else{
+    var sup = S.superTB && S.currentSet===2 && setsWon('a')===1 && setsWon('b')===1;
+    startTiebreak(sup);
+  }
+}
+
+function winTiebreak(t){
+  var o=other(t);
+  if(S.isSuper){
+    finishSet(S.points.a, S.points.b);            // super TB se registra 10-8, 11-9, etc.
+  }else{
+    S.games[t]=7; S.games[o]=6;
+    finishSet(S.games.a, S.games.b);
+  }
+}
+
+/* ══ JUEGOS / SETS ══ */
 function winGame(t){
   S.games[t]++;
   S.points.a=0; S.points.b=0;
-  // cambio de saque cada juego
-  S.serve = S.serve==='a'?'b':'a';
-  // ¿gana el set? (6 juegos con dif de 2, o 7)
-  var g=S.games[t], go=S.games[t==='a'?'b':'a'];
-  if((g>=6 && g-go>=2) || g===7){
-    S.sets[t][S.currentSet]=g;
-    S.sets[t==='a'?'b':'a'][S.currentSet]=go;
-    S.games.a=0; S.games.b=0;
-    S.currentSet=Math.min(S.currentSet+1,2);
+  S.serve = other(S.serve);                       // cambio de saque cada juego
+  var o=other(t), g=S.games[t], go=S.games[o];
+  if(g>=6 && g-go>=2){ finishSet(S.games.a, S.games.b); return; }
+  if(g===6 && go===6){ startTiebreak(false); return; }
+  render();
+}
+
+function finishSet(ga, gb){
+  S.sets.a[S.currentSet]=ga;
+  S.sets.b[S.currentSet]=gb;
+  S.games.a=0; S.games.b=0;
+  S.points.a=0; S.points.b=0;
+  S.tiebreak=false; S.isSuper=false; S.tbServed=0;
+  if(S.currentSet<2){
+    S.currentSet++;
+    // 1-1 en sets y super tie break activado -> el 3er set es a 10
+    if(S.currentSet===2 && S.superTB && setsWon('a')===1 && setsWon('b')===1){
+      startTiebreak(true); return;
+    }
   }
   render();
 }
 
+function setsWon(t){
+  var o=other(t), n=0;
+  for(var i=0;i<3;i++){
+    if(S.sets[t][i]!==null && S.sets[o][i]!==null && S.sets[t][i]>S.sets[o][i]) n++;
+  }
+  return n;
+}
+
+/* ══ CONTROLES ══ */
 function setName(t,v){ S.names[t]=v||('Equipo '+t.toUpperCase()); render(); }
-function setServe(t){ S.serve=t; render(); }
-function adjGame(t,d){ S.games[t]=Math.max(0,S.games[t]+d); render(); }
-function resetPoints(){ S.points.a=0; S.points.b=0; render(); }
-function closeSet(){
-  S.sets.a[S.currentSet]=S.games.a;
-  S.sets.b[S.currentSet]=S.games.b;
-  S.games.a=0; S.games.b=0;
-  S.currentSet=Math.min(S.currentSet+1,2);
-  S.points.a=0; S.points.b=0;
+function setServe(t){ S.serve=t; if(S.tiebreak){ S.tbStarter = (Math.floor((S.tbServed+1)/2)%2===0) ? t : other(t); } render(); }
+function toggleGolden(){ S.goldenPoint=!S.goldenPoint; render(); }
+function toggleSuper(){ S.superTB=!S.superTB; render(); }
+
+function adjGame(t,d){
+  if(S.tiebreak) return;                          // durante el tie break los juegos quedan 6-6
+  S.games[t]=Math.max(0,S.games[t]+d);
+  if(S.games.a===6 && S.games.b===6){ startTiebreak(false); return; }
   render();
 }
+
+function resetPoints(){ S.points.a=0; S.points.b=0; S.tbServed=0; if(S.tiebreak) S.tbStarter=S.serve; render(); }
+
+function closeSet(){
+  if(S.tiebreak){
+    if(S.isSuper) finishSet(S.points.a, S.points.b);
+    else finishSet(S.games.a, S.games.b);
+    return;
+  }
+  finishSet(S.games.a, S.games.b);
+}
+
 function resetAll(){
   if(!confirm('¿Reiniciar todo el marcador?')) return;
   S.points={a:0,b:0}; S.games={a:0,b:0};
   S.sets={a:[null,null,null],b:[null,null,null]};
   S.currentSet=0; S.serve='a';
+  S.tiebreak=false; S.isSuper=false; S.tbServed=0; S.tbStarter='a';
   render();
 }
 
@@ -295,7 +456,7 @@ function toggleProject(){
   }
 }
 
-// atajos de teclado: A/L = punto A/B ; Z/M = quitar ; S = cambia saque ; F = proyectar
+// atajos: A/L = punto A/B ; Z/M = quitar ; S = saque ; T = tie break ; F = proyectar
 document.addEventListener('keydown',function(e){
   if(e.target.tagName==='INPUT') return;
   var k=e.key.toLowerCase();
@@ -304,6 +465,7 @@ document.addEventListener('keydown',function(e){
   else if(k==='z') point('a',-1);
   else if(k==='m') point('b',-1);
   else if(k==='s') setServe(S.serve==='a'?'b':'a');
+  else if(k==='t') toggleTiebreak();
   else if(k==='f') toggleProject();
 });
 
