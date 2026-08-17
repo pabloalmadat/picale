@@ -59,6 +59,56 @@
   .board-note{text-align:center;margin-top:1.6vh;font-size:2.2vh;letter-spacing:.2vw;
     text-transform:uppercase;color:var(--yellow);min-height:2.6vh;font-weight:700;}
 
+  /* ══ ALERTAS: break point · set point · match point ══ */
+  .alert{display:flex;justify-content:center;align-items:center;margin-top:1.4vh;min-height:9vh;}
+  .alert-inner{display:none;align-items:baseline;gap:1.4vw;position:relative;overflow:hidden;
+    font-family:var(--display);font-size:4.4vh;line-height:1;letter-spacing:.32vw;text-transform:uppercase;
+    padding:1.6vh 3.4vw;border-radius:1.2vh;white-space:nowrap;}
+  .alert.on .alert-inner{display:inline-flex;animation:alertIn .5s cubic-bezier(.16,1,.3,1) both;}
+  .alert-who{font-family:var(--body);font-weight:800;font-size:2.4vh;letter-spacing:.14vw;opacity:.82;}
+
+  /* break point: contorno que respira */
+  .alert.break .alert-inner{color:var(--yellow);border:.35vh solid var(--yellow);background:rgba(212,240,0,.07);
+    animation:alertIn .5s cubic-bezier(.16,1,.3,1) both, breathe 1.9s ease-in-out .5s infinite;}
+  /* set point: bloque sólido con destello */
+  .alert.set .alert-inner{color:#070a0c;background:var(--yellow);}
+  .alert.set .alert-inner::after,.alert.match .alert-inner::after,.alert.win .alert-inner::after{
+    content:'';position:absolute;inset:0;transform:translateX(-130%);
+    background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.8) 50%,transparent 62%);
+    animation:sweep 2.6s ease-in-out .5s infinite;}
+  /* match point: bloque sólido + latido */
+  .alert.match .alert-inner{color:#070a0c;background:var(--yellow);
+    animation:alertIn .5s cubic-bezier(.16,1,.3,1) both, heartbeat 1.15s ease-in-out .5s infinite;}
+  .alert.match .alert-inner::after{animation-duration:1.5s;}
+  /* punto de oro: contorno doble */
+  .alert.gold .alert-inner{color:var(--yellow);border:.35vh solid var(--yellow);background:rgba(212,240,0,.07);
+    box-shadow:0 0 0 .8vh rgba(212,240,0,.09);
+    animation:alertIn .5s cubic-bezier(.16,1,.3,1) both, breathe 1.4s ease-in-out .4s infinite;}
+  /* cierre de set / partido */
+  .alert.win .alert-inner{color:#070a0c;background:var(--yellow);}
+
+  @keyframes alertIn{
+    0%{opacity:0;transform:translateY(2.5vh) scale(.9);}
+    60%{opacity:1;transform:translateY(0) scale(1.04);}
+    100%{opacity:1;transform:translateY(0) scale(1);}
+  }
+  @keyframes breathe{0%,100%{opacity:1}50%{opacity:.5}}
+  @keyframes sweep{0%{transform:translateX(-130%)}55%,100%{transform:translateX(130%)}}
+  @keyframes heartbeat{
+    0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(212,240,0,.45);}
+    50%{transform:scale(1.035);box-shadow:0 0 0 2.2vh rgba(212,240,0,0);}
+  }
+  @keyframes ptglow{0%,100%{box-shadow:0 0 0 .25vh rgba(212,240,0,.35)}50%{box-shadow:0 0 0 .55vh rgba(212,240,0,.75)}}
+
+  /* el equipo que tiene el punto: resalta su casilla */
+  .team-row.on-point .points-val{animation:ptglow 1.5s ease-in-out infinite;}
+  body.mp .board{box-shadow:inset 0 0 14vh rgba(212,240,0,.07);}
+
+  @media (prefers-reduced-motion:reduce){
+    .alert-inner,.alert.on .alert-inner,.alert.break .alert-inner,.alert.match .alert-inner,
+    .alert.gold .alert-inner,.alert .alert-inner::after,.team-row.on-point .points-val{animation:none!important;}
+  }
+
   /* ══ CONTROLES (abajo, para ti) ══ */
   .controls{padding:24px;max-width:900px;margin:0 auto;}
   .ctrl-section{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px;}
@@ -152,6 +202,9 @@
     </tbody>
   </table>
   <div class="board-note" id="board-note"></div>
+  <div class="alert" id="alert">
+    <div class="alert-inner"><span id="alert-text">Break point</span><span class="alert-who" id="alert-who"></span></div>
+  </div>
 </div>
 
 <!-- ══ CONTROLES ══ -->
@@ -216,7 +269,8 @@
       <button class="btn-action danger" onclick="resetPoints()">Reiniciar puntos</button>
       <button class="btn-action danger" onclick="resetAll()">Reiniciar TODO</button>
     </div>
-    <div class="hint">Atajos: <b>A</b> punto Equipo A · <b>L</b> punto Equipo B · <b>Z</b> / <b>M</b> quitar punto · <b>S</b> cambia saque · <b>T</b> tie break · <b>F</b> proyectar.</div>
+    <div class="hint">Atajos: <b>A</b> punto Equipo A · <b>L</b> punto Equipo B · <b>Z</b> / <b>M</b> quitar punto · <b>S</b> cambia saque · <b>T</b> tie break · <b>F</b> proyectar.<br>
+    El banner de <b>break point</b>, <b>set point</b> y <b>match point</b> sale solo en el marcador cuando la jugada lo amerita; al cerrar un set aparece <b>Set 1/2/3</b> y al terminar el partido, <b>Ganador</b>.</div>
   </div>
 
 </div>
@@ -234,7 +288,8 @@ var S = {
   tiebreak:false,         // tie break en curso
   isSuper:false,          // el tie break en curso es super tie break
   tbServed:0,             // puntos jugados en el tie break (para rotar saque)
-  tbStarter:'a'           // quien abrio el saque del tie break
+  tbStarter:'a',          // quien abrio el saque del tie break
+  flash:null              // aviso momentaneo (set / ganador)
 };
 var PT_LABELS = ['0','15','30','40','Ad'];
 
@@ -275,20 +330,83 @@ function render(){
   if(S.tiebreak){
     var total=S.points.a+S.points.b;
     if(total>0 && total%6===0) note='Cambio de lado';
-    else if(setPointTB()) note = setPointTB()+' tiene punto de set';
   }
   document.getElementById('board-note').textContent = note;
+
+  renderAlert();
 
   document.getElementById('hint-points').innerHTML = S.tiebreak
     ? 'Tie break a <b>'+tbTarget()+'</b> puntos con diferencia de 2. El saque cambia después del primer punto y luego cada 2 puntos. Al cerrarse, el set se registra automático.'
     : 'El punto avanza solo: 0 → 15 → 30 → 40 → '+(S.goldenPoint?'Punto de oro':'Ventaja')+' → Juego. Al ganar el juego suma a "Juegos" y reinicia puntos. Con 6 juegos y diferencia de 2 gana el set; en 6–6 arranca el tie break.';
 }
 
-function setPointTB(){
-  var t=tbTarget();
-  if(S.points.a>=t-1 && S.points.a>S.points.b) return S.names.a;
-  if(S.points.b>=t-1 && S.points.b>S.points.a) return S.names.b;
-  return '';
+/* ══ BREAK / SET / MATCH POINT ══ */
+// ¿este equipo gana el juego (o el tie break) con el siguiente punto?
+function gamePointFor(t){
+  var o=other(t);
+  if(S.tiebreak) return S.points[t]>=tbTarget()-1 && S.points[t]-S.points[o]>=1;
+  if(S.goldenPoint && S.points.a>=3 && S.points.b>=3) return true;   // punto de oro: los dos
+  return S.points[t]>=3 && S.points[t]>S.points[o];
+}
+// ¿ese juego cierra el set?
+function setPointFor(t){
+  if(!gamePointFor(t)) return false;
+  if(S.tiebreak) return true;
+  var g=S.games[t]+1, go=S.games[other(t)];
+  return g>=6 && g-go>=2;
+}
+// ¿ese set cierra el partido? (al mejor de 3)
+function matchPointFor(t){ return setPointFor(t) && setsWon(t)===1; }
+// break: tiene el punto quien recibe (en tie break no aplica)
+function breakPointFor(t){ return !S.tiebreak && gamePointFor(t) && S.serve!==t; }
+
+function alertFor(t){
+  if(matchPointFor(t)) return {rank:3, cls:'match', text:'Match point'};
+  if(setPointFor(t))   return {rank:2, cls:'set',   text:'Set point'};
+  if(breakPointFor(t)) return {rank:1, cls:'break', text:'Break point'};
+  return null;
+}
+
+function currentAlert(){
+  if(S.flash) return S.flash;
+  var A=alertFor('a'), B=alertFor('b');
+  // punto de oro: los dos equipos juegan el mismo punto
+  if(!S.tiebreak && S.goldenPoint && S.points.a>=3 && S.points.b>=3){
+    var top=Math.max(A?A.rank:0, B?B.rank:0);
+    return {cls:'gold', text:'Punto de oro',
+            who: top===3?'Define el partido':(top===2?'Define el set':'Define el juego'), team:null};
+  }
+  var pick=null, who=null;
+  if(A){ pick=A; who='a'; }
+  if(B && (!A || B.rank>A.rank)){ pick=B; who='b'; }
+  if(!pick) return null;
+  return {cls:pick.cls, text:pick.text, who:S.names[who], team:who};
+}
+
+var lastAlertKey='';
+function renderAlert(){
+  var al=currentAlert(), el=document.getElementById('alert');
+  var key = al ? (al.cls+'|'+al.text+'|'+(al.who||'')) : '';
+  if(key!==lastAlertKey){
+    el.className='alert';
+    void el.offsetWidth;                       // reinicia la animacion de entrada
+    if(al) el.classList.add('on', al.cls);
+    document.getElementById('alert-text').textContent = al?al.text:'';
+    document.getElementById('alert-who').textContent  = al?(al.who||''):'';
+    lastAlertKey=key;
+  }
+  document.body.classList.toggle('mp', !!al && al.cls==='match');
+  document.getElementById('row-a').classList.toggle('on-point', !!al && al.team==='a');
+  document.getElementById('row-b').classList.toggle('on-point', !!al && al.team==='b');
+}
+
+// aviso momentaneo (cierre de set o de partido)
+var flashTimer=null;
+function flash(text, who, ms){
+  S.flash={cls:'win', text:text, who:who||'', team:null};
+  clearTimeout(flashTimer);
+  flashTimer=setTimeout(function(){ S.flash=null; render(); }, ms||4500);
+  render();
 }
 
 function ptLabel(t){
@@ -393,6 +511,9 @@ function finishSet(ga, gb){
   S.games.a=0; S.games.b=0;
   S.points.a=0; S.points.b=0;
   S.tiebreak=false; S.isSuper=false; S.tbServed=0;
+  var w = ga>gb?'a':'b';
+  if(setsWon(w)>=2) flash('Ganador', S.names[w], 15000);
+  else flash('Set '+(S.currentSet+1), S.names[w], 4500);
   if(S.currentSet<2){
     S.currentSet++;
     // 1-1 en sets y super tie break activado -> el 3er set es a 10
@@ -441,6 +562,7 @@ function resetAll(){
   S.sets={a:[null,null,null],b:[null,null,null]};
   S.currentSet=0; S.serve='a';
   S.tiebreak=false; S.isSuper=false; S.tbServed=0; S.tbStarter='a';
+  S.flash=null; clearTimeout(flashTimer);
   render();
 }
 
