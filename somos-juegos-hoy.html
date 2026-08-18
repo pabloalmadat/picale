@@ -15,36 +15,44 @@
     --display:'Archivo Black',sans-serif;--body:'Archivo',sans-serif;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
-  html,body{background:var(--bg);color:var(--text);font-family:var(--body);}
-  .stage{min-height:100vh;padding:4vh 4vw;background:
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--body);}
+  .stage{position:fixed;inset:0;display:flex;flex-direction:column;padding:3vh 4vw;background:
     radial-gradient(ellipse 70% 45% at 50% 8%,rgba(22,64,79,.4),transparent 70%),
     radial-gradient(ellipse 80% 40% at 50% 108%,rgba(212,240,0,.05),transparent 70%),var(--bg);}
 
-  .header{text-align:center;margin-bottom:3vh;}
-  .header .brand{font-size:1.5vh;color:var(--muted);letter-spacing:.4vw;text-transform:uppercase;margin-bottom:1vh;}
-  .header h1{font-family:var(--display);font-style:italic;font-size:6vh;line-height:.9;text-transform:uppercase;color:var(--yellow);transform:skewX(-5deg);text-shadow:0 0 4vh rgba(212,240,0,.25);}
-  .header .fecha{display:inline-block;margin-top:1.4vh;background:var(--yellow);color:#070a0c;font-weight:800;font-size:1.8vh;letter-spacing:.1vw;text-transform:uppercase;padding:.6vh 1.6vw;transform:skewX(-5deg);}
+  .header{text-align:center;flex-shrink:0;margin-bottom:2vh;}
+  .header .brand{font-size:1.4vh;color:var(--muted);letter-spacing:.4vw;text-transform:uppercase;margin-bottom:.8vh;}
+  .header h1{font-family:var(--display);font-style:italic;font-size:5vh;line-height:.9;text-transform:uppercase;color:var(--yellow);transform:skewX(-5deg);}
+  .header .fecha{display:inline-block;margin-top:1vh;background:var(--yellow);color:#070a0c;font-weight:800;font-size:1.6vh;letter-spacing:.1vw;text-transform:uppercase;padding:.5vh 1.4vw;transform:skewX(-5deg);}
   .header .fecha span{display:inline-block;transform:skewX(5deg);}
 
-  .hora-bloque{margin-bottom:2.4vh;}
-  .hora-tit{display:flex;align-items:center;gap:1.2vw;margin-bottom:1.2vh;}
-  .hora-tit .h{font-family:var(--display);font-size:2.6vh;color:var(--yellow);white-space:nowrap;}
+  .content{flex:1;display:flex;flex-direction:column;min-height:0;justify-content:center;}
+  .pagina{display:none;flex-direction:column;gap:1.4vh;animation:fade .6s;}
+  .pagina.activa{display:flex;}
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+
+  .hora-bloque{}
+  .hora-tit{display:flex;align-items:center;gap:1.2vw;margin-bottom:1vh;}
+  .hora-tit .h{font-family:var(--display);font-size:2.4vh;color:var(--yellow);white-space:nowrap;}
   .hora-tit .linea{flex:1;height:2px;background:var(--line);}
 
-  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1vw 1.5vw;}
-  .partido{background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--yellow);border-radius:.8vh;padding:1.3vh 1.4vw;display:flex;align-items:center;gap:1.2vw;}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1vh 1.5vw;}
+  .partido{background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--yellow);border-radius:.8vh;padding:1.2vh 1.4vw;display:flex;align-items:center;gap:1.2vw;}
   .partido .cancha-box{text-align:center;flex-shrink:0;min-width:5vw;}
-  .partido .cancha-box .c{font-family:var(--display);font-size:1.8vh;color:var(--yellow);line-height:1;}
+  .partido .cancha-box .c{font-family:var(--display);font-size:1.7vh;color:var(--yellow);line-height:1;}
   .partido .cancha-box .p{font-size:1vh;color:var(--muted);text-transform:uppercase;margin-top:.3vh;}
   .partido .info{flex:1;min-width:0;}
-  .partido .cat{font-size:1.1vh;color:var(--muted);text-transform:uppercase;letter-spacing:.08vw;margin-bottom:.4vh;}
-  .partido .eqs{font-size:1.55vh;font-weight:700;line-height:1.35;}
-  .partido .eqs .vs{color:var(--yellow);font-size:1.1vh;font-weight:800;margin:0 .4vw;}
+  .partido .cat{font-size:1.05vh;color:var(--muted);text-transform:uppercase;letter-spacing:.08vw;margin-bottom:.3vh;}
+  .partido .eqs{font-size:1.5vh;font-weight:700;line-height:1.3;}
+  .partido .eqs .vs{color:var(--yellow);font-size:1vh;font-weight:800;margin:0 .4vw;}
 
-  .footer{text-align:center;margin-top:3vh;padding-top:2vh;border-top:1px solid var(--line);}
-  .footer .wa{font-size:1.5vh;color:var(--text);}
+  .footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;margin-top:2vh;padding-top:1.6vh;border-top:1px solid var(--line);}
+  .footer .wa{font-size:1.3vh;color:var(--text);}
   .footer .wa b{color:var(--yellow);}
-  .footer .by{font-size:1.2vh;color:var(--muted);letter-spacing:.15vw;text-transform:uppercase;margin-top:.6vh;}
+  .footer .dots{display:flex;gap:.8vw;}
+  .footer .dot{width:1.1vh;height:1.1vh;border-radius:50%;background:var(--bg3);transition:background .3s;}
+  .footer .dot.on{background:var(--yellow);}
+  .footer .by{font-size:1.2vh;color:var(--muted);letter-spacing:.15vw;text-transform:uppercase;}
   .footer .by b{color:var(--yellow);font-family:var(--display);}
 </style>
 </head>
@@ -55,15 +63,18 @@
     <h1>Juegos de Hoy</h1>
     <div class="fecha"><span>Lunes 17 de Agosto</span></div>
   </div>
-  <div id="lista"></div>
+  <div class="content" id="content"></div>
   <div class="footer">
-    <div class="wa">Torneo Inaugural - Informes <b>WhatsApp 811 379 1451</b></div>
-    <div class="by">Transmision en vivo por <b>PICALE</b></div>
+    <div class="wa">Informes <b>WhatsApp 811 379 1451</b></div>
+    <div class="dots" id="dots"></div>
+    <div class="by">Por <b>PICALE</b></div>
   </div>
 </div>
 
 <script>
 var PARTIDOS = [{"estado": "Finalizado", "categoria": "5ta Femenil", "grupo": "Grupo A", "pista": "P-15", "equipoA": "Ada Prada / Gaby Dieck", "equipoB": "Sarah Marroquin / Anahí Chávez", "setsA": ["4", "3"], "setsB": ["6", "6"], "hora": "5:30 p.m.", "cancha": "Cancha 2"}, {"estado": "En vivo", "categoria": "5ta Femenil", "grupo": "Grupo C", "pista": "P-7", "equipoA": "Keila Casillas / Azul Garcia Aguilar", "equipoB": "Adriana Rivera / Karla Villafuente", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 8"}, {"estado": "En vivo", "categoria": "5ta Varonil", "grupo": "Grupo D", "pista": "P-10", "equipoA": "Raul Salazar / Christian García", "equipoB": "Daniel Acevedo / Juan Pablo Flores", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 6"}, {"estado": "En vivo", "categoria": "5ta Varonil", "grupo": "Grupo K", "pista": "P-32", "equipoA": "Jesús Cavazos / Hugo Estrada", "equipoB": "Patricio Perez / Jaime Hernandez", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 7"}, {"estado": "En vivo", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "German Barona / Patricio Barona", "equipoB": "Guillermo Siller / Mauro Moreno", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 1 Estadio"}, {"estado": "En vivo", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "Rodrigo De La Garza / Tomás Cavazos", "equipoB": "Javier Garcia / Patricio Garcia", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 3"}, {"estado": "En vivo", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "Joel Sauceda / Roberto Arzamendi", "equipoB": "José Juan Gonzalez Cavazos / Toño Orozco", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 2"}, {"estado": "En vivo", "categoria": "6ta Femenil", "grupo": "Grupo B", "pista": "P-6", "equipoA": "Vanessa Guerra / Marilu Gutierrez", "equipoB": "Brenda Campos / Diana Paola Lagunes Blanco", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 4"}, {"estado": "Finalizado", "categoria": "6ta Femenil", "grupo": "Grupo C", "pista": "P-8", "equipoA": "Tania Gutierrez / Estefanía Huerta", "equipoB": "Silvia Piñones / Alejandra Lara", "setsA": ["6", "6"], "setsB": ["3", "3"], "hora": "6:45 p.m.", "cancha": "Cancha 5"}, {"estado": "Por jugar", "categoria": "4ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Raul Contreras Gomez / Reynold Villarreal Valenciano", "equipoB": "Gilberto Montelongo Martinez / Cesar Eliud Gaytan", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "5ta Femenil", "grupo": "Grupo B", "pista": "P-5", "equipoA": "Najla Garfias / Sofia Montemayor", "equipoB": "Ana Kristina López / Linda González", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Femenil", "grupo": "Grupo A", "pista": "P-3", "equipoA": "Carla Medellin / Susana Quintero", "equipoB": "Elisa Gallo / Janelle Sproul", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "Grupo A", "pista": "P-1", "equipoA": "Gerardo Dueñas Ramirez / Mario Alain Arjona Cavazos", "equipoB": "Luis Emilio López / Luis Emilio Lopez", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Edgar Rodríguez / Marcelo Rodríguez", "equipoB": "Brian Ruelas / Fernando Rosas", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Christian Alanis / Antonio Coello", "equipoB": "Alejandro Fernandez / Elías Ovalle", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Carlos Hernandez / Luis Cuesta", "equipoB": "Jesus Gonzalez Lozano / Abraham Galindo Seseña", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "7ma Femenil", "grupo": "Grupo A", "pista": "P-5", "equipoA": "Patricia Garza / Rocio Rodriguez", "equipoB": "Claudia González / Erika Rosani", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "4ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Miguel Guerra / Mauricio Gallardo", "equipoB": "Juan Carlos Reyna / Hugo Alejandro Almaguer Juarez", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "5ta Varonil", "grupo": "Grupo D", "pista": "P-12", "equipoA": "Pablo Almada / Alberto Bottarelli", "equipoB": "Raul Salazar / Christian García", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Programado", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "K1", "equipoB": "Alejandro Fernández / Luis Reyna", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Programado", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Pedro Puente / David Rodriguez", "equipoB": "A2", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Andres Fernández / Pedro Falcón", "equipoB": "Salvatore Vigil / Juan Carlos Rivera", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Enrique Castro / Emmanuel Chavez", "equipoB": "Eduardo Tamez / Miguel Lozano", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "David Baca / Mauricio Silva", "equipoB": "Erick Llamas / Guillermo Casas", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "7ma Varonil", "grupo": "Grupo F", "pista": "P-23", "equipoA": "Seth Alejandro Ramirez / Ezequiel Garza", "equipoB": "Jorge Alberto Weigend Ochoa / Ramiro Sierra", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "4ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Juan Gabriel Diaz / Juan Fernando Diaz", "equipoB": "Jesus Gonzalez / Irving Valenzuela", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "4ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Mario González / Christian Longoria", "equipoB": "Hugo Garcia Gonzalez / Victor Hugo Lopez", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "Rodrigo Charles / Antonio López", "equipoB": "Patricio Melendez / Fernando Guzman", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Programado", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "D2", "equipoB": "Rolando Martinez Quiroga / Ricardo Garcia Cantú", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Programado", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "Arturo Escobar / Alejandro Leal Gonzalez", "equipoB": "K2", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "Hector Hernández / Victor Dominguez", "equipoB": "José Silva / Eduardo Solis", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Programado", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "A1", "equipoB": "Rafael Serna / Julio Sáenz", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "Suma 5 Varonil", "grupo": "Grupo C", "pista": "P-17", "equipoA": "Nicolas Canello / Jorge Alarco", "equipoB": "Daniel Reding / Julio De La Fuente", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}];
+var POR_PAGINA = 8;        // partidos por pantalla
+var SEGUNDOS = 10;         // segundos por pantalla
 
 function esc(s){ return (s||'').replace(/</g,'&lt;'); }
 function convHora(h){
@@ -75,21 +86,52 @@ function convHora(h){
   return hh*60+mm;
 }
 
-// agrupar TODOS por hora
-var porHora={};
-PARTIDOS.forEach(function(p){ (porHora[p.hora]=porHora[p.hora]||[]).push(p); });
-var horas=Object.keys(porHora).sort(function(a,b){return convHora(a)-convHora(b);});
+// ordenar todos por hora
+var todos = PARTIDOS.slice().sort(function(a,b){return convHora(a.hora)-convHora(b.hora);});
 
-document.getElementById('lista').innerHTML = horas.map(function(h){
-  var cards = porHora[h].map(function(p){
-    return '<div class="partido">'+
-      '<div class="cancha-box"><div class="c">'+esc((p.cancha||'').replace('Cancha ','C'))+'</div><div class="p">'+esc(p.pista||'')+'</div></div>'+
-      '<div class="info"><div class="cat">'+esc(p.categoria)+(p.grupo?' - '+esc(p.grupo):'')+'</div>'+
-      '<div class="eqs">'+esc(p.equipoA)+' <span class="vs">VS</span> '+esc(p.equipoB)+'</div></div>'+
-    '</div>';
+// partir en paginas de POR_PAGINA
+var paginas = [];
+for(var i=0;i<todos.length;i+=POR_PAGINA){ paginas.push(todos.slice(i,i+POR_PAGINA)); }
+
+function cardHTML(p){
+  return '<div class="partido">'+
+    '<div class="cancha-box"><div class="c">'+esc((p.cancha||'').replace('Cancha ','C')||(p.pista||''))+'</div><div class="p">'+esc(p.pista||'')+'</div></div>'+
+    '<div class="info"><div class="cat">'+esc(p.categoria)+(p.grupo?' - '+esc(p.grupo):'')+'</div>'+
+    '<div class="eqs">'+esc(p.equipoA)+' <span class="vs">VS</span> '+esc(p.equipoB)+'</div></div>'+
+  '</div>';
+}
+
+// construir paginas agrupando por hora dentro de cada pagina
+var content = document.getElementById('content');
+content.innerHTML = paginas.map(function(pag, idx){
+  // agrupar por hora dentro de la pagina
+  var porHora = {};
+  pag.forEach(function(p){ (porHora[p.hora]=porHora[p.hora]||[]).push(p); });
+  var horas = Object.keys(porHora).sort(function(a,b){return convHora(a)-convHora(b);});
+  var inner = horas.map(function(h){
+    return '<div class="hora-bloque"><div class="hora-tit"><span class="h">'+esc(h)+'</span><span class="linea"></span></div>'+
+      '<div class="grid">'+porHora[h].map(cardHTML).join('')+'</div></div>';
   }).join('');
-  return '<div class="hora-bloque"><div class="hora-tit"><span class="h">'+esc(h)+'</span><span class="linea"></span></div><div class="grid">'+cards+'</div></div>';
+  return '<div class="pagina'+(idx===0?' activa':'')+'">'+inner+'</div>';
 }).join('');
+
+// dots
+var dots = document.getElementById('dots');
+dots.innerHTML = paginas.map(function(_,i){return '<div class="dot'+(i===0?' on':'')+'"></div>';}).join('');
+
+// rotacion
+var actual = 0;
+var pgs = document.querySelectorAll('.pagina');
+var dts = document.querySelectorAll('.dot');
+if(paginas.length > 1){
+  setInterval(function(){
+    pgs[actual].classList.remove('activa');
+    dts[actual].classList.remove('on');
+    actual = (actual+1) % paginas.length;
+    pgs[actual].classList.add('activa');
+    dts[actual].classList.add('on');
+  }, SEGUNDOS*1000);
+}
 </script>
 </body>
 </html>
