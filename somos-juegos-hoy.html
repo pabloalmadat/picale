@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juegos de Hoy - Somos Padel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070a0c;--bg2:#0e1418;--bg3:#141c21;
+    --yellow:#d4f000;--yellow-dim:rgba(212,240,0,.5);
+    --text:#f2f5f0;--muted:#7c8b90;--line:rgba(212,240,0,.14);
+    --display:'Archivo Black',sans-serif;--body:'Archivo',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:var(--bg);color:var(--text);font-family:var(--body);}
+  .stage{min-height:100vh;padding:4vh 4vw;background:
+    radial-gradient(ellipse 70% 45% at 50% 8%,rgba(22,64,79,.4),transparent 70%),
+    radial-gradient(ellipse 80% 40% at 50% 108%,rgba(212,240,0,.05),transparent 70%),var(--bg);}
+
+  .header{text-align:center;margin-bottom:3vh;}
+  .header .brand{font-size:1.5vh;color:var(--muted);letter-spacing:.4vw;text-transform:uppercase;margin-bottom:1vh;}
+  .header h1{font-family:var(--display);font-style:italic;font-size:6vh;line-height:.9;text-transform:uppercase;color:var(--yellow);transform:skewX(-5deg);text-shadow:0 0 4vh rgba(212,240,0,.25);}
+  .header .fecha{display:inline-block;margin-top:1.4vh;background:var(--yellow);color:#070a0c;font-weight:800;font-size:1.8vh;letter-spacing:.1vw;text-transform:uppercase;padding:.6vh 1.6vw;transform:skewX(-5deg);}
+  .header .fecha span{display:inline-block;transform:skewX(5deg);}
+
+  .hora-bloque{margin-bottom:2.4vh;}
+  .hora-tit{display:flex;align-items:center;gap:1.2vw;margin-bottom:1.2vh;}
+  .hora-tit .h{font-family:var(--display);font-size:2.6vh;color:var(--yellow);white-space:nowrap;}
+  .hora-tit .linea{flex:1;height:2px;background:var(--line);}
+
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1vw 1.5vw;}
+  .partido{background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--yellow);border-radius:.8vh;padding:1.3vh 1.4vw;display:flex;align-items:center;gap:1.2vw;}
+  .partido .cancha-box{text-align:center;flex-shrink:0;min-width:5vw;}
+  .partido .cancha-box .c{font-family:var(--display);font-size:1.8vh;color:var(--yellow);line-height:1;}
+  .partido .cancha-box .p{font-size:1vh;color:var(--muted);text-transform:uppercase;margin-top:.3vh;}
+  .partido .info{flex:1;min-width:0;}
+  .partido .cat{font-size:1.1vh;color:var(--muted);text-transform:uppercase;letter-spacing:.08vw;margin-bottom:.4vh;}
+  .partido .eqs{font-size:1.55vh;font-weight:700;line-height:1.35;}
+  .partido .eqs .vs{color:var(--yellow);font-size:1.1vh;font-weight:800;margin:0 .4vw;}
+
+  .footer{text-align:center;margin-top:3vh;padding-top:2vh;border-top:1px solid var(--line);}
+  .footer .wa{font-size:1.5vh;color:var(--text);}
+  .footer .wa b{color:var(--yellow);}
+  .footer .by{font-size:1.2vh;color:var(--muted);letter-spacing:.15vw;text-transform:uppercase;margin-top:.6vh;}
+  .footer .by b{color:var(--yellow);font-family:var(--display);}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="header">
+    <div class="brand">Somos Padel - Monterrey</div>
+    <h1>Juegos de Hoy</h1>
+    <div class="fecha"><span>Lunes 17 de Agosto</span></div>
+  </div>
+  <div id="lista"></div>
+  <div class="footer">
+    <div class="wa">Torneo Inaugural - Informes <b>WhatsApp 811 379 1451</b></div>
+    <div class="by">Transmision en vivo por <b>PICALE</b></div>
+  </div>
+</div>
+
+<script>
+var PARTIDOS = [{"estado": "Finalizado", "categoria": "5ta Femenil", "grupo": "Grupo A", "pista": "P-15", "equipoA": "Ada Prada / Gaby Dieck", "equipoB": "Sarah Marroquin / Anahí Chávez", "setsA": ["4", "3"], "setsB": ["6", "6"], "hora": "5:30 p.m.", "cancha": "Cancha 2"}, {"estado": "En vivo", "categoria": "5ta Femenil", "grupo": "Grupo C", "pista": "P-7", "equipoA": "Keila Casillas / Azul Garcia Aguilar", "equipoB": "Adriana Rivera / Karla Villafuente", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 8"}, {"estado": "En vivo", "categoria": "5ta Varonil", "grupo": "Grupo D", "pista": "P-10", "equipoA": "Raul Salazar / Christian García", "equipoB": "Daniel Acevedo / Juan Pablo Flores", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 6"}, {"estado": "En vivo", "categoria": "5ta Varonil", "grupo": "Grupo K", "pista": "P-32", "equipoA": "Jesús Cavazos / Hugo Estrada", "equipoB": "Patricio Perez / Jaime Hernandez", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 7"}, {"estado": "En vivo", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "German Barona / Patricio Barona", "equipoB": "Guillermo Siller / Mauro Moreno", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 1 Estadio"}, {"estado": "En vivo", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "Rodrigo De La Garza / Tomás Cavazos", "equipoB": "Javier Garcia / Patricio Garcia", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 3"}, {"estado": "En vivo", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "Joel Sauceda / Roberto Arzamendi", "equipoB": "José Juan Gonzalez Cavazos / Toño Orozco", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 2"}, {"estado": "En vivo", "categoria": "6ta Femenil", "grupo": "Grupo B", "pista": "P-6", "equipoA": "Vanessa Guerra / Marilu Gutierrez", "equipoB": "Brenda Campos / Diana Paola Lagunes Blanco", "setsA": [], "setsB": [], "hora": "6:45 p.m.", "cancha": "Cancha 4"}, {"estado": "Finalizado", "categoria": "6ta Femenil", "grupo": "Grupo C", "pista": "P-8", "equipoA": "Tania Gutierrez / Estefanía Huerta", "equipoB": "Silvia Piñones / Alejandra Lara", "setsA": ["6", "6"], "setsB": ["3", "3"], "hora": "6:45 p.m.", "cancha": "Cancha 5"}, {"estado": "Por jugar", "categoria": "4ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Raul Contreras Gomez / Reynold Villarreal Valenciano", "equipoB": "Gilberto Montelongo Martinez / Cesar Eliud Gaytan", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "5ta Femenil", "grupo": "Grupo B", "pista": "P-5", "equipoA": "Najla Garfias / Sofia Montemayor", "equipoB": "Ana Kristina López / Linda González", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Femenil", "grupo": "Grupo A", "pista": "P-3", "equipoA": "Carla Medellin / Susana Quintero", "equipoB": "Elisa Gallo / Janelle Sproul", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "Grupo A", "pista": "P-1", "equipoA": "Gerardo Dueñas Ramirez / Mario Alain Arjona Cavazos", "equipoB": "Luis Emilio López / Luis Emilio Lopez", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Edgar Rodríguez / Marcelo Rodríguez", "equipoB": "Brian Ruelas / Fernando Rosas", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Christian Alanis / Antonio Coello", "equipoB": "Alejandro Fernandez / Elías Ovalle", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Carlos Hernandez / Luis Cuesta", "equipoB": "Jesus Gonzalez Lozano / Abraham Galindo Seseña", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "7ma Femenil", "grupo": "Grupo A", "pista": "P-5", "equipoA": "Patricia Garza / Rocio Rodriguez", "equipoB": "Claudia González / Erika Rosani", "setsA": [], "setsB": [], "hora": "8:00 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "4ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Miguel Guerra / Mauricio Gallardo", "equipoB": "Juan Carlos Reyna / Hugo Alejandro Almaguer Juarez", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "5ta Varonil", "grupo": "Grupo D", "pista": "P-12", "equipoA": "Pablo Almada / Alberto Bottarelli", "equipoB": "Raul Salazar / Christian García", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Programado", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "K1", "equipoB": "Alejandro Fernández / Luis Reyna", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Programado", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Pedro Puente / David Rodriguez", "equipoB": "A2", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Andres Fernández / Pedro Falcón", "equipoB": "Salvatore Vigil / Juan Carlos Rivera", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Enrique Castro / Emmanuel Chavez", "equipoB": "Eduardo Tamez / Miguel Lozano", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "David Baca / Mauricio Silva", "equipoB": "Erick Llamas / Guillermo Casas", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "7ma Varonil", "grupo": "Grupo F", "pista": "P-23", "equipoA": "Seth Alejandro Ramirez / Ezequiel Garza", "equipoB": "Jorge Alberto Weigend Ochoa / Ramiro Sierra", "setsA": [], "setsB": [], "hora": "9:15 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "4ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Juan Gabriel Diaz / Juan Fernando Diaz", "equipoB": "Jesus Gonzalez / Irving Valenzuela", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "4ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "Mario González / Christian Longoria", "equipoB": "Hugo Garcia Gonzalez / Victor Hugo Lopez", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "Rodrigo Charles / Antonio López", "equipoB": "Patricio Melendez / Fernando Guzman", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Programado", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "D2", "equipoB": "Rolando Martinez Quiroga / Ricardo Garcia Cantú", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Programado", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "Arturo Escobar / Alejandro Leal Gonzalez", "equipoB": "K2", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "5ta Varonil", "grupo": "16vos de Final", "pista": "", "equipoA": "Hector Hernández / Victor Dominguez", "equipoB": "José Silva / Eduardo Solis", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Programado", "categoria": "6ta Varonil", "grupo": "8vos de Final", "pista": "", "equipoA": "A1", "equipoB": "Rafael Serna / Julio Sáenz", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}, {"estado": "Por jugar", "categoria": "Suma 5 Varonil", "grupo": "Grupo C", "pista": "P-17", "equipoA": "Nicolas Canello / Jorge Alarco", "equipoB": "Daniel Reding / Julio De La Fuente", "setsA": [], "setsB": [], "hora": "10:30 p.m.", "cancha": ""}];
+
+function esc(s){ return (s||'').replace(/</g,'&lt;'); }
+function convHora(h){
+  var m=(h||'').match(/(\d+):(\d+)\s*(a|p)/i);
+  if(!m) return 9999;
+  var hh=parseInt(m[1]),mm=parseInt(m[2]);
+  if(m[3].toLowerCase()==='p'&&hh!==12)hh+=12;
+  if(m[3].toLowerCase()==='a'&&hh===12)hh=0;
+  return hh*60+mm;
+}
+
+// agrupar TODOS por hora
+var porHora={};
+PARTIDOS.forEach(function(p){ (porHora[p.hora]=porHora[p.hora]||[]).push(p); });
+var horas=Object.keys(porHora).sort(function(a,b){return convHora(a)-convHora(b);});
+
+document.getElementById('lista').innerHTML = horas.map(function(h){
+  var cards = porHora[h].map(function(p){
+    return '<div class="partido">'+
+      '<div class="cancha-box"><div class="c">'+esc((p.cancha||'').replace('Cancha ','C'))+'</div><div class="p">'+esc(p.pista||'')+'</div></div>'+
+      '<div class="info"><div class="cat">'+esc(p.categoria)+(p.grupo?' - '+esc(p.grupo):'')+'</div>'+
+      '<div class="eqs">'+esc(p.equipoA)+' <span class="vs">VS</span> '+esc(p.equipoB)+'</div></div>'+
+    '</div>';
+  }).join('');
+  return '<div class="hora-bloque"><div class="hora-tit"><span class="h">'+esc(h)+'</span><span class="linea"></span></div><div class="grid">'+cards+'</div></div>';
+}).join('');
+</script>
+</body>
+</html>
