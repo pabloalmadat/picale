@@ -74,11 +74,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--b
 .club-scroll{flex:1;overflow-y:auto;padding-bottom:calc(var(--safe-bottom) + 20px);}
 
 /* ── COURTS TABS ── */
-.courts-tabs{display:flex;gap:8px;padding:16px 16px 0;}
-.court-tab{flex:1;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s;}
+.courts-tabs{display:flex;gap:8px;padding:16px 16px 0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.courts-tabs::-webkit-scrollbar{display:none;}
+.court-tab{flex:1 0 auto;min-width:88px;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s;}
 .court-tab.active{background:var(--bg3);border-color:var(--border2);}
-.court-tab-name{font-size:13px;font-weight:600;margin-bottom:2px;}
-.court-tab-sub{font-size:10px;color:var(--muted);}
+.court-tab-name{font-size:13px;font-weight:600;margin-bottom:2px;white-space:nowrap;}
+.court-tab-sub{font-size:10px;color:var(--muted);white-space:nowrap;}
 .live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;margin-right:4px;}
 
 /* ── SECTION TABS ── */
@@ -347,6 +348,48 @@ const COURTS = {
     sub: 'SOMOS PÁDEL',
     courtId: '6bc0621c-f99a-4e1f-8971-d70155ea3383',
     hls: CLOUD + '/hls/2111bf2250a5751d/index.m3u8',
+  },
+  somos_c2: {
+    name: 'Cancha 2',
+    sub: 'SOMOS PÁDEL',
+    courtId: 'e1dc778e-831f-4fa4-bc86-d6a31a7de1d1',
+    hls: CLOUD + '/hls/e6835934e7a68e22/index.m3u8',
+  },
+  somos_c3: {
+    name: 'Cancha 3',
+    sub: 'SOMOS PÁDEL',
+    courtId: 'fc8bbc6d-e21b-466d-92e6-a2beefe6bd38',
+    hls: CLOUD + '/hls/c776bfbbe6618fe4/index.m3u8',
+  },
+  somos_c4: {
+    name: 'Cancha 4',
+    sub: 'SOMOS PÁDEL',
+    courtId: '2d54ad6f-895f-4f6c-b985-95b431fe03b3',
+    hls: CLOUD + '/hls/f132a6e907de3361/index.m3u8',
+  },
+  somos_c5: {
+    name: 'Cancha 5',
+    sub: 'SOMOS PÁDEL',
+    courtId: '28b6283d-dacf-428d-a3fb-fc0015d5f6aa',
+    hls: CLOUD + '/hls/e4df4f9f11a4b00d/index.m3u8',
+  },
+  somos_c6: {
+    name: 'Cancha 6',
+    sub: 'SOMOS PÁDEL',
+    courtId: '519bbd5d-b2f5-4a84-a257-6d327bebf9a8',
+    hls: CLOUD + '/hls/e1f8c1f9fa4ea04f/index.m3u8',
+  },
+  somos_c7: {
+    name: 'Cancha 7',
+    sub: 'SOMOS PÁDEL',
+    courtId: '28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512',
+    hls: CLOUD + '/hls/872566c01554f2e7/index.m3u8',
+  },
+  somos_c8: {
+    name: 'Cancha 8',
+    sub: 'SOMOS PÁDEL',
+    courtId: '35c16c54-f31e-4397-922b-044722d06524',
+    hls: CLOUD + '/hls/410266125aa0e463/index.m3u8',
   }
 };
 
@@ -363,7 +406,7 @@ var CLUBS_CONFIG = {
   },
   somos: {
     name: 'SOMOS PÁDEL',
-    courts: ['somos_c1'],
+    courts: ['somos_c1','somos_c2','somos_c3','somos_c4','somos_c5','somos_c6','somos_c7','somos_c8'],
     defaultCourt: 'somos_c1',
   }
 };
@@ -376,7 +419,16 @@ var hlsInstance = null;
 var ScoreOverlay = {
   POLL_MS: 20000,
   // Canchas con marcador habilitado (agrega más court_ids aquí)
-  enabledCourts: ['6bc0621c-f99a-4e1f-8971-d70155ea3383'], // Somos Pádel C1
+  enabledCourts: [
+    '6bc0621c-f99a-4e1f-8971-d70155ea3383', // Somos C1
+    'e1dc778e-831f-4fa4-bc86-d6a31a7de1d1', // Somos C2
+    'fc8bbc6d-e21b-466d-92e6-a2beefe6bd38', // Somos C3
+    '2d54ad6f-895f-4f6c-b985-95b431fe03b3', // Somos C4
+    '28b6283d-dacf-428d-a3fb-fc0015d5f6aa', // Somos C5
+    '519bbd5d-b2f5-4a84-a257-6d327bebf9a8', // Somos C6
+    '28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512', // Somos C7
+    '35c16c54-f31e-4397-922b-044722d06524', // Somos C8
+  ],
   courtId: null, matchId: null, timer: null, _ro: null,
 
   setCourt: function(courtId) {
