@@ -276,6 +276,73 @@
 </div>
 
 <script>
+/* ═══════════ CONEXION AL OVERLAY (solo agrega, no cambia el marcador) ═══════════ */
+var PICALE_API = 'https://api.picalereplay.com/api/v1/score';
+var PICALE_COURT = '6bc0621c-f99a-4e1f-8971-d70155ea3383'; // Cancha 1 Somos
+var PICALE_MATCH = null;
+var PICALE_LISTO = false;
+
+// crea (o reusa) el match de la cancha al abrir
+async function picaleInit(){
+  try{
+    // reusar match activo si existe
+    var r = await fetch(PICALE_API + '/court/' + PICALE_COURT + '/active');
+    var d = await r.json();
+    if(d && d.match_id){ PICALE_MATCH = d.match_id; PICALE_LISTO = true; picaleShowLink(); return; }
+  }catch(e){}
+  try{
+    var body = {
+      court_id: PICALE_COURT, court_name:'Cancha 1', club_name:'Somos Pádel',
+      left_p1: S.names.a, left_p2:'', right_p1: S.names.b, right_p2:'',
+      current_server: S.serve==='a'?'left':'right', scoring_mode: S.goldenPoint?'golden_point':'traditional'
+    };
+    var r2 = await fetch(PICALE_API + '/', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var d2 = await r2.json();
+    if(d2.match_id){ PICALE_MATCH = d2.match_id; PICALE_LISTO = true; picaleShowLink(); }
+  }catch(e){}
+}
+
+function picaleShowLink(){
+  var ov = 'https://picalereplay.com/score-overlay.html?match_id='+PICALE_MATCH;
+  console.log('OVERLAY:', ov);
+  var el = document.getElementById('picale-link');
+  if(el){ el.innerHTML = 'Overlay en vivo: <a href="'+ov+'" target="_blank" style="color:#d4f000">'+ov+'</a>'; }
+}
+
+// manda el estado COMPLETO al overlay (envia un evento que trae el snapshot)
+var _picaleTimer = null;
+function picaleSync(){
+  if(!PICALE_LISTO || !PICALE_MATCH) return;
+  // arma el estado tal como lo tiene el marcador y lo manda como metadata
+  var snap = {
+    sets_left: setsWon('a'), sets_right: setsWon('b'),
+    games_left: S.games.a, games_right: S.games.b,
+    pts_left: ptLabel('a'), pts_right: ptLabel('b'),
+    current_server: S.serve==='a'?'left':'right',
+    in_tiebreak: S.tiebreak,
+    left_p1: S.names.a, left_p2:'', right_p1: S.names.b, right_p2:'',
+    sets_history: buildSetsHistory(),
+    court_name:'Cancha 1', club_name:'Somos Pádel',
+    cat_label: (document.getElementById('cat-label')||{}).textContent || ''
+  };
+  clearTimeout(_picaleTimer);
+  _picaleTimer = setTimeout(function(){
+    fetch(PICALE_API + '/' + PICALE_MATCH + '/event', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({type:'SNAPSHOT', source:'marcador', metadata: snap})
+    }).catch(function(){});
+  }, 150);
+}
+
+function buildSetsHistory(){
+  var h=[];
+  for(var i=0;i<3;i++){
+    if(S.sets.a[i]!==null && S.sets.b[i]!==null) h.push({left:S.sets.a[i], right:S.sets.b[i]});
+  }
+  return h;
+}
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
 var S = {
   names:{a:'Equipo A', b:'Equipo B'},
   points:{a:0, b:0},      // juego normal: 0,1,2,3 = 0,15,30,40 ; 4 = ventaja | tiebreak: puntos reales
@@ -338,6 +405,8 @@ function render(){
   document.getElementById('hint-points').innerHTML = S.tiebreak
     ? 'Tie break a <b>'+tbTarget()+'</b> puntos con diferencia de 2. El saque cambia después del primer punto y luego cada 2 puntos. Al cerrarse, el set se registra automático.'
     : 'El punto avanza solo: 0 → 15 → 30 → 40 → '+(S.goldenPoint?'Punto de oro':'Ventaja')+' → Juego. Al ganar el juego suma a "Juegos" y reinicia puntos. Con 6 juegos y diferencia de 2 gana el set; en 6–6 arranca el tie break.';
+
+  if(typeof picaleSync==='function') picaleSync();  // manda al overlay
 }
 
 /* ══ BREAK / SET / MATCH POINT ══ */
@@ -592,6 +661,8 @@ document.addEventListener('keydown',function(e){
 });
 
 render();
+picaleInit();          // conecta con el overlay al abrir
+setInterval(picaleSync, 3000);  // respaldo: reenvia el estado cada 3s
 </script>
 </body>
 </html>

@@ -82,8 +82,11 @@ function render(s){
   if(!s){ return; }
   // overlay visible?
   qs('wrap').classList.toggle('hidden', s.overlay_visible===false || s.status==='finished' && false);
-  qs('nm-l').textContent = ((s.left_p1||'')+' / '+(s.left_p2||'')).toUpperCase();
-  qs('nm-r').textContent = ((s.right_p1||'')+' / '+(s.right_p2||'')).toUpperCase();
+  // nombres: si p2 viene vacio, el nombre completo ya esta en p1
+  var nl = s.left_p2 ? ((s.left_p1||'')+' / '+(s.left_p2||'')) : (s.left_p1||'');
+  var nr = s.right_p2 ? ((s.right_p1||'')+' / '+(s.right_p2||'')) : (s.right_p1||'');
+  qs('nm-l').textContent = nl.toUpperCase();
+  qs('nm-r').textContent = nr.toUpperCase();
   qs('l-p').textContent = s.pts_left;
   qs('r-p').textContent = s.pts_right;
   qs('l-g').textContent = s.games_left;
@@ -126,7 +129,10 @@ function computeAlert(s){
 function ptVal(p){ // convierte "40","Ad","15" a numero para comparar
   if(p==='Ad') return 4; if(p==='40') return 3; if(p==='30') return 2; if(p==='15') return 1; return parseInt(p)||0;
 }
-function nameOf(s, side){ return side==='left'?((s.left_p1||'')+' / '+(s.left_p2||'')):((s.right_p1||'')+' / '+(s.right_p2||'')); }
+function nameOf(s, side){
+  if(side==='left') return s.left_p2 ? ((s.left_p1||'')+' / '+(s.left_p2||'')) : (s.left_p1||'');
+  return s.right_p2 ? ((s.right_p1||'')+' / '+(s.right_p2||'')) : (s.right_p1||'');
+}
 
 function detectAlert(s){
   // match/set/break point calculado del estado del engine
