@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control Marcador - PÍCALE</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#070a0c;--bg2:#0e1418;--bg3:#141c21;--yellow:#d4f000;--text:#f2f5f0;--muted:#7c8b90;--line:rgba(212,240,0,.14);--display:'Archivo Black',sans-serif;--body:'Archivo',sans-serif;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--body);padding:20px;max-width:640px;margin:0 auto;}
+  h1{font-family:var(--display);font-size:22px;color:var(--yellow);margin-bottom:4px;}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:18px;}
+  .card{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px;}
+  .card h2{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+  input,select{width:100%;padding:10px;margin-bottom:8px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;color:var(--text);font-size:15px;font-family:var(--body);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  button{font-family:var(--body);font-weight:800;cursor:pointer;border:none;border-radius:10px;transition:all .15s;}
+  .btn-start{width:100%;padding:14px;background:var(--yellow);color:#070a0c;font-size:16px;}
+  .scorebox{display:none;}
+  .scorebox.on{display:block;}
+  .teams{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+  .team{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center;}
+  .team.serving{border-color:var(--yellow);box-shadow:inset 0 0 0 1px var(--yellow);}
+  .team .nm{font-size:15px;font-weight:800;margin-bottom:4px;min-height:38px;display:flex;align-items:center;justify-content:center;}
+  .team .serve{font-size:10px;color:var(--yellow);text-transform:uppercase;letter-spacing:.1em;height:14px;}
+  .team .pts{font-family:var(--display);font-size:52px;color:var(--yellow);line-height:1;margin:8px 0;}
+  .team .add{width:100%;padding:16px;background:var(--yellow);color:#070a0c;font-size:20px;margin-top:6px;}
+  .team .add:active{transform:scale(.96);}
+  .mini{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px;}
+  .mini button{padding:12px;background:var(--bg3);color:var(--text);border:1px solid var(--line);font-size:13px;}
+  .scoreline{display:flex;justify-content:center;gap:24px;font-family:var(--display);font-size:15px;color:var(--muted);margin-bottom:14px;}
+  .scoreline b{color:var(--text);}
+  .danger{background:rgba(255,59,59,.15)!important;color:#ff6b6b!important;border-color:rgba(255,59,59,.3)!important;}
+  .links{margin-top:14px;font-size:12px;color:var(--muted);word-break:break-all;}
+  .links a{color:var(--yellow);}
+  .status{font-size:12px;padding:6px 10px;border-radius:6px;margin-bottom:10px;text-align:center;}
+  .status.ok{background:rgba(212,240,0,.12);color:var(--yellow);}
+  .status.err{background:rgba(255,59,59,.15);color:#ff6b6b;}
+</style>
+</head>
+<body>
+<h1>Control Marcador</h1>
+<div class="sub">Somos Pádel · conectado a la nube (todos ven el overlay)</div>
+
+<div id="setup">
+  <div class="card">
+    <h2>Cancha</h2>
+    <select id="court">
+      <option value="6bc0621c-f99a-4e1f-8971-d70155ea3383|Cancha 1">Cancha 1</option>
+      <option value="e1dc778e-831f-4fa4-bc86-d6a31a7de1d1|Cancha 2">Cancha 2</option>
+      <option value="fc8bbc6d-e21b-466d-92e6-a2beefe6bd38|Cancha 3">Cancha 3</option>
+      <option value="2d54ad6f-895f-4f6c-b985-95b431fe03b3|Cancha 4">Cancha 4</option>
+      <option value="28b6283d-dacf-428d-a3fb-fc0015d5f6aa|Cancha 5">Cancha 5</option>
+      <option value="519bbd5d-b2f5-4a84-a257-6d327bebf9a8|Cancha 6">Cancha 6</option>
+      <option value="28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512|Cancha 7">Cancha 7</option>
+      <option value="35c16c54-f31e-4397-922b-044722d06524|Cancha 8">Cancha 8</option>
+    </select>
+  </div>
+  <div class="card">
+    <h2>Pareja Izquierda</h2>
+    <input id="lp1" placeholder="Jugador 1">
+    <input id="lp2" placeholder="Jugador 2">
+  </div>
+  <div class="card">
+    <h2>Pareja Derecha</h2>
+    <input id="rp1" placeholder="Jugador 1">
+    <input id="rp2" placeholder="Jugador 2">
+  </div>
+  <div class="card">
+    <h2>Opciones</h2>
+    <div class="row2">
+      <select id="mode">
+        <option value="traditional">Ventaja tradicional</option>
+        <option value="golden_point">Punto de oro</option>
+      </select>
+      <select id="server">
+        <option value="left">Saca Izquierda</option>
+        <option value="right">Saca Derecha</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn-start" onclick="startMatch()">Iniciar partido</button>
+  <div id="setupStatus"></div>
+</div>
+
+<div class="scorebox" id="scorebox">
+  <div id="liveStatus" class="status ok">● Conectado</div>
+  <div class="scoreline" id="scoreline"></div>
+  <div class="teams">
+    <div class="team" id="team-l">
+      <div class="nm" id="nm-l">—</div>
+      <div class="serve" id="sv-l">SAQUE</div>
+      <div class="pts" id="pts-l">0</div>
+      <button class="add" onclick="point('left')">+ Punto (A)</button>
+    </div>
+    <div class="team" id="team-r">
+      <div class="nm" id="nm-r">—</div>
+      <div class="serve" id="sv-r">SAQUE</div>
+      <div class="pts" id="pts-r">0</div>
+      <button class="add" onclick="point('right')">+ Punto (L)</button>
+    </div>
+  </div>
+  <div class="mini">
+    <button onclick="ev('UNDO')">↶ Deshacer (Z)</button>
+    <button onclick="ev('CHANGE_SERVER')">⇄ Cambiar saque (S)</button>
+  </div>
+  <div class="mini">
+    <button onclick="toggleOverlay()" id="btn-ov">👁 Overlay visible</button>
+    <button class="danger" onclick="finishMatch()">Terminar partido</button>
+  </div>
+  <div class="links" id="links"></div>
+</div>
+
+<script>
+var API = 'https://api.picalereplay.com/api/v1/score';
+var matchId = null;
+var overlayVisible = true;
+
+function qs(id){ return document.getElementById(id); }
+
+// si viene ?match_id= en la URL, reconecta a ese
+var urlMatch = new URLSearchParams(location.search).get('match_id');
+
+async function startMatch(){
+  var courtVal = qs('court').value.split('|');
+  var body = {
+    court_id: courtVal[0],
+    court_name: courtVal[1],
+    club_name: 'Somos Pádel',
+    left_p1: qs('lp1').value || 'Jugador 1',
+    left_p2: qs('lp2').value || 'Jugador 2',
+    right_p1: qs('rp1').value || 'Jugador 3',
+    right_p2: qs('rp2').value || 'Jugador 4',
+    current_server: qs('server').value,
+    scoring_mode: qs('mode').value
+  };
+  qs('setupStatus').innerHTML = '<div class="status">Creando partido...</div>';
+  try{
+    var r = await fetch(API + '/', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var d = await r.json();
+    if(d.match_id){
+      matchId = d.match_id;
+      qs('setup').style.display='none';
+      qs('scorebox').classList.add('on');
+      showLinks();
+      connectWS();
+      loadState();
+    } else {
+      qs('setupStatus').innerHTML = '<div class="status err">Error al crear</div>';
+    }
+  }catch(e){
+    qs('setupStatus').innerHTML = '<div class="status err">Sin conexión: '+e.message+'</div>';
+  }
+}
+
+function showLinks(){
+  var ov = 'https://picalereplay.com/score-overlay.html?match_id='+matchId;
+  qs('links').innerHTML = 'match_id: <b>'+matchId+'</b><br>Overlay: <a href="'+ov+'" target="_blank">'+ov+'</a>';
+}
+
+async function point(side){
+  await ev(side==='left'?'POINT_LEFT':'POINT_RIGHT');
+}
+async function ev(type){
+  if(!matchId) return;
+  try{
+    var r = await fetch(API+'/'+matchId+'/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:type,source:'control'})});
+    var d = await r.json();
+    if(d.state) render(d.state);
+  }catch(e){
+    qs('liveStatus').className='status err';
+    qs('liveStatus').textContent='● Sin conexión (reintenta)';
+  }
+}
+
+async function toggleOverlay(){
+  overlayVisible = !overlayVisible;
+  await ev(overlayVisible?'OVERLAY_SHOWN':'OVERLAY_HIDDEN');
+  qs('btn-ov').textContent = overlayVisible?'👁 Overlay visible':'🚫 Overlay oculto';
+}
+
+async function finishMatch(){
+  if(!confirm('¿Terminar el partido?')) return;
+  await ev('MATCH_FINISHED');
+}
+
+var ws=null;
+function connectWS(){
+  try{
+    var wsUrl = 'wss://api.picalereplay.com/api/v1/score/'+matchId+'/ws';
+    ws = new WebSocket(wsUrl);
+    ws.onmessage = function(e){
+      try{ var m=JSON.parse(e.data); if(m.state) render(m.state); }catch(_){}
+    };
+    ws.onopen = function(){ qs('liveStatus').className='status ok'; qs('liveStatus').textContent='● Conectado en vivo'; };
+    ws.onclose = function(){ setTimeout(connectWS, 2000); };
+  }catch(e){}
+}
+
+async function loadState(){
+  try{
+    var r = await fetch(API+'/'+matchId);
+    var d = await r.json();
+    if(d.state) render(d.state);
+  }catch(e){}
+}
+
+function render(s){
+  qs('nm-l').textContent = (s.left_p1||'')+' / '+(s.left_p2||'');
+  qs('nm-r').textContent = (s.right_p1||'')+' / '+(s.right_p2||'');
+  qs('pts-l').textContent = s.pts_left;
+  qs('pts-r').textContent = s.pts_right;
+  qs('team-l').classList.toggle('serving', s.current_server==='left');
+  qs('team-r').classList.toggle('serving', s.current_server==='right');
+  qs('sv-l').style.visibility = s.current_server==='left'?'visible':'hidden';
+  qs('sv-r').style.visibility = s.current_server==='right'?'visible':'hidden';
+  // linea de sets y games
+  var hist = (s.sets_history||[]).map(function(x){return x.left+'-'+x.right;}).join('  ');
+  qs('scoreline').innerHTML = 'Sets: <b>'+s.sets_left+'-'+s.sets_right+'</b>'+
+    (hist?'&nbsp;('+hist+')':'')+'&nbsp;&nbsp;Games: <b>'+s.games_left+'-'+s.games_right+'</b>'+
+    (s.in_tiebreak?'&nbsp;&nbsp;<b style="color:var(--yellow)">TIE BREAK</b>':'');
+  if(s.status==='finished'){
+    qs('liveStatus').className='status ok';
+    qs('liveStatus').textContent='✓ Partido terminado';
+  }
+}
+
+// teclado
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  var k=e.key.toLowerCase();
+  if(k==='a') point('left');
+  else if(k==='l') point('right');
+  else if(k==='z') ev('UNDO');
+  else if(k==='s') ev('CHANGE_SERVER');
+});
+
+// reconectar si viene match_id en URL
+if(urlMatch){
+  matchId = urlMatch;
+  qs('setup').style.display='none';
+  qs('scorebox').classList.add('on');
+  showLinks();
+  connectWS();
+  loadState();
+}
+</script>
+</body>
+</html>

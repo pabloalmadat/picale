@@ -2,356 +2,194 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Marcador · Somos Pádel</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overlay Marcador - PÍCALE</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
-html,body{margin:0;padding:0;background:transparent;width:100vw;height:100vh;overflow:hidden;font-family:'DM Sans',sans-serif;}
-
-#overlay{
-  position:fixed;
-  top:28px;
-  left:28px;
-  display:flex;
-  flex-direction:column;
-  gap:0;
-  transition:opacity .4s;
-}
-#overlay.hidden{opacity:0;pointer-events:none;}
-
-/* ── MAIN BOARD ── */
-.board{
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  border-radius:3px;
-  box-shadow:0 2px 24px rgba(0,0,0,.7);
-  min-width:340px;
-}
-
-/* ── ROW ── */
-.row{
-  display:flex;
-  align-items:stretch;
-  height:38px;
-}
-.row:first-child{border-bottom:1px solid rgba(0,0,0,.15);}
-
-/* Name section */
-.name-section{
-  background:rgba(22,22,22,.97);
-  display:flex;
-  align-items:center;
-  gap:7px;
-  padding:0 10px 0 8px;
-  flex:1;
-  min-width:0;
-  position:relative;
-}
-/* serve indicator */
-.serve{
-  width:3px;
-  height:65%;
-  border-radius:2px;
-  background:#D4E000;
-  flex-shrink:0;
-  opacity:0;
-}
-.row.serving .serve{opacity:1;}
-
-.names{flex:1;min-width:0;}
-.name1{
-  font-size:13px;
-  font-weight:700;
-  color:#F0EDE6;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  line-height:1.1;
-  letter-spacing:.2px;
-}
-.name2{
-  font-size:13px;
-  font-weight:700;
-  color:#F0EDE6;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  line-height:1.1;
-  margin-top:1px;
-}
-
-/* ── SCORE CELLS ── */
-.cell{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-family:'JetBrains Mono',monospace;
-  font-weight:700;
-  flex-shrink:0;
-  border-left:1px solid rgba(255,255,255,.06);
-}
-
-/* Past sets */
-.set-cell{
-  width:26px;
-  font-size:15px;
-  color:rgba(240,237,230,.55);
-  background:rgba(28,28,28,.97);
-}
-.set-cell.won{color:#F0EDE6;}
-
-/* Current games */
-.games-cell{
-  width:38px;
-  font-size:22px;
-  color:#F0EDE6;
-  background:rgba(36,36,36,.97);
-}
-.games-cell.leading{color:#D4E000;}
-
-/* Points */
-.pts-cell{
-  width:50px;
-  font-size:18px;
-  color:#F0EDE6;
-  background:rgba(18,18,18,.97);
-  border-left:1px solid rgba(212,224,0,.12);
-}
-.pts-cell.adv{color:#D4E000;font-size:12px;letter-spacing:1px;}
-.pts-cell.leading{color:#D4E000;}
-
-/* ── LOGOS BAR (below scoreboard) ── */
-.logos-bar{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  background:rgba(8,8,8,.9);
-  border-top:2px solid #D4E000;
-  padding:4px 10px;
-  gap:8px;
-}
-.logos-left{display:flex;align-items:center;gap:7px;}
-.logo-img{height:16px;width:auto;object-fit:contain;}
-.logo-div{width:1px;height:12px;background:rgba(212,224,0,.25);}
-.live-badge{
-  display:flex;align-items:center;gap:4px;
-  font-size:9px;font-weight:700;letter-spacing:2px;
-  color:rgba(240,237,230,.6);
-}
-.live-dot{width:5px;height:5px;border-radius:50%;background:#D4E000;animation:blink 1.5s infinite;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
-
-/* ── TIEBREAK TAG ── */
-.tb-tag{
-  background:#D4E000;
-  color:#000;
-  font-size:8px;
-  font-weight:700;
-  letter-spacing:1.5px;
-  padding:2px 6px;
-  border-radius:2px;
-  display:none;
-}
-
-/* ── SET FLASH ── */
-.court-info{
-  font-size:9px;
-  font-weight:600;
-  color:rgba(240,237,230,.5);
-  letter-spacing:1px;
-  white-space:nowrap;
-}
-
-.flash{
-  position:fixed;
-  top:28px;left:28px;
-  background:#D4E000;
-  color:#000;
-  font-family:'Bebas Neue',sans-serif;
-  font-size:26px;
-  letter-spacing:3px;
-  padding:10px 20px;
-  border-radius:3px;
-  opacity:0;
-  transform:translateY(-6px);
-  transition:all .25s;
-  pointer-events:none;
-  white-space:nowrap;
-  box-shadow:0 4px 24px rgba(0,0,0,.6);
-}
-.flash.show{opacity:1;transform:translateY(0);}
+  :root{--yellow:#d4f000;--text:#f2f5f0;--muted:#aeb6b2;--bgcard:rgba(10,14,16,.82);--line:rgba(212,240,0,.22);--display:'Archivo Black',sans-serif;--body:'Archivo',sans-serif;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:transparent;font-family:var(--body);overflow:hidden;}
+  .wrap{position:fixed;left:2.5%;bottom:6%;transition:opacity .4s;}
+  .wrap.hidden{opacity:0;pointer-events:none;}
+  .sb{background:var(--bgcard);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.55);overflow:hidden;backdrop-filter:blur(4px);min-width:min(92vw,460px);}
+  .sb-head{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;background:rgba(0,0,0,.35);border-bottom:1px solid var(--line);}
+  .sb-head .live{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--yellow);text-transform:uppercase;letter-spacing:.07em;}
+  .sb-head .live .dot{width:8px;height:8px;border-radius:50%;background:#ff3b3b;animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+  .sb-head .cat{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+  .sb-head .brand{font-family:var(--display);font-size:13px;color:var(--text);}
+  table{border-collapse:collapse;width:100%;}
+  td{padding:8px 8px;}
+  .r{border-top:1px solid rgba(255,255,255,.06);}
+  .r:first-child td{border-top:none;}
+  .nm{font-size:17px;font-weight:800;color:var(--text);white-space:nowrap;padding-left:14px;min-width:190px;}
+  .sd{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--yellow);margin-right:8px;vertical-align:middle;visibility:hidden;box-shadow:0 0 8px rgba(212,240,0,.7);}
+  .r.serving .sd{visibility:visible;}
+  .setv{font-family:var(--display);font-size:19px;color:var(--muted);text-align:center;width:34px;}
+  .setv.win{color:var(--yellow);}
+  .gm{font-family:var(--display);font-size:22px;color:var(--text);text-align:center;width:42px;background:rgba(255,255,255,.05);}
+  .pt{font-family:var(--display);font-size:23px;color:#070a0c;text-align:center;width:56px;background:var(--yellow);}
+  .hd td{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;text-align:center;padding:5px 8px 1px;font-weight:700;}
+  .hd .nm{text-align:left;}
+  .r.on-point .pt{box-shadow:inset 0 0 0 3px #fff;}
+  .alert{margin-top:7px;padding:8px 14px;border-radius:9px;font-family:var(--display);font-size:14px;letter-spacing:.02em;display:none;align-items:center;gap:9px;background:var(--yellow);color:#070a0c;box-shadow:0 6px 24px rgba(0,0,0,.4);animation:slideIn .3s ease;}
+  @keyframes slideIn{from{transform:translateY(8px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .alert.show{display:flex;}
+  .alert.break{background:#ff9500;}
+  .alert.set{background:var(--yellow);}
+  .alert.match{background:#ff3b3b;color:#fff;}
+  .alert.win{background:#fff;}
+  .alert .who{font-family:var(--body);font-weight:700;font-size:12px;opacity:.85;}
+  body.tb .pt{font-size:21px;}
 </style>
 </head>
 <body>
-
-<div id="overlay">
-  <div class="board">
-    <!-- ROW LEFT -->
-    <div class="row" id="row-left">
-      <div class="name-section">
-        <div class="serve"></div>
-        <div class="names">
-          <div class="name1" id="n-l1">Leal</div>
-          <div class="name2" id="n-l2">Guerrero</div>
-        </div>
-      </div>
-      <div class="sets-history" id="sh-left" style="display:flex;"></div>
-      <div class="cell games-cell" id="g-left">4</div>
-      <div class="cell pts-cell" id="p-left">15</div>
+<div class="wrap" id="wrap">
+  <div class="sb">
+    <div class="sb-head">
+      <span class="live"><span class="dot"></span><span id="tag">En vivo</span></span>
+      <span class="cat" id="cat">—</span>
+      <span class="brand">PÍCALE</span>
     </div>
-    <!-- ROW RIGHT -->
-    <div class="row" id="row-right">
-      <div class="name-section">
-        <div class="serve"></div>
-        <div class="names">
-          <div class="name1" id="n-r1">Galán</div>
-          <div class="name2" id="n-r2">Chingotto</div>
-        </div>
-      </div>
-      <div class="sets-history" id="sh-right" style="display:flex;"></div>
-      <div class="cell games-cell" id="g-right">3</div>
-      <div class="cell pts-cell" id="p-right">30</div>
-    </div>
+    <table>
+      <tr class="hd"><td class="nm">&nbsp;</td><td>S1</td><td>S2</td><td>S3</td><td>JGS</td><td id="thpt">PTS</td></tr>
+      <tr class="r" id="row-l">
+        <td class="nm"><span class="sd"></span><span id="nm-l">Equipo A</span></td>
+        <td class="setv" id="l-s1">–</td><td class="setv" id="l-s2">–</td><td class="setv" id="l-s3">–</td>
+        <td class="gm" id="l-g">0</td><td class="pt" id="l-p">0</td>
+      </tr>
+      <tr class="r" id="row-r">
+        <td class="nm"><span class="sd"></span><span id="nm-r">Equipo B</span></td>
+        <td class="setv" id="r-s1">–</td><td class="setv" id="r-s2">–</td><td class="setv" id="r-s3">–</td>
+        <td class="gm" id="r-g">0</td><td class="pt" id="r-p">0</td>
+      </tr>
+    </table>
   </div>
-
-  <!-- LOGOS BAR -->
-  <div class="logos-bar">
-    <div class="logos-left">
-      <img src="/assets/somos_padel.jpg" class="logo-img" alt="Somos Pádel" onerror="this.style.display='none'">
-      <div class="logo-div"></div>
-      <img src="/assets/picale_logo.png" class="logo-img" alt="Pícale" onerror="this.style.display='none'">
-      <div class="logo-div"></div>
-      <span class="court-info" id="court-info">Cancha 1 · Somos Pádel</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div class="tb-tag" id="tb-tag">TIE-BREAK</div>
-      <div class="live-badge"><div class="live-dot"></div>EN VIVO</div>
-    </div>
-  </div>
+  <div class="alert" id="alert"><span id="al-text"></span><span class="who" id="al-who"></span></div>
 </div>
 
-<div class="flash" id="flash"></div>
-
 <script>
-var CLOUD = 'https://api.picalereplay.com';
-var matchId = new URLSearchParams(window.location.search).get('match_id');
-var ws = null;
-var prev = null;
+var params = new URLSearchParams(location.search);
+var matchId = params.get('match_id');
+var courtId = params.get('court_id');   // alternativa: buscar match activo por cancha
+var API = 'https://api.picalereplay.com/api/v1/score';
 
-var DEMO = {
-  left_p1:'Jugador 1',left_p2:'Jugador 2',
-  right_p1:'Jugador 3',right_p2:'Jugador 4',
-  sets_left:0,sets_right:0,
-  games_left:0,games_right:0,
-  pts_left:'0',pts_right:'0',
-  current_server:'left',
-  in_tiebreak:false,
-  sets_history:[],
-  overlay_visible:true,
-  status:'active',
-  court_name:'Cancha 1',
-  club_name:'Somos Pádel',
-};
+function qs(id){return document.getElementById(id);}
 
-function connect() {
-  if (!matchId) { render(DEMO); return; }
-  fetch(CLOUD+'/api/v1/score/'+matchId)
-    .then(function(r){return r.json();})
-    .then(function(d){if(d.state)render(d.state);})
-    .catch(function(){});
-  var wsUrl = CLOUD.replace('https://','wss://').replace('http://','ws://')+'/api/v1/score/'+matchId+'/ws';
-  ws = new WebSocket(wsUrl);
-  ws.onmessage = function(e){
-    var m = JSON.parse(e.data);
-    if(m.type==='state_update'&&m.state) render(m.state);
-  };
-  ws.onclose = function(){ setTimeout(connect,3000); };
-}
+var prev = {l:{s:0,g:0,pt:'0'}, r:{s:0,g:0,pt:'0'}};
 
-function render(s) {
-  document.getElementById('overlay').classList.toggle('hidden', !s.overlay_visible);
+function render(s){
+  if(!s){ return; }
+  // overlay visible?
+  qs('wrap').classList.toggle('hidden', s.overlay_visible===false || s.status==='finished' && false);
+  qs('nm-l').textContent = ((s.left_p1||'')+' / '+(s.left_p2||'')).toUpperCase();
+  qs('nm-r').textContent = ((s.right_p1||'')+' / '+(s.right_p2||'')).toUpperCase();
+  qs('l-p').textContent = s.pts_left;
+  qs('r-p').textContent = s.pts_right;
+  qs('l-g').textContent = s.games_left;
+  qs('r-g').textContent = s.games_right;
+  qs('cat').textContent = (s.court_name||'')+(s.club_name?' · '+s.club_name:'');
 
-  // Names
-  document.getElementById('n-l1').textContent = s.left_p1||'';
-  document.getElementById('n-l2').textContent = s.left_p2||'';
-  document.getElementById('n-r1').textContent = s.right_p1||'';
-  document.getElementById('n-r2').textContent = s.right_p2||'';
-
-  // Server
-  document.getElementById('row-left').classList.toggle('serving', s.current_server==='left');
-  document.getElementById('row-right').classList.toggle('serving', s.current_server==='right');
-
-  // Sets history
+  // sets history
   var hist = s.sets_history||[];
-  var totalCols = Math.max(hist.length+1, 2); // at least 2 cols
-  var shL = '', shR = '';
-  for(var i=0;i<totalCols;i++){
-    if(i<hist.length){
-      var wl=hist[i][0]>hist[i][1], wr=hist[i][1]>hist[i][0];
-      shL+='<div class="cell set-cell'+(wl?' won':'')+'">'+hist[i][0]+'</div>';
-      shR+='<div class="cell set-cell'+(wr?' won':'')+'">'+hist[i][1]+'</div>';
-    } else if(i===hist.length){
-      shL+='<div class="cell set-cell won" style="color:#D4E000">'+s.sets_left+'</div>';
-      shR+='<div class="cell set-cell won" style="color:#D4E000">'+s.sets_right+'</div>';
-    }
-  }
-  document.getElementById('sh-left').innerHTML=shL;
-  document.getElementById('sh-right').innerHTML=shR;
-
-  // Games
-  var gl=document.getElementById('g-left'), gr=document.getElementById('g-right');
-  gl.textContent=s.games_left; gr.textContent=s.games_right;
-  gl.className='cell games-cell'+(s.games_left>s.games_right?' leading':'');
-  gr.className='cell games-cell'+(s.games_right>s.games_left?' leading':'');
-
-  // Points
-  var pl=document.getElementById('p-left'), pr=document.getElementById('p-right');
-  pl.textContent=s.pts_left; pr.textContent=s.pts_right;
-  pl.className='cell pts-cell'+(s.pts_left==='ADV'?' adv':s.pts_left>s.pts_right&&s.pts_left!=='0'?' leading':'');
-  pr.className='cell pts-cell'+(s.pts_right==='ADV'?' adv':s.pts_right>s.pts_left&&s.pts_right!=='0'?' leading':'');
-
-  // Tiebreak
-  document.getElementById('tb-tag').style.display=s.in_tiebreak?'block':'none';
-
-  // Court / Club info
-  var courtEl = document.getElementById('court-info');
-  if (courtEl) {
-    var parts = [];
-    if (s.court_name) parts.push(s.court_name);
-    if (s.club_name) parts.push(s.club_name);
-    courtEl.textContent = parts.join(' · ') || 'Somos Pádel';
+  for(var i=0;i<3;i++){
+    var L=qs('l-s'+(i+1)), R=qs('r-s'+(i+1));
+    if(hist[i]){
+      L.textContent=hist[i].left; R.textContent=hist[i].right;
+      L.classList.toggle('win', hist[i].left>hist[i].right);
+      R.classList.toggle('win', hist[i].right>hist[i].left);
+    } else { L.textContent='–'; R.textContent='–'; L.classList.remove('win'); R.classList.remove('win'); }
   }
 
-  // Flash on set win
-  if(prev){
-    var ph=(prev.sets_history||[]).length, nh=(s.sets_history||[]).length;
-    if(nh>ph){
-      var last=s.sets_history[s.sets_history.length-1];
-      var wname=last[0]>last[1]?(s.left_p1||'Equipo A'):(s.right_p1||'Equipo B');
-      showFlash('SET · '+wname.split(' ')[0].toUpperCase()+' / '+(last[0]>last[1]?(s.left_p2||''):(s.right_p2||'')).split(' ')[0].toUpperCase());
-    }
-    if(s.status==='finished'&&prev.status!=='finished'){
-      var sl=s.sets_left,sr=s.sets_right;
-      var wn=sl>sr?(s.left_p1||'Equipo A'):(s.right_p1||'Equipo B');
-      showFlash('🏆 '+wn.split(' ')[0].toUpperCase()+' / '+(sl>sr?(s.left_p2||''):(s.right_p2||'')).split(' ')[0].toUpperCase(),5000);
-    }
-  }
-  prev = s;
+  qs('row-l').classList.toggle('serving', s.current_server==='left');
+  qs('row-r').classList.toggle('serving', s.current_server==='right');
+  document.body.classList.toggle('tb', s.in_tiebreak);
+  qs('thpt').textContent = s.in_tiebreak?'TB':'PTS';
+
+  computeAlert(s);
 }
 
-function showFlash(text, dur) {
-  dur = dur||3500;
-  var f = document.getElementById('flash');
-  document.getElementById('overlay').style.opacity='0';
-  f.textContent = text;
-  f.classList.add('show');
-  setTimeout(function(){
-    f.classList.remove('show');
-    document.getElementById('overlay').style.opacity='1';
-  }, dur);
+// break / set / match point desde el estado
+function computeAlert(s){
+  var el=qs('alert');
+  qs('row-l').classList.remove('on-point');
+  qs('row-r').classList.remove('on-point');
+  var al = detectAlert(s);
+  if(al){
+    el.className='alert show '+al.cls;
+    qs('al-text').textContent=al.text;
+    qs('al-who').textContent=al.who||'';
+    if(al.side) qs('row-'+(al.side==='left'?'l':'r')).classList.add('on-point');
+  } else { el.className='alert'; }
 }
 
-connect();
+function ptVal(p){ // convierte "40","Ad","15" a numero para comparar
+  if(p==='Ad') return 4; if(p==='40') return 3; if(p==='30') return 2; if(p==='15') return 1; return parseInt(p)||0;
+}
+function nameOf(s, side){ return side==='left'?((s.left_p1||'')+' / '+(s.left_p2||'')):((s.right_p1||'')+' / '+(s.right_p2||'')); }
+
+function detectAlert(s){
+  // match/set/break point calculado del estado del engine
+  var pl=s.pts_left, pr=s.pts_right;
+  function gamePoint(side){
+    var me=side==='left'?pl:pr, op=side==='left'?pr:pl;
+    if(s.in_tiebreak){ var m=parseInt(me)||0,o=parseInt(op)||0; return m>=(s.tb_target||7)-1 && m>o; }
+    if(me==='Ad') return true;
+    if(me==='40' && op!=='40' && op!=='Ad') return true;
+    return false;
+  }
+  function willWinSet(side){
+    if(!gamePoint(side)) return false;
+    if(s.in_tiebreak) return true;
+    var g=(side==='left'?s.games_left:s.games_right)+1, go=(side==='left'?s.games_right:s.games_left);
+    return g>=6 && g-go>=2;
+  }
+  function setsOf(side){ return side==='left'?s.sets_left:s.sets_right; }
+  function willWinMatch(side){ return willWinSet(side) && setsOf(side)===1; }
+  function isBreak(side){ return gamePoint(side) && s.current_server!==side && !s.in_tiebreak; }
+
+  for(var _i=0;_i<2;_i++){
+    var side=_i===0?'left':'right';
+    if(willWinMatch(side)) return {cls:'match',text:'Match point',who:nameOf(s,side),side:side};
+  }
+  for(var _j=0;_j<2;_j++){
+    var side2=_j===0?'left':'right';
+    if(willWinSet(side2)) return {cls:'set',text:'Set point',who:nameOf(s,side2),side:side2};
+  }
+  for(var _k=0;_k<2;_k++){
+    var side3=_k===0?'left':'right';
+    if(isBreak(side3)) return {cls:'break',text:'Break point',who:nameOf(s,side3),side:side3};
+  }
+  return null;
+}
+
+// ── conexión: WebSocket + fallback ──
+var ws=null;
+function connectWS(id){
+  try{
+    ws=new WebSocket('wss://api.picalereplay.com/api/v1/score/'+id+'/ws');
+    ws.onmessage=function(e){ try{var m=JSON.parse(e.data); if(m.state) render(m.state);}catch(_){} };
+    ws.onclose=function(){ setTimeout(function(){connectWS(id);}, 2000); };
+  }catch(e){ setTimeout(function(){connectWS(id);},2000); }
+}
+async function loadOnce(id){
+  try{ var r=await fetch(API+'/'+id); var d=await r.json(); if(d.state) render(d.state); }catch(e){}
+}
+
+async function init(){
+  if(!matchId && courtId){
+    // buscar match activo de la cancha
+    try{
+      var r=await fetch(API+'/court/'+courtId+'/active');
+      var d=await r.json();
+      if(d.match_id){ matchId=d.match_id; if(d.state) render(d.state); }
+    }catch(e){}
+  }
+  if(matchId){ loadOnce(matchId); connectWS(matchId); }
+}
+init();
+// si se pasó court_id, re-chequear cada 20s por si empieza un match nuevo
+if(!matchId && courtId){ setInterval(init, 20000); }
 </script>
 </body>
 </html>

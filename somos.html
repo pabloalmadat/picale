@@ -103,6 +103,8 @@
   .court-card:hover{transform:translateY(-3px);border-color:var(--yellow-dim);}
   .court-video{position:relative;aspect-ratio:16/9;background:#000;overflow:hidden;}
   .court-video video{width:100%;height:100%;object-fit:cover;}
+  .score-ovl-wrap{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:3;}
+  .score-ovl-wrap iframe{width:1920px;height:1080px;border:0;background:transparent;transform-origin:top left;pointer-events:none;}
   .court-video .placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);background:linear-gradient(135deg,#0e1418,#070a0c);gap:8px;}
   .court-video .placeholder .ic{font-size:28px;opacity:.4;}
   .court-video .placeholder .t{font-size:12px;letter-spacing:1px;text-transform:uppercase;}
@@ -338,6 +340,7 @@ COURTS.forEach(function(c){
     '<div class="court-video" id="cv-'+c.n+'">'+
       '<div class="live-dot"><span class="d"></span> En vivo</div>'+
       '<video id="v-'+c.n+'" muted playsinline></video>'+
+      '<div class="score-ovl-wrap" id="ovl-wrap-'+c.n+'" style="display:none;"><iframe id="ovl-frame-'+c.n+'" allowtransparency="true"></iframe></div>'+
       '<div class="placeholder"><div class="ic">🎾</div><div class="t">Cancha '+c.n+'</div></div>'+
     '</div>'+
     '<div class="court-info">'+
@@ -371,6 +374,45 @@ COURTS.forEach(function(c){
 function updateLiveCount(){
   document.getElementById('live-count').textContent = liveCount + ' cancha' + (liveCount!==1?'s':'') + ' en vivo';
 }
+
+// ── Overlay del marcador por cancha ──
+var ovlState = {};  // n -> matchId actual
+function rescaleOverlay(n){
+  var wrap = document.getElementById('ovl-wrap-'+n);
+  var frame = document.getElementById('ovl-frame-'+n);
+  if(!wrap || !frame) return;
+  var w = wrap.clientWidth;
+  if(w) frame.style.transform = 'scale(' + (w/1920) + ')';
+}
+function checkScore(c){
+  fetch(CLOUD + '/api/v1/score/court/' + c.uuid + '/active')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      var wrap = document.getElementById('ovl-wrap-'+c.n);
+      var frame = document.getElementById('ovl-frame-'+c.n);
+      if(!wrap || !frame) return;
+      if(data && data.match_id){
+        if(ovlState[c.n] !== data.match_id){
+          ovlState[c.n] = data.match_id;
+          frame.src = 'score-overlay.html?match_id=' + data.match_id;
+          wrap.style.display = 'block';
+          rescaleOverlay(c.n);
+        }
+      } else {
+        if(ovlState[c.n]){
+          ovlState[c.n] = null;
+          frame.src = 'about:blank';
+          wrap.style.display = 'none';
+        }
+      }
+    })
+    .catch(function(){ /* API caída: no romper */ });
+}
+// revisar todas las canchas cada 15s
+function checkAllScores(){ COURTS.forEach(checkScore); }
+checkAllScores();
+setInterval(checkAllScores, 15000);
+window.addEventListener('resize', function(){ COURTS.forEach(function(c){ rescaleOverlay(c.n); }); });
 
 // ── Estado por cancha vía Playtomic ──
 function pollStatus(){
