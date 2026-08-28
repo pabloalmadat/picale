@@ -867,6 +867,14 @@ function closeModal() {
   video.pause();
   video.src = '';
 }
+
+// ── Abrir club directo por ?club=xxx en la URL ──
+(function(){
+  try{
+    var c = new URLSearchParams(location.search).get('club');
+    if(c && CLUBS_CONFIG[c]) openClub(c);
+  }catch(e){}
+})();
 </script>
 <script>if(window.PICALE){PICALE.renderAuthBtn("auth-btn-container","clubs.html");}</script>
 </body>
