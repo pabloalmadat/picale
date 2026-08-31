@@ -13,6 +13,7 @@
 </head>
 <body>
 <div id="root"></div>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script>
@@ -59,6 +60,24 @@ const LEAGUE = {
     name: "Cordillera PC"
   }]
 };
+
+/* ============================================================================
+   TRANSMISIÓN DE LAS CANCHAS
+   El servidor del club publica cada cámara como HLS. Ajusta base y archivo si
+   tus rutas son distintas; todo lo demás de la página se acomoda solo.
+     base:   carpeta pública de HLS en el servidor del club
+     file:   nombre del manifiesto por cancha
+     courts: canchas con cámara instalada
+   La página intenta cargar el manifiesto y, si no hay señal, muestra la cancha
+   como "sin transmisión" sin romper nada.
+============================================================================ */
+const STREAM = {
+  base: "https://picalereplay.com/hls",
+  file: court => `cancha${court}.m3u8`,
+  courts: [1, 2, 3, 4, 5, 6, 7, 8],
+  venue: "somos"
+};
+const streamUrl = court => STREAM.courts.includes(court) ? `${STREAM.base}/${STREAM.file(court)}` : null;
 const DIVISIONS = [{
   id: "varonil",
   name: "Varonil",
@@ -456,20 +475,6 @@ const SPONSORS = [{
   color: "#F5F2EC",
   imageUrl: FOUR_LOGO,
   url: "#"
-}, {
-  id: "somos",
-  name: "Somos Pádel",
-  line: "Club sede y transmisión en vivo",
-  color: "#D8E23F",
-  imageUrl: SOMOS_AD,
-  url: "#"
-}, {
-  id: "libre",
-  name: "Tu marca aquí",
-  line: "Espacio disponible para esta temporada",
-  color: "#8B8B90",
-  imageUrl: "",
-  url: "#"
 }];
 const AD_SIZES = {
   leaderboard: "970 × 90",
@@ -813,6 +818,9 @@ const CSS = `
 
 .court { position:relative; background:#08080A; border:1px solid var(--line); }
 .court svg { display:block; width:100%; height:auto; }
+.court-video { display:block; width:100%; aspect-ratio:16/9; background:#000; }
+.court-video.hide { display:none; }
+.court-off { position:absolute; inset:auto 0 42%; text-align:center; font-size:12.5px; color:var(--muted); }
 .court-badge { position:absolute; top:10px; left:10px; display:flex; align-items:center; gap:6px; padding:5px 9px; background:rgba(255,51,85,.92); color:#fff; font-size:10.5px; font-weight:600; letter-spacing:.08em; }
 .court-cam { position:absolute; bottom:9px; right:11px; font-size:10.5px; color:var(--muted); }
 
@@ -835,7 +843,8 @@ const CSS = `
 .rail { border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:18px 0; margin-top:24px; }
 .rail-h { display:block; font-size:10.5px; letter-spacing:.14em; color:var(--muted); margin-bottom:11px; }
 .rail-list { display:flex; flex-wrap:wrap; gap:8px; }
-.rail-item { padding:7px 12px; border:1px solid var(--line); font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:600; }
+.rail-logo { display:flex; align-items:center; padding:10px 18px; border:1px solid var(--line); }
+.rail-logo img { height:26px; width:auto; display:block; }
 
 /* pie */
 .foot { padding:40px 0 96px; }
@@ -845,7 +854,7 @@ const CSS = `
 .foot-links { display:flex; flex-wrap:wrap; gap:15px; margin-top:18px; font-size:12.5px; color:var(--muted); }
 
 /* barra inferior móvil */
-.bnav { position:fixed; left:0; right:0; bottom:0; z-index:50; display:grid; grid-template-columns:repeat(5,1fr); background:rgba(5,5,6,.95); backdrop-filter:blur(14px); border-top:1px solid var(--line); }
+.bnav { position:fixed; left:0; right:0; bottom:0; z-index:50; display:grid; grid-template-columns:repeat(6,1fr); background:rgba(5,5,6,.95); backdrop-filter:blur(14px); border-top:1px solid var(--line); }
 .bnav button { padding:9px 2px 11px; display:grid; justify-items:center; gap:4px; font-size:10px; color:var(--muted); }
 .bnav button.on { color:var(--ivory); }
 .bnav button.on .bi { border-color:var(--div); color:var(--div); }
@@ -895,6 +904,81 @@ function CourtFrame() {
     stroke: "rgba(245,242,236,.4)",
     strokeWidth: "2"
   }));
+}
+function LiveVideo({
+  court,
+  label
+}) {
+  const ref = useRef(null);
+  const [state, setState] = useState("loading");
+  useEffect(() => {
+    const url = streamUrl(court);
+    const v = ref.current;
+    if (!url || !v) {
+      setState("off");
+      return;
+    }
+    let hls;
+    const attach = () => {
+      if (v.canPlayType("application/vnd.apple.mpegurl")) {
+        v.src = url;
+        v.addEventListener("loadedmetadata", () => setState("on"));
+        v.addEventListener("error", () => setState("off"));
+        return;
+      }
+      const H = window.Hls;
+      if (!H || !H.isSupported()) {
+        setState("off");
+        return;
+      }
+      hls = new H({
+        liveDurationInfinity: true,
+        lowLatencyMode: true
+      });
+      hls.loadSource(url);
+      hls.attachMedia(v);
+      hls.on(H.Events.MANIFEST_PARSED, () => {
+        setState("on");
+        v.play().catch(() => {});
+      });
+      hls.on(H.Events.ERROR, (_, d) => {
+        if (d && d.fatal) setState("off");
+      });
+    };
+    if (window.Hls) attach();else {
+      const t = setInterval(() => {
+        if (window.Hls) {
+          clearInterval(t);
+          attach();
+        }
+      }, 300);
+      setTimeout(() => clearInterval(t), 8000);
+    }
+    return () => {
+      if (hls) hls.destroy();
+    };
+  }, [court]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "court"
+  }, /*#__PURE__*/React.createElement("video", {
+    ref: ref,
+    muted: true,
+    playsInline: true,
+    autoPlay: true,
+    controls: true,
+    className: `court-video${state === "on" ? "" : " hide"}`
+  }), state !== "on" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(CourtFrame, null), /*#__PURE__*/React.createElement("span", {
+    className: "court-off"
+  }, state === "loading" ? "Conectando con la cámara…" : "Cancha sin transmisión en este momento")), state === "on" && /*#__PURE__*/React.createElement("span", {
+    className: "court-badge"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "dot",
+    style: {
+      background: "#fff"
+    }
+  }), " EN VIVO"), /*#__PURE__*/React.createElement("span", {
+    className: "court-cam"
+  }, label || `Cancha ${court}`, " · cámara Pícale"));
 }
 function AdSlot({
   format = "leaderboard",
@@ -1364,6 +1448,44 @@ function TeamCard({
     }
   }, r.pts), "Puntos")));
 }
+function CourtsPage() {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "wrap"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mp-head"
+  }, /*#__PURE__*/React.createElement("h1", {
+    className: "mp-title"
+  }, "Canchas en vivo"), /*#__PURE__*/React.createElement("div", {
+    className: "mp-meta"
+  }, /*#__PURE__*/React.createElement("span", null, STREAM.courts.length, " cámaras en Somos Pádel"), /*#__PURE__*/React.createElement("span", null, "·"), /*#__PURE__*/React.createElement("span", null, "señal directa, sin retraso añadido"))), /*#__PURE__*/React.createElement("div", {
+    className: "blk"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid g2"
+  }, STREAM.courts.map(c => /*#__PURE__*/React.createElement("div", {
+    key: c,
+    className: "card",
+    style: {
+      padding: 0
+    }
+  }, /*#__PURE__*/React.createElement(LiveVideo, {
+    court: c
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "12px 15px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: "'Barlow Condensed',sans-serif",
+      fontSize: 20,
+      fontWeight: 600
+    }
+  }, "Cancha ", c), /*#__PURE__*/React.createElement(Somos, {
+    h: 20
+  })))))));
+}
 function LivePage({
   div,
   go,
@@ -1394,18 +1516,9 @@ function LivePage({
     style: {
       padding: 0
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "court"
-  }, /*#__PURE__*/React.createElement(CourtFrame, null), /*#__PURE__*/React.createElement("span", {
-    className: "court-badge"
-  }, /*#__PURE__*/React.createElement("i", {
-    className: "dot",
-    style: {
-      background: "#fff"
-    }
-  }), " EN VIVO"), /*#__PURE__*/React.createElement("span", {
-    className: "court-cam"
-  }, "Cancha ", m.court, " · cámara Pícale")), /*#__PURE__*/React.createElement(AdSlot, {
+  }, /*#__PURE__*/React.createElement(LiveVideo, {
+    court: m.court
+  }), /*#__PURE__*/React.createElement(AdSlot, {
     format: "court"
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1418,6 +1531,27 @@ function LivePage({
   }))))) : /*#__PURE__*/React.createElement("div", {
     className: "empty"
   }, /*#__PURE__*/React.createElement("b", null, "No hay partidos en vivo en este momento."), "La siguiente jornada es el ", fmtLong(d.date), ".")), /*#__PURE__*/React.createElement("div", {
+    className: "blk"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "sec-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    className: "sub",
+    style: {
+      marginBottom: 4
+    }
+  }, "Canchas del club"), /*#__PURE__*/React.createElement("p", {
+    className: "sec-note"
+  }, "Las ", STREAM.courts.length, " cámaras de Somos Pádel, jueguen o no de liga."))), /*#__PURE__*/React.createElement("div", {
+    className: "grid g2"
+  }, STREAM.courts.slice(0, 4).map(c => /*#__PURE__*/React.createElement("div", {
+    key: c,
+    className: "card",
+    style: {
+      padding: 0
+    }
+  }, /*#__PURE__*/React.createElement(LiveVideo, {
+    court: c
+  }))))), /*#__PURE__*/React.createElement("div", {
     className: "blk"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "sub"
@@ -1646,23 +1780,30 @@ function MatchPage({
   }), /*#__PURE__*/React.createElement("div", {
     className: "sb-foot"
   }, /*#__PURE__*/React.createElement("span", null, m.status === "final" ? `Sets ${m.setsA}–${m.setsB}` : m.status === "live" ? "Marcador Pícale en tiempo real" : "Por jugarse"), /*#__PURE__*/React.createElement("span", null, m.winner ? `Ganó ${m.winner.name}` : LEAGUE.season))), /*#__PURE__*/React.createElement(AdSlot, {
-    format: "leaderboard",
-    note: "patrocinador del partido"
+    format: "leaderboard"
   }), !hasStream(d) && /*#__PURE__*/React.createElement("div", {
     className: "blk"
   }, /*#__PURE__*/React.createElement("div", {
     className: "empty"
-  }, /*#__PURE__*/React.createElement("b", null, "Este partido se juega en ", venueName(d) || "otra sede", "."), "La transmisión en vivo y el replay de Pícale solo están disponibles en Somos Pádel.")), hasStream(d) && m.status !== "scheduled" && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("b", null, "Este partido se juega en ", venueName(d) || "otra sede", "."), "La transmisión en vivo y el replay de Pícale solo están disponibles en Somos Pádel.")), hasStream(d) && m.status === "live" && /*#__PURE__*/React.createElement("div", {
     className: "blk"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "sub"
-  }, m.status === "live" ? "Transmisión" : "Replay"), /*#__PURE__*/React.createElement("div", {
-    className: "court"
-  }, /*#__PURE__*/React.createElement(CourtFrame, null), /*#__PURE__*/React.createElement("span", {
-    className: "court-badge"
-  }, m.status === "live" ? "EN VIVO" : "REPLAY"), /*#__PURE__*/React.createElement("span", {
-    className: "court-cam"
-  }, "Cancha ", m.court, " · cámara Pícale"))), hasStream(d) && m.status === "scheduled" && /*#__PURE__*/React.createElement("div", {
+  }, "Transmisión"), /*#__PURE__*/React.createElement(LiveVideo, {
+    court: m.court
+  })), hasStream(d) && m.status === "final" && /*#__PURE__*/React.createElement("div", {
+    className: "blk"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "sub"
+  }, "Replay"), m.replay ? /*#__PURE__*/React.createElement("video", {
+    className: "court-video",
+    src: m.replay,
+    controls: true,
+    playsInline: true,
+    poster: ""
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "empty"
+  }, /*#__PURE__*/React.createElement("b", null, "El replay se está procesando."), "Queda disponible unos minutos después del último punto.")), hasStream(d) && m.status === "scheduled" && /*#__PURE__*/React.createElement("div", {
     className: "blk"
   }, /*#__PURE__*/React.createElement("div", {
     className: "empty"
@@ -1689,9 +1830,7 @@ function StandingsPage({
   }, /*#__PURE__*/React.createElement("span", null, byId(DIVISIONS, div).name), /*#__PURE__*/React.createElement("span", null, "·"), /*#__PURE__*/React.createElement("span", null, LEAGUE.season), /*#__PURE__*/React.createElement("span", null, "·"), /*#__PURE__*/React.createElement("span", null, "tres puntos por victoria"))), /*#__PURE__*/React.createElement("div", {
     className: "blk"
   }, /*#__PURE__*/React.createElement(AdSlot, {
-    format: "leaderboard",
-    sponsor: "atr",
-    note: "tabla presentada por"
+    format: "leaderboard"
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 20
@@ -1844,6 +1983,9 @@ const NAV = [{
   label: "En vivo",
   path: "/live"
 }, {
+  label: "Canchas",
+  path: "/courts"
+}, {
   label: "Calendario",
   path: "/calendar"
 }, {
@@ -1864,6 +2006,10 @@ const BNAV = [{
   label: "En vivo",
   icon: "●",
   path: "/live"
+}, {
+  label: "Canchas",
+  icon: "8",
+  path: "/courts"
 }, {
   label: "Calendario",
   icon: "17",
@@ -1904,7 +2050,7 @@ function App() {
     div: div,
     go: go,
     tick: tick
-  });else if (seg[0] === "calendar") page = /*#__PURE__*/React.createElement(CalendarPage, {
+  });else if (seg[0] === "courts") page = /*#__PURE__*/React.createElement(CourtsPage, null);else if (seg[0] === "calendar") page = /*#__PURE__*/React.createElement(CalendarPage, {
     div: div,
     go: go,
     tick: tick
@@ -2008,13 +2154,12 @@ function App() {
   }, "PATROCINADORES DE LA TEMPORADA"), /*#__PURE__*/React.createElement("div", {
     className: "rail-list"
   }, SPONSORS.map(s => /*#__PURE__*/React.createElement("span", {
-    className: "rail-item",
-    key: s.id,
-    style: {
-      borderColor: s.color + "55",
-      color: s.color
-    }
-  }, s.name)))), /*#__PURE__*/React.createElement("div", {
+    className: "rail-logo",
+    key: s.id
+  }, /*#__PURE__*/React.createElement("img", {
+    src: s.imageUrl,
+    alt: s.name
+  }))))), /*#__PURE__*/React.createElement("div", {
     className: "foot-links"
   }, NAV.map(n => /*#__PURE__*/React.createElement("button", {
     key: n.path,

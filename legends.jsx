@@ -34,6 +34,25 @@ const LEAGUE = {
   ],
 };
 
+/* ============================================================================
+   TRANSMISIÓN DE LAS CANCHAS
+   El servidor del club publica cada cámara como HLS. Ajusta base y archivo si
+   tus rutas son distintas; todo lo demás de la página se acomoda solo.
+     base:   carpeta pública de HLS en el servidor del club
+     file:   nombre del manifiesto por cancha
+     courts: canchas con cámara instalada
+   La página intenta cargar el manifiesto y, si no hay señal, muestra la cancha
+   como "sin transmisión" sin romper nada.
+============================================================================ */
+const STREAM = {
+  base: "https://picalereplay.com/hls",
+  file: (court) => `cancha${court}.m3u8`,
+  courts: [1, 2, 3, 4, 5, 6, 7, 8],
+  venue: "somos",
+};
+const streamUrl = (court) =>
+  STREAM.courts.includes(court) ? `${STREAM.base}/${STREAM.file(court)}` : null;
+
 const DIVISIONS = [
   { id: "varonil", name: "Varonil", color: "#22C55E" },
   { id: "femenil", name: "Femenil", color: "#FF5CA8" },
@@ -127,8 +146,6 @@ const SOMOS_AD = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUsAAAB4CAYAAAB7
 const SPONSORS = [
   { id: "banregio", name: "Banregio", line: "Patrocinador oficial de la liga", color: "#F5F2EC", imageUrl: BANREGIO_LOGO, url: "#" },
   { id: "four", name: "Four Padel", line: "Equipamiento y palas oficiales", color: "#F5F2EC", imageUrl: FOUR_LOGO, url: "#" },
-  { id: "somos", name: "Somos Pádel", line: "Club sede y transmisión en vivo", color: "#D8E23F", imageUrl: SOMOS_AD, url: "#" },
-  { id: "libre", name: "Tu marca aquí", line: "Espacio disponible para esta temporada", color: "#8B8B90", imageUrl: "", url: "#" },
 ];
 
 const AD_SIZES = { leaderboard: "970 × 90", banner: "728 × 90", court: "valla virtual · 1280 × 120" };
@@ -401,6 +418,9 @@ const CSS = `
 
 .court { position:relative; background:#08080A; border:1px solid var(--line); }
 .court svg { display:block; width:100%; height:auto; }
+.court-video { display:block; width:100%; aspect-ratio:16/9; background:#000; }
+.court-video.hide { display:none; }
+.court-off { position:absolute; inset:auto 0 42%; text-align:center; font-size:12.5px; color:var(--muted); }
 .court-badge { position:absolute; top:10px; left:10px; display:flex; align-items:center; gap:6px; padding:5px 9px; background:rgba(255,51,85,.92); color:#fff; font-size:10.5px; font-weight:600; letter-spacing:.08em; }
 .court-cam { position:absolute; bottom:9px; right:11px; font-size:10.5px; color:var(--muted); }
 
@@ -423,7 +443,8 @@ const CSS = `
 .rail { border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:18px 0; margin-top:24px; }
 .rail-h { display:block; font-size:10.5px; letter-spacing:.14em; color:var(--muted); margin-bottom:11px; }
 .rail-list { display:flex; flex-wrap:wrap; gap:8px; }
-.rail-item { padding:7px 12px; border:1px solid var(--line); font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:600; }
+.rail-logo { display:flex; align-items:center; padding:10px 18px; border:1px solid var(--line); }
+.rail-logo img { height:26px; width:auto; display:block; }
 
 /* pie */
 .foot { padding:40px 0 96px; }
@@ -433,7 +454,7 @@ const CSS = `
 .foot-links { display:flex; flex-wrap:wrap; gap:15px; margin-top:18px; font-size:12.5px; color:var(--muted); }
 
 /* barra inferior móvil */
-.bnav { position:fixed; left:0; right:0; bottom:0; z-index:50; display:grid; grid-template-columns:repeat(5,1fr); background:rgba(5,5,6,.95); backdrop-filter:blur(14px); border-top:1px solid var(--line); }
+.bnav { position:fixed; left:0; right:0; bottom:0; z-index:50; display:grid; grid-template-columns:repeat(6,1fr); background:rgba(5,5,6,.95); backdrop-filter:blur(14px); border-top:1px solid var(--line); }
 .bnav button { padding:9px 2px 11px; display:grid; justify-items:center; gap:4px; font-size:10px; color:var(--muted); }
 .bnav button.on { color:var(--ivory); }
 .bnav button.on .bi { border-color:var(--div); color:var(--div); }
@@ -469,6 +490,56 @@ function CourtFrame() {
       </g>
       <path d="M205 292 L795 292" stroke="rgba(245,242,236,.4)" strokeWidth="2" />
     </svg>
+  );
+}
+
+function LiveVideo({ court, label }) {
+  const ref = useRef(null);
+  const [state, setState] = useState("loading");
+
+  useEffect(() => {
+    const url = streamUrl(court);
+    const v = ref.current;
+    if (!url || !v) { setState("off"); return; }
+    let hls;
+    const attach = () => {
+      if (v.canPlayType("application/vnd.apple.mpegurl")) {
+        v.src = url;
+        v.addEventListener("loadedmetadata", () => setState("on"));
+        v.addEventListener("error", () => setState("off"));
+        return;
+      }
+      const H = window.Hls;
+      if (!H || !H.isSupported()) { setState("off"); return; }
+      hls = new H({ liveDurationInfinity: true, lowLatencyMode: true });
+      hls.loadSource(url);
+      hls.attachMedia(v);
+      hls.on(H.Events.MANIFEST_PARSED, () => { setState("on"); v.play().catch(() => {}); });
+      hls.on(H.Events.ERROR, (_, d) => { if (d && d.fatal) setState("off"); });
+    };
+    if (window.Hls) attach();
+    else {
+      const t = setInterval(() => { if (window.Hls) { clearInterval(t); attach(); } }, 300);
+      setTimeout(() => clearInterval(t), 8000);
+    }
+    return () => { if (hls) hls.destroy(); };
+  }, [court]);
+
+  return (
+    <div className="court">
+      <video ref={ref} muted playsInline autoPlay controls
+        className={`court-video${state === "on" ? "" : " hide"}`} />
+      {state !== "on" && (
+        <>
+          <CourtFrame />
+          <span className="court-off">
+            {state === "loading" ? "Conectando con la cámara…" : "Cancha sin transmisión en este momento"}
+          </span>
+        </>
+      )}
+      {state === "on" && <span className="court-badge"><i className="dot" style={{ background: "#fff" }} /> EN VIVO</span>}
+      <span className="court-cam">{label || `Cancha ${court}`} · cámara Pícale</span>
+    </div>
   );
 }
 
@@ -762,6 +833,33 @@ function TeamCard({ r, go }) {
   );
 }
 
+function CourtsPage() {
+  return (
+    <div className="wrap">
+      <div className="mp-head">
+        <h1 className="mp-title">Canchas en vivo</h1>
+        <div className="mp-meta">
+          <span>{STREAM.courts.length} cámaras en Somos Pádel</span><span>·</span>
+          <span>señal directa, sin retraso añadido</span>
+        </div>
+      </div>
+      <div className="blk">
+        <div className="grid g2">
+          {STREAM.courts.map((c) => (
+            <div key={c} className="card" style={{ padding: 0 }}>
+              <LiveVideo court={c} />
+              <div style={{ padding: "12px 15px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 600 }}>Cancha {c}</span>
+                <Somos h={20} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LivePage({ div, go, tick }) {
   const live = divMatches(div).filter((m) => m.status === "live");
   const d = nextDay(div, true);
@@ -780,11 +878,7 @@ function LivePage({ div, go, tick }) {
           <div className="grid g2">
             {live.map((m) => (
               <div className="card" key={m.id} style={{ padding: 0 }}>
-                <div className="court">
-                  <CourtFrame />
-                  <span className="court-badge"><i className="dot" style={{ background: "#fff" }} /> EN VIVO</span>
-                  <span className="court-cam">Cancha {m.court} · cámara Pícale</span>
-                </div>
+                <LiveVideo court={m.court} />
                 <AdSlot format="court" />
                 <div style={{ padding: 15 }}>
                   <Fixture m={m} go={go} tick={tick} />
@@ -798,6 +892,22 @@ function LivePage({ div, go, tick }) {
             La siguiente jornada es el {fmtLong(d.date)}.
           </div>
         )}
+      </div>
+
+      <div className="blk">
+        <div className="sec-head">
+          <div>
+            <h3 className="sub" style={{ marginBottom: 4 }}>Canchas del club</h3>
+            <p className="sec-note">Las {STREAM.courts.length} cámaras de Somos Pádel, jueguen o no de liga.</p>
+          </div>
+        </div>
+        <div className="grid g2">
+          {STREAM.courts.slice(0, 4).map((c) => (
+            <div key={c} className="card" style={{ padding: 0 }}>
+              <LiveVideo court={c} />
+            </div>
+          ))}
+        </div>
       </div>
       <div className="blk">
         <h3 className="sub">Próxima transmisión — {dayLabel(d).toLowerCase()}, {venueName(d)}</h3>
@@ -944,7 +1054,7 @@ function MatchPage({ slug, go, tick }) {
         </div>
       </div>
 
-      <AdSlot format="leaderboard" note="patrocinador del partido" />
+      <AdSlot format="leaderboard" />
 
       {!hasStream(d) && (
         <div className="blk">
@@ -955,14 +1065,19 @@ function MatchPage({ slug, go, tick }) {
         </div>
       )}
 
-      {hasStream(d) && m.status !== "scheduled" && (
+      {hasStream(d) && m.status === "live" && (
         <div className="blk">
-          <h3 className="sub">{m.status === "live" ? "Transmisión" : "Replay"}</h3>
-          <div className="court">
-            <CourtFrame />
-            <span className="court-badge">{m.status === "live" ? "EN VIVO" : "REPLAY"}</span>
-            <span className="court-cam">Cancha {m.court} · cámara Pícale</span>
-          </div>
+          <h3 className="sub">Transmisión</h3>
+          <LiveVideo court={m.court} />
+        </div>
+      )}
+
+      {hasStream(d) && m.status === "final" && (
+        <div className="blk">
+          <h3 className="sub">Replay</h3>
+          {m.replay
+            ? <video className="court-video" src={m.replay} controls playsInline poster="" />
+            : <div className="empty"><b>El replay se está procesando.</b>Queda disponible unos minutos después del último punto.</div>}
         </div>
       )}
 
@@ -994,7 +1109,7 @@ function StandingsPage({ div, go }) {
         </div>
       </div>
       <div className="blk">
-        <AdSlot format="leaderboard" sponsor="atr" note="tabla presentada por" />
+        <AdSlot format="leaderboard" />
         <div style={{ marginTop: 20 }}><StandingsTable rows={standings(div)} go={go} cut /></div>
       </div>
     </div>
@@ -1084,6 +1199,7 @@ function NotFound({ go }) {
 const NAV = [
   { label: "Inicio", path: "/" },
   { label: "En vivo", path: "/live" },
+  { label: "Canchas", path: "/courts" },
   { label: "Calendario", path: "/calendar" },
   { label: "Resultados", path: "/results" },
   { label: "Clasificación", path: "/standings" },
@@ -1092,6 +1208,7 @@ const NAV = [
 const BNAV = [
   { label: "Inicio", icon: "L", path: "/" },
   { label: "En vivo", icon: "●", path: "/live" },
+  { label: "Canchas", icon: "8", path: "/courts" },
   { label: "Calendario", icon: "17", path: "/calendar" },
   { label: "Tabla", icon: "#", path: "/standings" },
   { label: "Equipos", icon: "T", path: "/teams" },
@@ -1118,6 +1235,7 @@ export default function App() {
   let page;
   if (!seg.length) page = <Home div={div} go={go} tick={tick} />;
   else if (seg[0] === "live") page = <LivePage div={div} go={go} tick={tick} />;
+  else if (seg[0] === "courts") page = <CourtsPage />;
   else if (seg[0] === "calendar") page = <CalendarPage div={div} go={go} tick={tick} />;
   else if (seg[0] === "results") page = <CalendarPage div={div} go={go} tick={tick} onlyFinal />;
   else if (seg[0] === "standings") page = <StandingsPage div={div} go={go} />;
@@ -1183,7 +1301,7 @@ export default function App() {
             <span className="rail-h">PATROCINADORES DE LA TEMPORADA</span>
             <div className="rail-list">
               {SPONSORS.map((s) => (
-                <span className="rail-item" key={s.id} style={{ borderColor: s.color + "55", color: s.color }}>{s.name}</span>
+                <span className="rail-logo" key={s.id}><img src={s.imageUrl} alt={s.name} /></span>
               ))}
             </div>
           </div>
