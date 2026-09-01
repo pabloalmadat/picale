@@ -71,8 +71,22 @@ const LEAGUE = {
    La página intenta cargar el manifiesto y, si no hay señal, muestra la cancha
    como "sin transmisión" sin romper nada.
 ============================================================================ */
+/* Puedes probar otra ruta sin recompilar: legends.html?hls=https://tu-servidor/live
+   Queda guardada en el navegador hasta que la cambies. */
+function hlsBase() {
+  try {
+    const q = new URLSearchParams(location.search).get("hls");
+    if (q) {
+      localStorage.setItem("picale_hls", q);
+      return q;
+    }
+    return localStorage.getItem("picale_hls") || "https://picalereplay.com/hls";
+  } catch (e) {
+    return "https://picalereplay.com/hls";
+  }
+}
 const STREAM = {
-  base: "https://picalereplay.com/hls",
+  base: hlsBase(),
   file: court => `cancha${court}.m3u8`,
   courts: [1, 2, 3, 4, 5, 6, 7, 8],
   venue: "somos"

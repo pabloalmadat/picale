@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pícale — diagnóstico de transmisión</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#050506;color:#F5F2EC;font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.55;padding:28px 18px 60px}
+  .wrap{max-width:900px;margin:0 auto}
+  h1{font-family:'Barlow Condensed',sans-serif;font-size:38px;margin-bottom:6px}
+  h2{font-family:'Barlow Condensed',sans-serif;font-size:21px;margin:26px 0 10px}
+  p.sub{color:#8B8B90;font-size:13px}
+  label{display:block;font-size:11px;letter-spacing:.1em;color:#8B8B90;margin:16px 0 5px}
+  input{width:100%;padding:11px;background:#151519;border:1px solid rgba(245,242,236,.12);color:#F5F2EC;font:inherit}
+  button{font:inherit;color:#0B0B0C;background:#F5F2EC;border:0;padding:11px 20px;margin-top:14px;cursor:pointer;font-weight:600}
+  button.ghost{background:none;color:#F5F2EC;border:1px solid rgba(245,242,236,.25);margin-left:8px}
+  table{width:100%;border-collapse:collapse;margin-top:18px;font-size:13.5px}
+  th{text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:.1em;color:#8B8B90;padding:9px 10px;border-bottom:1px solid rgba(245,242,236,.1)}
+  td{padding:9px 10px;border-bottom:1px solid rgba(245,242,236,.1);vertical-align:top}
+  code{font-size:12.5px;color:#A7B0A4;word-break:break-all}
+  .ok{color:#22C55E;font-weight:600}
+  .bad{color:#FF3355;font-weight:600}
+  .wait{color:#E4B84B}
+  .note{border:1px solid rgba(245,242,236,.1);background:#0D0D0F;padding:16px;margin-top:22px;font-size:13.5px;color:#8B8B90}
+  .note b{color:#F5F2EC;font-weight:500}
+  pre{background:#0D0D0F;border:1px solid rgba(245,242,236,.1);padding:14px;overflow:auto;font-size:12.5px;color:#A7B0A4;margin-top:10px}
+  video{width:100%;max-width:480px;margin-top:14px;background:#000;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Diagnóstico de transmisión</h1>
+  <p class="sub">Prueba dónde vive realmente el HLS de las canchas y si el navegador puede leerlo.</p>
+
+  <label>RUTA BASE A PROBAR</label>
+  <input id="base" value="https://picalereplay.com/hls" />
+  <label>PATRÓN DEL ARCHIVO — usa {n} para el número de cancha</label>
+  <input id="pat" value="cancha{n}.m3u8" />
+  <div>
+    <button onclick="run()">Probar 8 canchas</button>
+    <button class="ghost" onclick="guess()">Probar rutas comunes</button>
+  </div>
+
+  <table id="out"><thead><tr><th>URL</th><th>Resultado</th><th>Detalle</th></tr></thead><tbody></tbody></table>
+
+  <video id="v" controls muted playsinline></video>
+
+  <div class="note" id="hint"></div>
+
+  <h2>Si todo sale en rojo</h2>
+  <div class="note">
+    <b>404</b> — la ruta no es esa. Entra por SSH y busca dónde escribe los segmentos:
+    <pre>find / -name "*.m3u8" -mmin -60 2>/dev/null
+docker ps          # revisa el contenedor de nginx-rtmp
+docker exec -it &lt;contenedor&gt; ls /opt/data/hls</pre>
+    <b>Bloqueo de CORS</b> — el archivo existe pero otro dominio no puede leerlo. En el bloque del HLS en nginx:
+    <pre>location /hls {
+    add_header Access-Control-Allow-Origin * always;
+    add_header Cache-Control no-cache always;
+    types { application/vnd.apple.mpegurl m3u8; video/mp2t ts; }
+    root /opt/data;
+}</pre>
+    <b>Mixed content</b> — si la página va por HTTPS y el HLS por HTTP, el navegador lo corta sin avisar. Los dos tienen que ser HTTPS.
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+<script>
+const tb = document.querySelector('#out tbody');
+const hint = document.getElementById('hint');
+
+function row(url){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><code>${url}</code></td><td class="wait">probando…</td><td class="sub"></td>`;
+  tb.appendChild(tr);
+  return tr;
+}
+
+async function probe(url, tr){
+  try {
+    const r = await fetch(url, { cache:'no-store', mode:'cors' });
+    if (!r.ok){
+      tr.children[1].innerHTML = '<span class="bad">' + r.status + '</span>';
+      tr.children[2].textContent = r.status === 404 ? 'no existe en esa ruta' : r.statusText;
+      return false;
+    }
+    const txt = await r.text();
+    if (!txt.includes('#EXTM3U')){
+      tr.children[1].innerHTML = '<span class="bad">no es HLS</span>';
+      tr.children[2].textContent = 'responde algo que no es un manifiesto';
+      return false;
+    }
+    const segs = (txt.match(/\.ts|\.m4s/g) || []).length;
+    tr.children[1].innerHTML = '<span class="ok">OK</span>';
+    tr.children[2].textContent = segs ? segs + ' segmentos, señal activa' : 'manifiesto vacío, cámara apagada';
+    if (segs) play(url);
+    return true;
+  } catch (e){
+    tr.children[1].innerHTML = '<span class="bad">bloqueado</span>';
+    tr.children[2].textContent = 'CORS, mixed content o servidor inalcanzable';
+    return false;
+  }
+}
+
+function play(url){
+  const v = document.getElementById('v');
+  if (v.dataset.on) return;
+  v.dataset.on = '1'; v.style.display = 'block';
+  if (window.Hls && Hls.isSupported()){
+    const h = new Hls(); h.loadSource(url); h.attachMedia(v);
+    h.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(()=>{}));
+  } else { v.src = url; }
+  hint.innerHTML = '<b>Encontrada.</b> Abre la liga con esa ruta: <code>legends.html?hls=' + url.replace(/\/[^\/]+$/,'') + '</code> y queda guardada.';
+}
+
+async function run(){
+  tb.innerHTML = ''; hint.textContent = '';
+  const base = document.getElementById('base').value.replace(/\/$/,'');
+  const pat = document.getElementById('pat').value;
+  let any = false;
+  for (let n = 1; n <= 8; n++){
+    const url = base + '/' + pat.replace('{n}', n);
+    const tr = row(url);
+    if (await probe(url, tr)) any = true;
+  }
+  if (!any) hint.innerHTML = '<b>Ninguna respondió.</b> Prueba el botón de rutas comunes o revisa las notas de abajo.';
+}
+
+async function guess(){
+  tb.innerHTML = ''; hint.textContent = '';
+  const host = location.origin;
+  const cands = [
+    host + '/hls/cancha1.m3u8', host + '/hls/stream1.m3u8', host + '/hls/court1.m3u8',
+    host + '/hls/cancha1/index.m3u8', host + '/live/cancha1/index.m3u8',
+    host + '/live/cancha1.m3u8', host + '/stream/cancha1.m3u8',
+    'https://picalereplay.com/hls/cancha1.m3u8', 'https://picalereplay.com/live/cancha1/index.m3u8',
+  ];
+  let any = false;
+  for (const u of cands){ if (await probe(u, row(u))) any = true; }
+  if (!any) hint.innerHTML = '<b>Ninguna de las rutas comunes respondió.</b> Busca el archivo en el servidor con los comandos de abajo y pega la ruta arriba.';
+}
+</script>
+</body>
+</html>
