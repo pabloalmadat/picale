@@ -44,14 +44,46 @@ const LEAGUE = {
    La página intenta cargar el manifiesto y, si no hay señal, muestra la cancha
    como "sin transmisión" sin romper nada.
 ============================================================================ */
-const STREAM = {
-  base: "https://picalereplay.com/hls",
-  file: (court) => `cancha${court}.m3u8`,
-  courts: [1, 2, 3, 4, 5, 6, 7, 8],
-  venue: "somos",
-};
-const streamUrl = (court) =>
-  STREAM.courts.includes(court) ? `${STREAM.base}/${STREAM.file(court)}` : null;
+/* Canchas de Somos Pádel — mismas rutas que usa clubs.html.
+   Cada cancha tiene su manifiesto HLS y su court_id en el API de Pícale. */
+const CLOUD = "https://api.picalereplay.com";
+
+const SOMOS_COURTS = [
+  { n: 1, hls: "2111bf2250a5751d", courtId: "6bc0621c-f99a-4e1f-8971-d70155ea3383" },
+  { n: 2, hls: "e6835934e7a68e22", courtId: "e1dc778e-831f-4fa4-bc86-d6a31a7de1d1" },
+  { n: 3, hls: "c776bfbbe6618fe4", courtId: "fc8bbc6d-e21b-466d-92e6-a2beefe6bd38" },
+  { n: 4, hls: "f132a6e907de3361", courtId: "2d54ad6f-895f-4f6c-b985-95b431fe03b3" },
+  { n: 5, hls: "e4df4f9f11a4b00d", courtId: "28b6283d-dacf-428d-a3fb-fc0015d5f6aa" },
+  { n: 6, hls: "e1f8c1f9fa4ea04f", courtId: "519bbd5d-b2f5-4a84-a257-6d327bebf9a8" },
+  { n: 7, hls: "872566c01554f2e7", courtId: "28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512" },
+  { n: 8, hls: "410266125aa0e463", courtId: "35c16c54-f31e-4397-922b-044722d06524" },
+];
+
+const STREAM = { courts: SOMOS_COURTS.map((c) => c.n), venue: "somos" };
+const court = (n) => SOMOS_COURTS.find((c) => c.n === n);
+const streamUrl = (n) => (court(n) ? `${CLOUD}/hls/${court(n).hls}/index.m3u8` : null);
+const courtIdOf = (n) => (court(n) ? court(n).courtId : null);
+
+/* Partido activo en una cancha, según el motor de marcador de Pícale.
+   Devuelve el match_id cuando hay juego, o null. */
+function useActiveMatch(n) {
+  const [matchId, setMatchId] = useState(null);
+  useEffect(() => {
+    const id = courtIdOf(n);
+    if (!id) return;
+    let alive = true;
+    const check = () => {
+      fetch(`${CLOUD}/api/v1/score/court/${id}/active`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (alive) setMatchId(d && d.match_id ? d.match_id : null); })
+        .catch(() => { });
+    };
+    check();
+    const t = setInterval(check, 20000);
+    return () => { alive = false; clearInterval(t); };
+  }, [n]);
+  return matchId;
+}
 
 const DIVISIONS = [
   { id: "varonil", name: "Varonil", color: "#22C55E" },
@@ -496,6 +528,7 @@ function CourtFrame() {
 function LiveVideo({ court, label }) {
   const ref = useRef(null);
   const [state, setState] = useState("loading");
+  const matchId = useActiveMatch(court);
 
   useEffect(() => {
     const url = streamUrl(court);
@@ -537,7 +570,11 @@ function LiveVideo({ court, label }) {
           </span>
         </>
       )}
-      {state === "on" && <span className="court-badge"><i className="dot" style={{ background: "#fff" }} /> EN VIVO</span>}
+      {state === "on" && (
+        <span className="court-badge">
+          <i className="dot" style={{ background: "#fff" }} /> {matchId ? "PARTIDO EN CURSO" : "EN VIVO"}
+        </span>
+      )}
       <span className="court-cam">{label || `Cancha ${court}`} · cámara Pícale</span>
     </div>
   );
