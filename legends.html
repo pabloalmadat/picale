@@ -511,6 +511,164 @@ const MATCHDAYS = [
   pairs: [["Ganador SF1", "Ganador SF2"], ["Perdedor SF1", "Perdedor SF2"]]
 }];
 
+/* ============================================================================
+   ORDEN DE JUEGO
+   Un duelo entre equipos son varios partidos por categoría, cada uno con su
+   hora y su cancha. Clave: id del duelo (division-jN-cN).
+============================================================================ */
+const RUBBERS = {
+  // ---- Varonil · jornada 1 · martes 1 de septiembre · Somos Pádel
+  "varonil-j1-c1": [{
+    cat: "3ra/4ta",
+    time: "18:30",
+    court: 1,
+    a: ["Orlando Aguirre", "Mauricio Martínez"],
+    b: ["Jorge Ortegón", "David Ramos"]
+  }, {
+    cat: "2da/2da",
+    time: "18:30",
+    court: 2,
+    a: ["Luis Morfín", "Fernando Chapa"],
+    b: ["Cenith Castillo", "Karim Alejo"]
+  }, {
+    cat: "3ra/3ra",
+    time: "18:30",
+    court: 3,
+    a: ["Federico Seyffert", "Américo Huesca"],
+    b: ["Daniel Reding", "Eugenio Candanedo"]
+  }, {
+    cat: "1ra/1ra",
+    time: "20:00",
+    court: 1,
+    a: ["Andrés Perales", "Carlos Artigas"],
+    b: ["Gianluca Bianchezi", "Mario Perales"]
+  }, {
+    cat: "4ta/4ta",
+    time: "20:00",
+    court: 2,
+    a: ["Eduardo Elizondo", "Fernando Llovera"],
+    b: ["Federico Colyer", "Andrés Treviño"]
+  }, {
+    cat: "5ta/5ta",
+    time: "21:30",
+    court: 1,
+    a: ["David Rubio", "Maximiliano Ramos"],
+    b: ["Eduardo Saldaña", "Ricardo González"]
+  }, {
+    cat: "6ta/6ta",
+    time: "21:30",
+    court: 2,
+    a: ["Jaime Elizalde", "Santiago Treviño"],
+    b: ["Juan Pablo Serratos", "Christian Alanís"]
+  }],
+  "varonil-j1-c2": [{
+    cat: "3ra/4ta",
+    time: "18:30",
+    court: 5,
+    a: ["Paulo Medina", "Ricardo Lechuga"],
+    b: ["Manuel Sobera", "Agustín Gil"]
+  }, {
+    cat: "4ta/4ta",
+    time: "18:30",
+    court: 6,
+    a: ["Diego Larraza", "Daniel Támez"],
+    b: ["Carlos Chan", "Pedro Pintos"]
+  }, {
+    cat: "5ta/5ta",
+    time: "18:30",
+    court: 7,
+    a: ["Humberto Castellanos", "Sebastián Garza T"],
+    b: ["Lázaro Casas", "Luis Brull"]
+  }, {
+    cat: "6ta/6ta",
+    time: "20:00",
+    court: 5,
+    a: ["Marcelo Guajardo", "Manuel Flores"],
+    b: ["Adrián Azuela", "Juan José Luna"]
+  }, {
+    cat: "1ra/1ra",
+    time: "20:00",
+    court: 6,
+    a: ["Arturo Espinosa", "Luis A. Domínguez"],
+    b: ["Nicolás Canello", "César Arriaga"]
+  }, {
+    cat: "2da/2da",
+    time: "21:30",
+    court: 5,
+    a: ["Rodrigo Támez", "Mauricio Canavati"],
+    b: ["Andrés Gil", "Fernando Sanmiguel"]
+  }, {
+    cat: "3ra/3ra",
+    time: "21:30",
+    court: 6,
+    a: ["Francisco Sada", "Fabián Peña"],
+    b: ["Emiliano Castro", "Jafet González"]
+  }],
+  // ---- Femenil · jornada 1
+  "femenil-j1-c1": [{
+    cat: "5ta/5ta",
+    time: "18:30",
+    court: 8,
+    a: ["Trudy Durán", "Florencia Fonseca"],
+    b: ["Jannett Garza", "Jessica Cortés"]
+  }, {
+    cat: "6ta/6ta",
+    time: "20:00",
+    court: 7,
+    a: ["Susana Quintero", "Melissa Ramírez"],
+    b: ["Ileana Garza", "Luisa Monter"]
+  }, {
+    cat: "4ta/5ta",
+    time: "20:00",
+    court: 8,
+    a: ["Fernanda Islas", "Sofía Treviño"],
+    b: ["Graciela Muñoz Rey", "Karina Mariscal"]
+  }, {
+    cat: "3ra/3ra",
+    time: "21:30",
+    court: 7,
+    a: ["Paola Medina", "Claudia Lozano"],
+    b: ["Michelle Villaseñor", "Alejandra Franco"]
+  }, {
+    cat: "4ta/4ta",
+    time: "21:30",
+    court: 8,
+    a: ["Andrea Garza", "Balbina Treviño"],
+    b: ["Myrna Pérez", "Ana Lucía Recio"]
+  }],
+  "femenil-j1-c2": [{
+    cat: "3ra/3ra",
+    time: "18:30",
+    court: 4,
+    a: ["María Garza", "Ana Gabriela Estrada"],
+    b: ["Gabriela Mendoza", "Valeria Gómez"]
+  }, {
+    cat: "5ta/5ta",
+    time: "20:00",
+    court: 3,
+    a: ["Loretta Sánchez", "Luisina Garza"],
+    b: ["Alexia Francke", "Mónica Ortiz"]
+  }, {
+    cat: "4ta/4ta",
+    time: "20:00",
+    court: 4,
+    a: ["Alexandra Mena", "Claudia Mena"],
+    b: ["Leticia Ortega", "Floriza Guerrero"]
+  }, {
+    cat: "6ta/6ta",
+    time: "21:30",
+    court: 3,
+    a: ["Sabrina Garza", "Paulina Rivera"],
+    b: ["Karen Fosado", "Miriam Fernández"]
+  }, {
+    cat: "4ta/5ta",
+    time: "21:30",
+    court: 4,
+    a: ["Laila Melisa Garza", "Brenda Urquiza"],
+    b: ["Daniela González", "Karla V. Cardona"]
+  }]
+};
+
 /* Resultados terminados. Clave: id del partido (ver ejemplo abajo). */
 const RESULTS = {
   // "varonil-j1-c1": { sets: [[6,4],[3,6],[10,8]], replay: "https://..." },
@@ -573,13 +731,20 @@ function buildMatches() {
       sets.forEach(([a, b]) => {
         if (a > b && isSetClosed(a, b)) setsA++;else if (b > a && isSetClosed(b, a)) setsB++;
       });
+      const rubbers = RUBBERS[id] || [];
+      const times = rubbers.map(r => r.time).sort();
+      const courts = [...new Set(rubbers.map(r => r.court))].sort((a, b) => a - b);
       const status = liv ? "live" : res ? "final" : "scheduled";
       out.push({
         id,
         slug: id,
         matchday: d,
         div: d.div,
-        court: i + 1,
+        court: courts[0] || i + 1,
+        rubbers,
+        courts,
+        from: times[0] || "",
+        to: times[times.length - 1] || "",
         date: d.date,
         teamA,
         teamB,
@@ -597,6 +762,15 @@ function buildMatches() {
   return out;
 }
 const MATCHES = buildMatches();
+function rosterOf(teamId) {
+  const names = new Set();
+  MATCHES.forEach(m => {
+    if (!m.rubbers.length) return;
+    if (m.teamA.id === teamId) m.rubbers.forEach(r => r.a.forEach(n => names.add(n)));
+    if (m.teamB.id === teamId) m.rubbers.forEach(r => r.b.forEach(n => names.add(n)));
+  });
+  return [...names];
+}
 const divTeams = div => TEAMS.filter(t => t.div === div).map(t => ({
   ...t,
   slug: slugify(t.name)
@@ -896,6 +1070,21 @@ const CSS = `
 .court-badge { position:absolute; top:10px; left:10px; display:flex; align-items:center; gap:6px; padding:5px 9px; background:rgba(255,51,85,.92); color:#fff; font-size:10.5px; font-weight:600; letter-spacing:.08em; }
 .court-cam { position:absolute; bottom:9px; right:11px; font-size:10.5px; color:var(--muted); }
 
+.order { display:grid; gap:8px; }
+.ord { display:grid; grid-template-columns:76px 1fr; gap:12px; align-items:center;
+  border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:12px 14px; }
+.ord-when { text-align:center; border-right:1px solid var(--line); padding-right:10px; }
+.ord-when b { display:block; font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:700; line-height:1; }
+.ord-when span { display:block; font-size:10px; color:var(--muted); letter-spacing:.06em; margin-top:3px; }
+.ord-cat { display:inline-block; font-size:10px; letter-spacing:.12em; color:var(--muted); margin-bottom:7px; text-transform:uppercase; }
+.ord-side { display:flex; align-items:center; gap:9px; font-size:14px; padding:2px 0; }
+.ord-side i { width:3px; height:15px; flex:none; display:block; }
+.ord-cta { grid-column:1/-1; text-align:left; font-size:12px; color:var(--div); padding-top:9px; border-top:1px solid var(--line); }
+@media (min-width:760px){
+  .ord { grid-template-columns:76px 1fr auto; }
+  .ord-cta { grid-column:auto; border-top:0; padding-top:0; }
+}
+
 .empty { padding:30px 16px; text-align:center; border:1px dashed var(--line2); color:var(--muted); font-size:14px; }
 .empty b { display:block; color:var(--ivory); font-family:'Barlow Condensed',sans-serif; font-size:19px; margin-bottom:6px; font-weight:600; }
 
@@ -1119,7 +1308,7 @@ function CourtFrame() {
     strokeWidth: "2"
   }));
 }
-const BUILD = "2026-08-31-v6";
+const BUILD = "2026-09-01-v7";
 const ICONS = {
   home: "M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5",
   live: "M12 12h.01M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13",
@@ -1354,14 +1543,14 @@ function Fixture({
     className: `fx${m.status === "live" ? " is-live" : ""}${stream ? "" : " no-stream"}`
   }, /*#__PURE__*/React.createElement("div", {
     className: "fx-court"
-  }, /*#__PURE__*/React.createElement("b", null, m.court), /*#__PURE__*/React.createElement("span", null, "CANCHA")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("b", null, m.courts && m.courts.length > 1 ? `${m.courts[0]}-${m.courts[m.courts.length - 1]}` : m.court), /*#__PURE__*/React.createElement("span", null, m.courts && m.courts.length > 1 ? "CANCHAS" : "CANCHA")), /*#__PURE__*/React.createElement("div", {
     className: "fx-body"
   }, /*#__PURE__*/React.createElement("div", {
     className: "fx-meta"
   }, /*#__PURE__*/React.createElement(StatusChip, {
     m: m,
     tick: tick
-  }), /*#__PURE__*/React.createElement("span", null, dayLabel(d)), /*#__PURE__*/React.createElement("span", null, "·"), /*#__PURE__*/React.createElement("span", null, fmtShort(m.date)), /*#__PURE__*/React.createElement("span", null, "·"), /*#__PURE__*/React.createElement("span", null, venue || "sede por confirmar"), !stream && /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", null, dayLabel(d)), /*#__PURE__*/React.createElement("span", null, "·"), /*#__PURE__*/React.createElement("span", null, fmtShort(m.date)), /*#__PURE__*/React.createElement("span", null, "·"), /*#__PURE__*/React.createElement("span", null, venue || "sede por confirmar"), m.from && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, "·"), /*#__PURE__*/React.createElement("span", null, m.from, " a ", m.to, " h")), !stream && /*#__PURE__*/React.createElement("span", {
     className: "chip"
   }, "SIN TRANSMISIÓN")), /*#__PURE__*/React.createElement("button", {
     className: "fx-row",
@@ -1383,7 +1572,7 @@ function Fixture({
     side: "B"
   })), /*#__PURE__*/React.createElement("div", {
     className: "fx-foot"
-  }, /*#__PURE__*/React.createElement("span", null, m.status === "final" ? `Sets ${m.setsA}–${m.setsB}` : fmtLong(m.date)), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("span", null, m.status === "final" ? `Sets ${m.setsA}–${m.setsB}` : m.rubbers.length ? `${m.rubbers.length} partidos por categoría` : fmtLong(m.date)), /*#__PURE__*/React.createElement("button", {
     className: `fx-cta${m.status === "live" ? " livec" : ""}`,
     onClick: () => go(`/match/${m.slug}`)
   }, !stream ? "Detalle →" : m.status === "live" ? "Ver transmisión →" : m.status === "final" ? "Ver partido →" : "Detalle →"))));
@@ -1597,7 +1786,7 @@ function Home({
       fontSize: 11.5,
       color: "var(--muted)"
     }
-  }, "Cancha ", m.court)))), /*#__PURE__*/React.createElement("button", {
+  }, m.from ? `${m.from} h · canchas ${m.courts.join(", ")}` : `Cancha ${m.court}`)))), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-div btn-sm",
     style: {
       marginTop: 16,
@@ -2046,7 +2235,42 @@ function MatchPage({
     }));
   }), /*#__PURE__*/React.createElement("div", {
     className: "sb-foot"
-  }, /*#__PURE__*/React.createElement("span", null, m.status === "final" ? `Sets ${m.setsA}–${m.setsB}` : m.status === "live" ? "Marcador Pícale en tiempo real" : "Por jugarse"), /*#__PURE__*/React.createElement("span", null, m.winner ? `Ganó ${m.winner.name}` : LEAGUE.season))), /*#__PURE__*/React.createElement(AdSlot, {
+  }, /*#__PURE__*/React.createElement("span", null, m.status === "final" ? `Sets ${m.setsA}–${m.setsB}` : m.status === "live" ? "Marcador Pícale en tiempo real" : "Por jugarse"), /*#__PURE__*/React.createElement("span", null, m.winner ? `Ganó ${m.winner.name}` : LEAGUE.season))), m.rubbers.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "blk"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "sub"
+  }, "Orden de juego"), /*#__PURE__*/React.createElement("div", {
+    className: "order"
+  }, m.rubbers.map((r, i) => /*#__PURE__*/React.createElement("div", {
+    className: "ord",
+    key: i
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ord-when"
+  }, /*#__PURE__*/React.createElement("b", null, r.time), /*#__PURE__*/React.createElement("span", null, "Cancha ", r.court)), /*#__PURE__*/React.createElement("div", {
+    className: "ord-pairs"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "ord-cat"
+  }, r.cat), /*#__PURE__*/React.createElement("div", {
+    className: "ord-side"
+  }, /*#__PURE__*/React.createElement("i", {
+    style: {
+      background: m.teamA.color
+    }
+  }), /*#__PURE__*/React.createElement("span", null, r.a.join(" / "))), /*#__PURE__*/React.createElement("div", {
+    className: "ord-side"
+  }, /*#__PURE__*/React.createElement("i", {
+    style: {
+      background: m.teamB.color
+    }
+  }), /*#__PURE__*/React.createElement("span", null, r.b.join(" / ")))), hasStream(d) && /*#__PURE__*/React.createElement("button", {
+    className: "ord-cta",
+    onClick: () => go("/courts")
+  }, "Cancha ", r.court, " →")))), /*#__PURE__*/React.createElement("p", {
+    className: "sec-note",
+    style: {
+      marginTop: 12
+    }
+  }, m.rubbers.length, " partidos por categoría. Gana el duelo el equipo que se lleve más.")), /*#__PURE__*/React.createElement(AdSlot, {
     format: "leaderboard"
   }), !hasStream(d) && /*#__PURE__*/React.createElement("div", {
     className: "blk"
@@ -2190,18 +2414,30 @@ function TeamPage({
     style: {
       color: "var(--div)"
     }
-  }, r.pts), /*#__PURE__*/React.createElement("span", null, "PUNTOS")))), roster.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, r.pts), /*#__PURE__*/React.createElement("span", null, "PUNTOS")))), rosterOf(t.id).length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "blk"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "sub"
-  }, "Plantel"), /*#__PURE__*/React.createElement("div", {
-    className: "grid g2"
-  }, roster.map(p => /*#__PURE__*/React.createElement("div", {
+  }, "Jugadores"), /*#__PURE__*/React.createElement("div", {
+    className: "grid g3"
+  }, rosterOf(t.id).map(n => /*#__PURE__*/React.createElement("div", {
     className: "card",
-    key: p.id
+    key: n,
+    style: {
+      padding: "12px 14px"
+    }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "team-name"
-  }, p.name))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "'Barlow Condensed',sans-serif",
+      fontSize: 18,
+      fontWeight: 600
+    }
+  }, n)))), /*#__PURE__*/React.createElement("p", {
+    className: "sec-note",
+    style: {
+      marginTop: 10
+    }
+  }, "Tomados del orden de juego publicado. Se completan conforme avanza la temporada.")), /*#__PURE__*/React.createElement("div", {
     className: "blk"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "sub"

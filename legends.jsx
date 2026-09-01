@@ -158,6 +158,49 @@ const MATCHDAYS = [
   { id: "f-fin", div: "femenil", n: 16, phase: "Final", date: "2026-10-28", venue: null, pairs: [["Ganador SF1", "Ganador SF2"], ["Perdedor SF1", "Perdedor SF2"]] },
 ];
 
+
+/* ============================================================================
+   ORDEN DE JUEGO
+   Un duelo entre equipos son varios partidos por categoría, cada uno con su
+   hora y su cancha. Clave: id del duelo (division-jN-cN).
+============================================================================ */
+const RUBBERS = {
+  // ---- Varonil · jornada 1 · martes 1 de septiembre · Somos Pádel
+  "varonil-j1-c1": [
+    { cat: "3ra/4ta", time: "18:30", court: 1, a: ["Orlando Aguirre", "Mauricio Martínez"], b: ["Jorge Ortegón", "David Ramos"] },
+    { cat: "2da/2da", time: "18:30", court: 2, a: ["Luis Morfín", "Fernando Chapa"], b: ["Cenith Castillo", "Karim Alejo"] },
+    { cat: "3ra/3ra", time: "18:30", court: 3, a: ["Federico Seyffert", "Américo Huesca"], b: ["Daniel Reding", "Eugenio Candanedo"] },
+    { cat: "1ra/1ra", time: "20:00", court: 1, a: ["Andrés Perales", "Carlos Artigas"], b: ["Gianluca Bianchezi", "Mario Perales"] },
+    { cat: "4ta/4ta", time: "20:00", court: 2, a: ["Eduardo Elizondo", "Fernando Llovera"], b: ["Federico Colyer", "Andrés Treviño"] },
+    { cat: "5ta/5ta", time: "21:30", court: 1, a: ["David Rubio", "Maximiliano Ramos"], b: ["Eduardo Saldaña", "Ricardo González"] },
+    { cat: "6ta/6ta", time: "21:30", court: 2, a: ["Jaime Elizalde", "Santiago Treviño"], b: ["Juan Pablo Serratos", "Christian Alanís"] },
+  ],
+  "varonil-j1-c2": [
+    { cat: "3ra/4ta", time: "18:30", court: 5, a: ["Paulo Medina", "Ricardo Lechuga"], b: ["Manuel Sobera", "Agustín Gil"] },
+    { cat: "4ta/4ta", time: "18:30", court: 6, a: ["Diego Larraza", "Daniel Támez"], b: ["Carlos Chan", "Pedro Pintos"] },
+    { cat: "5ta/5ta", time: "18:30", court: 7, a: ["Humberto Castellanos", "Sebastián Garza T"], b: ["Lázaro Casas", "Luis Brull"] },
+    { cat: "6ta/6ta", time: "20:00", court: 5, a: ["Marcelo Guajardo", "Manuel Flores"], b: ["Adrián Azuela", "Juan José Luna"] },
+    { cat: "1ra/1ra", time: "20:00", court: 6, a: ["Arturo Espinosa", "Luis A. Domínguez"], b: ["Nicolás Canello", "César Arriaga"] },
+    { cat: "2da/2da", time: "21:30", court: 5, a: ["Rodrigo Támez", "Mauricio Canavati"], b: ["Andrés Gil", "Fernando Sanmiguel"] },
+    { cat: "3ra/3ra", time: "21:30", court: 6, a: ["Francisco Sada", "Fabián Peña"], b: ["Emiliano Castro", "Jafet González"] },
+  ],
+  // ---- Femenil · jornada 1
+  "femenil-j1-c1": [
+    { cat: "5ta/5ta", time: "18:30", court: 8, a: ["Trudy Durán", "Florencia Fonseca"], b: ["Jannett Garza", "Jessica Cortés"] },
+    { cat: "6ta/6ta", time: "20:00", court: 7, a: ["Susana Quintero", "Melissa Ramírez"], b: ["Ileana Garza", "Luisa Monter"] },
+    { cat: "4ta/5ta", time: "20:00", court: 8, a: ["Fernanda Islas", "Sofía Treviño"], b: ["Graciela Muñoz Rey", "Karina Mariscal"] },
+    { cat: "3ra/3ra", time: "21:30", court: 7, a: ["Paola Medina", "Claudia Lozano"], b: ["Michelle Villaseñor", "Alejandra Franco"] },
+    { cat: "4ta/4ta", time: "21:30", court: 8, a: ["Andrea Garza", "Balbina Treviño"], b: ["Myrna Pérez", "Ana Lucía Recio"] },
+  ],
+  "femenil-j1-c2": [
+    { cat: "3ra/3ra", time: "18:30", court: 4, a: ["María Garza", "Ana Gabriela Estrada"], b: ["Gabriela Mendoza", "Valeria Gómez"] },
+    { cat: "5ta/5ta", time: "20:00", court: 3, a: ["Loretta Sánchez", "Luisina Garza"], b: ["Alexia Francke", "Mónica Ortiz"] },
+    { cat: "4ta/4ta", time: "20:00", court: 4, a: ["Alexandra Mena", "Claudia Mena"], b: ["Leticia Ortega", "Floriza Guerrero"] },
+    { cat: "6ta/6ta", time: "21:30", court: 3, a: ["Sabrina Garza", "Paulina Rivera"], b: ["Karen Fosado", "Miriam Fernández"] },
+    { cat: "4ta/5ta", time: "21:30", court: 4, a: ["Laila Melisa Garza", "Brenda Urquiza"], b: ["Daniela González", "Karla V. Cardona"] },
+  ],
+};
+
 /* Resultados terminados. Clave: id del partido (ver ejemplo abajo). */
 const RESULTS = {
   // "varonil-j1-c1": { sets: [[6,4],[3,6],[10,8]], replay: "https://..." },
@@ -205,9 +248,13 @@ function buildMatches() {
         if (a > b && isSetClosed(a, b)) setsA++;
         else if (b > a && isSetClosed(b, a)) setsB++;
       });
+      const rubbers = RUBBERS[id] || [];
+      const times = rubbers.map((r) => r.time).sort();
+      const courts = [...new Set(rubbers.map((r) => r.court))].sort((a, b) => a - b);
       const status = liv ? "live" : res ? "final" : "scheduled";
       out.push({
-        id, slug: id, matchday: d, div: d.div, court: i + 1,
+        id, slug: id, matchday: d, div: d.div, court: courts[0] || i + 1,
+        rubbers, courts, from: times[0] || "", to: times[times.length - 1] || "",
         date: d.date, teamA, teamB, sets, setsA, setsB, status,
         winner: status === "final" ? (setsA > setsB ? teamA : teamB) : null,
         elapsed: liv ? liv.elapsed || 0 : null,
@@ -219,6 +266,16 @@ function buildMatches() {
   return out;
 }
 const MATCHES = buildMatches();
+
+function rosterOf(teamId) {
+  const names = new Set();
+  MATCHES.forEach((m) => {
+    if (!m.rubbers.length) return;
+    if (m.teamA.id === teamId) m.rubbers.forEach((r) => r.a.forEach((n) => names.add(n)));
+    if (m.teamB.id === teamId) m.rubbers.forEach((r) => r.b.forEach((n) => names.add(n)));
+  });
+  return [...names];
+}
 
 const divTeams = (div) => TEAMS.filter((t) => t.div === div).map((t) => ({ ...t, slug: slugify(t.name) }));
 const divDays = (div) => MATCHDAYS.filter((d) => d.div === div);
@@ -462,6 +519,21 @@ const CSS = `
 .court-badge { position:absolute; top:10px; left:10px; display:flex; align-items:center; gap:6px; padding:5px 9px; background:rgba(255,51,85,.92); color:#fff; font-size:10.5px; font-weight:600; letter-spacing:.08em; }
 .court-cam { position:absolute; bottom:9px; right:11px; font-size:10.5px; color:var(--muted); }
 
+.order { display:grid; gap:8px; }
+.ord { display:grid; grid-template-columns:76px 1fr; gap:12px; align-items:center;
+  border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:12px 14px; }
+.ord-when { text-align:center; border-right:1px solid var(--line); padding-right:10px; }
+.ord-when b { display:block; font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:700; line-height:1; }
+.ord-when span { display:block; font-size:10px; color:var(--muted); letter-spacing:.06em; margin-top:3px; }
+.ord-cat { display:inline-block; font-size:10px; letter-spacing:.12em; color:var(--muted); margin-bottom:7px; text-transform:uppercase; }
+.ord-side { display:flex; align-items:center; gap:9px; font-size:14px; padding:2px 0; }
+.ord-side i { width:3px; height:15px; flex:none; display:block; }
+.ord-cta { grid-column:1/-1; text-align:left; font-size:12px; color:var(--div); padding-top:9px; border-top:1px solid var(--line); }
+@media (min-width:760px){
+  .ord { grid-template-columns:76px 1fr auto; }
+  .ord-cta { grid-column:auto; border-top:0; padding-top:0; }
+}
+
 .empty { padding:30px 16px; text-align:center; border:1px dashed var(--line2); color:var(--muted); font-size:14px; }
 .empty b { display:block; color:var(--ivory); font-family:'Barlow Condensed',sans-serif; font-size:19px; margin-bottom:6px; font-weight:600; }
 
@@ -673,7 +745,7 @@ function CourtFrame() {
   );
 }
 
-const BUILD = "2026-08-31-v6";
+const BUILD = "2026-09-01-v7";
 
 const ICONS = {
   home: "M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5",
@@ -827,7 +899,8 @@ function Fixture({ m, go, tick }) {
   return (
     <div className={`fx${m.status === "live" ? " is-live" : ""}${stream ? "" : " no-stream"}`}>
       <div className="fx-court">
-        <b>{m.court}</b><span>CANCHA</span>
+        <b>{m.courts && m.courts.length > 1 ? `${m.courts[0]}-${m.courts[m.courts.length - 1]}` : m.court}</b>
+        <span>{m.courts && m.courts.length > 1 ? "CANCHAS" : "CANCHA"}</span>
       </div>
       <div className="fx-body">
         <div className="fx-meta">
@@ -835,6 +908,7 @@ function Fixture({ m, go, tick }) {
           <span>{dayLabel(d)}</span><span>·</span>
           <span>{fmtShort(m.date)}</span><span>·</span>
           <span>{venue || "sede por confirmar"}</span>
+          {m.from && <><span>·</span><span>{m.from} a {m.to} h</span></>}
           {!stream && <span className="chip">SIN TRANSMISIÓN</span>}
         </div>
         <button className="fx-row" onClick={() => go(`/match/${m.slug}`)}>
@@ -846,7 +920,11 @@ function Fixture({ m, go, tick }) {
           <Sets m={m} side="B" />
         </button>
         <div className="fx-foot">
-          <span>{m.status === "final" ? `Sets ${m.setsA}–${m.setsB}` : fmtLong(m.date)}</span>
+          <span>
+            {m.status === "final" ? `Sets ${m.setsA}–${m.setsB}`
+              : m.rubbers.length ? `${m.rubbers.length} partidos por categoría`
+                : fmtLong(m.date)}
+          </span>
           <button className={`fx-cta${m.status === "live" ? " livec" : ""}`} onClick={() => go(`/match/${m.slug}`)}>
             {!stream ? "Detalle →" : m.status === "live" ? "Ver transmisión →" : m.status === "final" ? "Ver partido →" : "Detalle →"}
           </button>
@@ -964,7 +1042,9 @@ function Home({ div, go, tick }) {
                       <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 17, fontWeight: 600 }}>
                         {m.teamA.short || m.teamA.placeholder} <span style={{ color: "var(--muted)" }}>vs</span> {m.teamB.short || m.teamB.placeholder}
                       </span>
-                      <span style={{ fontSize: 11.5, color: "var(--muted)" }}>Cancha {m.court}</span>
+                      <span style={{ fontSize: 11.5, color: "var(--muted)" }}>
+                        {m.from ? `${m.from} h · canchas ${m.courts.join(", ")}` : `Cancha ${m.court}`}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -1276,6 +1356,39 @@ function MatchPage({ slug, go, tick }) {
         </div>
       </div>
 
+      {m.rubbers.length > 0 && (
+        <div className="blk">
+          <h3 className="sub">Orden de juego</h3>
+          <div className="order">
+            {m.rubbers.map((r, i) => (
+              <div className="ord" key={i}>
+                <div className="ord-when">
+                  <b>{r.time}</b>
+                  <span>Cancha {r.court}</span>
+                </div>
+                <div className="ord-pairs">
+                  <span className="ord-cat">{r.cat}</span>
+                  <div className="ord-side">
+                    <i style={{ background: m.teamA.color }} />
+                    <span>{r.a.join(" / ")}</span>
+                  </div>
+                  <div className="ord-side">
+                    <i style={{ background: m.teamB.color }} />
+                    <span>{r.b.join(" / ")}</span>
+                  </div>
+                </div>
+                {hasStream(d) && (
+                  <button className="ord-cta" onClick={() => go("/courts")}>Cancha {r.court} →</button>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="sec-note" style={{ marginTop: 12 }}>
+            {m.rubbers.length} partidos por categoría. Gana el duelo el equipo que se lleve más.
+          </p>
+        </div>
+      )}
+
       <AdSlot format="leaderboard" />
 
       {!hasStream(d) && (
@@ -1381,16 +1494,19 @@ function TeamPage({ div, slug, go, tick }) {
         </div>
       </div>
 
-      {roster.length > 0 && (
+      {rosterOf(t.id).length > 0 && (
         <div className="blk">
-          <h3 className="sub">Plantel</h3>
-          <div className="grid g2">
-            {roster.map((p) => (
-              <div className="card" key={p.id}>
-                <div className="team-name">{p.name}</div>
+          <h3 className="sub">Jugadores</h3>
+          <div className="grid g3">
+            {rosterOf(t.id).map((n) => (
+              <div className="card" key={n} style={{ padding: "12px 14px" }}>
+                <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18, fontWeight: 600 }}>{n}</div>
               </div>
             ))}
           </div>
+          <p className="sec-note" style={{ marginTop: 10 }}>
+            Tomados del orden de juego publicado. Se completan conforme avanza la temporada.
+          </p>
         </div>
       )}
 
