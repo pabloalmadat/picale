@@ -299,7 +299,7 @@ const CSS = `
   --ivory:#F5F2EC; --muted:#8B8B90; --live:#FF3355; --sage:#A7B0A4;
   --div:#22C55E; --div-soft:rgba(34,197,94,.14);
   background:var(--ink); color:var(--ivory);
-  font-family:'Inter',system-ui,sans-serif; font-size:15px; line-height:1.55; min-height:100vh;
+  font-family:'Inter',system-ui,sans-serif; font-size:15px; line-height:1.55; min-height:100vh; overflow-x:hidden;
   -webkit-font-smoothing:antialiased;
 }
 .lg.femenil { --div:#FF5CA8; --div-soft:rgba(255,92,168,.14); }
@@ -508,6 +508,97 @@ const CSS = `
   .hero{ padding:64px 0 48px; } .hero-grid{ grid-template-columns:1.1fr .9fr; align-items:center; }
   .foot{ padding-bottom:40px; } .sec{ padding:56px 0; }
 }
+/* ---------------------------------------------------------------
+   CELULAR — la página se comporta como app: menos cromo, filtros
+   deslizables y zonas táctiles de al menos 44 px.
+--------------------------------------------------------------- */
+@media (max-width:759px){
+  .lg { font-size:15.5px; }
+  .wrap { padding:0 14px; }
+
+  .nav-in { height:58px; gap:12px; }
+  .nav-in > button:first-child img { height:34px!important; }
+  .burger { padding:10px; margin-right:-8px; }
+  .sheet button { padding:16px 18px; font-size:16px; }
+
+  .divbar-in { height:46px; gap:8px; }
+  .divbtn { padding:8px 16px; font-size:16px; }
+  .divbar .meta { font-size:11px; }
+
+  .hero { padding:24px 0 26px; }
+  .hero-mark { margin-bottom:16px; }
+  .hero-mark img { height:auto!important; width:min(220px,64vw); }
+  .hero-season { font-size:26px; }
+  .hero-lede { font-size:15px; margin-top:14px; }
+  .cta-row { gap:8px; margin-top:20px; }
+  .cta-row .btn { flex:1 1 100%; justify-content:center; padding:14px 18px; }
+  .brands { gap:10px; margin-top:20px; padding-top:18px; }
+  .brands img { height:auto!important; max-height:26px; max-width:38vw; }
+
+  .sec { padding:30px 0; }
+  .sec-head { flex-direction:column; align-items:flex-start; gap:8px; margin-bottom:16px; }
+  .sec-title { font-size:29px; }
+  .mp-head { padding:18px 0 16px; }
+  .mp-title { font-size:32px; }
+  .blk { padding:20px 0; }
+  .sub { font-size:20px; }
+
+  .filters { padding:12px 0 12px 12px; }
+  .frow { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; padding-right:12px; }
+  .frow::-webkit-scrollbar { display:none; }
+  .flabel { min-width:auto; padding-right:4px; }
+  .fbtn { padding:9px 14px; font-size:13.5px; white-space:nowrap; }
+  .fclear { padding:9px 0; }
+
+  .fx { grid-template-columns:46px 1fr; }
+  .fx-court b { font-size:22px; }
+  .fx-body { padding:11px 12px; }
+  .fx-team { font-size:18px; }
+  .fx-meta { font-size:11px; gap:7px; }
+  .fx-foot { font-size:11.5px; }
+  .fx-sets b { min-width:23px; font-size:19px; }
+
+  .card { padding:13px; }
+  .team-name { font-size:19px; }
+  .hero-stats { grid-template-columns:repeat(2,1fr); }
+  .hs b { font-size:26px; }
+
+  .tbl { font-size:13.5px; }
+  .tbl th { font-size:11px; padding:0 6px 9px 0; }
+  .tbl td { padding:11px 6px 11px 0; }
+  .tbl th:last-child, .tbl td:last-child { padding-right:0; }
+  .pos { width:24px; font-size:16px; }
+
+  .btn { padding:12px 18px; }
+  .btn-sm { padding:10px 14px; }
+  .sec-link { padding:6px 0; }
+  .pathpill code { font-size:11px; }
+
+  .ad { padding:20px 12px; }
+  .ad img { max-height:42px; max-width:70%; }
+  .rail-logo img { height:22px!important; }
+
+  .court-cam { font-size:10px; bottom:7px; right:9px; }
+  .court-off { font-size:12px; }
+
+  .lockup { gap:12px; }
+  .lockup img { height:auto!important; max-height:32px; max-width:40vw; }
+  .lockup i { font-size:17px; }
+  .foot { padding:32px 0 calc(88px + env(safe-area-inset-bottom)); }
+  .foot-links { gap:14px; }
+  .foot-links button { padding:5px 0; }
+
+  .bnav { padding-bottom:env(safe-area-inset-bottom); }
+  .bnav button { padding:9px 1px 10px; font-size:9.5px; gap:3px; }
+  .bi { width:19px; height:19px; font-size:10px; }
+}
+
+@media (max-width:359px){
+  .bnav button { font-size:9px; }
+  .fx { grid-template-columns:40px 1fr; }
+  .hero-season { font-size:23px; }
+}
+
 @media (prefers-reduced-motion:reduce){ .lg *{ animation:none!important; transition:none!important; } }
 `;
 
@@ -529,7 +620,7 @@ function CourtFrame() {
   );
 }
 
-const BUILD = "2026-08-31-v4";
+const BUILD = "2026-08-31-v5";
 
 function LiveVideo({ court, label }) {
   const ref = useRef(null);
