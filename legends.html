@@ -760,10 +760,12 @@ const CSS = `
 
 /* switch de división */
 .divbar { border-bottom:1px solid var(--line); background:var(--panel); }
-.divbar-in { display:flex; align-items:center; gap:10px; height:44px; }
-.divbtn { padding:5px 14px; border:1px solid var(--line); font-family:'Barlow Condensed',sans-serif;
-  font-size:16px; font-weight:600; letter-spacing:.08em; color:var(--muted); }
-.divbtn.on { color:#0B0B0C; border-color:transparent; }
+.divbar-in { display:flex; align-items:center; gap:12px; height:50px; }
+.divseg { display:inline-flex; gap:3px; padding:3px; background:var(--panel2); border:1px solid var(--line); border-radius:999px; }
+.divbtn { padding:6px 18px; border:0; border-radius:999px; font-family:'Barlow Condensed',sans-serif;
+  font-size:16px; font-weight:600; letter-spacing:.08em; color:var(--muted); transition:background .18s,color .18s; }
+.divbtn:hover { color:var(--ivory); }
+.divbtn.on { color:#0B0B0C; }
 .divbtn.on.varonil { background:#22C55E; }
 .divbtn.on.femenil { background:#FF5CA8; }
 .divbar .meta { margin-left:auto; font-size:11.5px; color:var(--muted); letter-spacing:.05em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -928,7 +930,10 @@ const CSS = `
 .bnav button { padding:9px 2px 11px; display:grid; justify-items:center; gap:4px; font-size:10px; color:var(--muted); }
 .bnav button.on { color:var(--ivory); }
 .bnav button.on .bi { border-color:var(--div); color:var(--div); }
-.bi { width:20px; height:20px; display:grid; place-items:center; border:1px solid var(--line); font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; }
+.bi { width:22px; height:22px; display:grid; place-items:center; }
+.bi svg { width:21px; height:21px; }
+.bdot { position:absolute; top:0; left:50%; transform:translateX(-50%); width:22px; height:2px; background:var(--div); }
+.bnav button { position:relative; }
 
 @media (min-width:760px){
   .g2{ grid-template-columns:1fr 1fr; } .g3{ grid-template-columns:repeat(3,1fr); }
@@ -1033,6 +1038,54 @@ const CSS = `
   .hero-season { font-size:23px; }
 }
 
+/* ---------------------------------------------------------------
+   ACABADO
+--------------------------------------------------------------- */
+.card, .fx, .court, .ad, .filters, .empty, .score-board, .monitor, .pathpill, .hero-stats {
+  border-radius:10px;
+}
+.court { overflow:hidden; }
+.court-video { border-radius:10px 10px 0 0; }
+.card { box-shadow:inset 0 1px 0 rgba(245,242,236,.045); }
+.fx { box-shadow:inset 0 1px 0 rgba(245,242,236,.04); overflow:hidden; }
+.crest, .avatar { border-radius:8px; }
+.btn { border-radius:8px; }
+.chip, .fbtn { border-radius:999px; }
+.chip.live { box-shadow:0 0 0 1px rgba(255,51,85,.12), 0 0 18px -6px rgba(255,51,85,.7); }
+.court-badge { border-radius:999px; }
+.hs:first-child { border-top-left-radius:10px; }
+.hs:last-child { border-bottom-right-radius:10px; }
+
+@media (max-width:759px){
+  /* jerarquía tipo app: encabezado compacto, contenido protagonista */
+  .nav { border-bottom:0; box-shadow:0 1px 0 var(--line); }
+  .divbar { border-bottom:0; box-shadow:0 1px 0 var(--line); }
+  .divbar .meta { display:none; }
+
+  .hero-kicker, .hero-eyebrow { font-size:10.5px; letter-spacing:.2em; color:var(--muted); }
+  .hero-season { font-size:22px; letter-spacing:.04em; }
+  .hero-lede { font-size:14.5px; line-height:1.6; color:var(--muted); }
+
+  .cta-row .btn:first-child { flex:1 1 100%; }
+  .cta-row .btn:not(:first-child) { flex:1 1 calc(50% - 4px); }
+
+  .sec-title, .mp-title { letter-spacing:-.015em; }
+  .sec + .sec { border-top:0; }
+
+  /* la tarjeta de próxima jornada gana peso visual */
+  .monitor, .hero-grid > div:last-child .card { box-shadow:0 18px 40px -28px rgba(0,0,0,.9), inset 0 1px 0 rgba(245,242,236,.05); }
+
+  /* nombres largos como "Nación Cuatro by Candelas" sin partirse feo */
+  .fx-team { font-size:16.5px; line-height:1.18; }
+  .hero-season { font-size:21px; }
+  .brands img { max-height:23px!important; }
+  .sec-note { font-size:12px; }
+
+  .bnav { height:auto; box-shadow:0 -1px 0 var(--line); }
+  .bnav button { padding:10px 1px 9px; }
+  .bl { font-size:9.5px; letter-spacing:.01em; }
+}
+
 @media (prefers-reduced-motion:reduce){ .lg *{ animation:none!important; transition:none!important; } }
 `;
 
@@ -1066,7 +1119,30 @@ function CourtFrame() {
     strokeWidth: "2"
   }));
 }
-const BUILD = "2026-08-31-v5";
+const BUILD = "2026-08-31-v6";
+const ICONS = {
+  home: "M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5",
+  live: "M12 12h.01M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13",
+  courts: "M3 5h18v14H3zM12 5v14M3 12h18M7.5 9.5h9v5h-9z",
+  calendar: "M3 6.5h18v14H3zM3 10.5h18M8 3.5v4M16 3.5v4",
+  table: "M4 20V10M10 20V5M16 20v-8M22 20H2",
+  teams: "M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM2.5 20a6.5 6.5 0 0 1 13 0M17 11.5a3 3 0 1 0 0-6M17.5 14.5a5.5 5.5 0 0 1 4 5.5"
+};
+function Icon({
+  name
+}) {
+  return /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.6",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: ICONS[name]
+  }));
+}
 function LiveVideo({
   court,
   label
@@ -2191,27 +2267,27 @@ const NAV = [{
 }];
 const BNAV = [{
   label: "Inicio",
-  icon: "L",
+  icon: "home",
   path: "/"
 }, {
   label: "En vivo",
-  icon: "●",
+  icon: "live",
   path: "/live"
 }, {
   label: "Canchas",
-  icon: "8",
+  icon: "courts",
   path: "/courts"
 }, {
   label: "Calendario",
-  icon: "17",
+  icon: "calendar",
   path: "/calendar"
 }, {
   label: "Tabla",
-  icon: "#",
+  icon: "table",
   path: "/standings"
 }, {
   label: "Equipos",
-  icon: "T",
+  icon: "teams",
   path: "/teams"
 }];
 function App() {
@@ -2315,6 +2391,8 @@ function App() {
     className: "divbar"
   }, /*#__PURE__*/React.createElement("div", {
     className: "wrap divbar-in"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "divseg"
   }, DIVISIONS.map(x => /*#__PURE__*/React.createElement("button", {
     key: x.id,
     className: `divbtn ${x.id}${div === x.id ? " on" : ""}`,
@@ -2322,7 +2400,7 @@ function App() {
       setDiv(x.id);
       if (seg[0] === "team" || seg[0] === "match" || seg[0] === "matchday") go("/");
     }
-  }, x.name.toUpperCase())), /*#__PURE__*/React.createElement("span", {
+  }, x.name.toUpperCase()))), /*#__PURE__*/React.createElement("span", {
     className: "meta"
   }, "Próxima: ", dayLabel(d).toLowerCase(), ", ", fmtShort(d.date)))), /*#__PURE__*/React.createElement("main", null, page), /*#__PURE__*/React.createElement("footer", {
     className: "foot"
@@ -2369,7 +2447,13 @@ function App() {
     onClick: () => go(n.path)
   }, /*#__PURE__*/React.createElement("span", {
     className: "bi"
-  }, n.icon), n.label))));
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: n.icon
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "bl"
+  }, n.label), on(n.path) && /*#__PURE__*/React.createElement("i", {
+    className: "bdot"
+  })))));
 }
 console.log("legends build", BUILD);
 ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
