@@ -452,7 +452,10 @@ const CSS = `
 .court svg { display:block; width:100%; height:auto; }
 .court-video { display:block; width:100%; aspect-ratio:16/9; background:#000; }
 .court-video.hide { display:none; }
-.court-off { position:absolute; inset:auto 0 42%; text-align:center; font-size:12.5px; color:var(--muted); }
+.court-off { position:absolute; left:0; right:0; top:42%; text-align:center; font-size:12.5px; color:var(--muted); }
+.court-off span { display:block; padding:0 12px; }
+.retry { margin-top:9px; padding:5px 12px; border:1px solid var(--line2); font-size:11.5px; color:var(--ivory); }
+.retry:hover { background:rgba(245,242,236,.08); }
 .court-badge { position:absolute; top:10px; left:10px; display:flex; align-items:center; gap:6px; padding:5px 9px; background:rgba(255,51,85,.92); color:#fff; font-size:10.5px; font-weight:600; letter-spacing:.08em; }
 .court-cam { position:absolute; bottom:9px; right:11px; font-size:10.5px; color:var(--muted); }
 
@@ -527,36 +530,71 @@ function CourtFrame() {
 
 function LiveVideo({ court, label }) {
   const ref = useRef(null);
-  const [state, setState] = useState("loading");
+  const [state, setState] = useState("loading");   // loading | on | off
+  const [why, setWhy] = useState("");
+  const [attempt, setAttempt] = useState(0);
   const matchId = useActiveMatch(court);
 
   useEffect(() => {
     const url = streamUrl(court);
     const v = ref.current;
-    if (!url || !v) { setState("off"); return; }
-    let hls;
+    if (!url || !v) { setState("off"); setWhy("cancha sin cámara"); return; }
+
+    let dead = false, hls = null, timer = null, waiting = null;
+    setState("loading"); setWhy("");
+
+    const fail = (reason) => {
+      if (dead) return;
+      dead = true;
+      clearTimeout(timer); clearInterval(waiting);
+      if (hls) { try { hls.destroy(); } catch (e) { } }
+      setWhy(reason || "");
+      setState("off");
+    };
+    const ok = () => {
+      if (dead) return;
+      clearTimeout(timer); clearInterval(waiting);
+      setState("on");
+      v.play().catch(() => { });
+    };
+
+    // si en 10 s no hay imagen, se deja de intentar en vez de quedarse colgado
+    timer = setTimeout(() => fail("la cámara no respondió a tiempo"), 10000);
+
     const attach = () => {
+      if (dead) return;
       if (v.canPlayType("application/vnd.apple.mpegurl")) {
         v.src = url;
-        v.addEventListener("loadedmetadata", () => setState("on"));
-        v.addEventListener("error", () => setState("off"));
+        v.addEventListener("loadedmetadata", ok);
+        v.addEventListener("error", () => fail("el navegador no pudo abrir la señal"));
         return;
       }
       const H = window.Hls;
-      if (!H || !H.isSupported()) { setState("off"); return; }
-      hls = new H({ liveDurationInfinity: true, lowLatencyMode: true });
+      if (!H || !H.isSupported()) { fail("este navegador no reproduce HLS"); return; }
+      hls = new H({ liveDurationInfinity: true, manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 1 });
       hls.loadSource(url);
       hls.attachMedia(v);
-      hls.on(H.Events.MANIFEST_PARSED, () => { setState("on"); v.play().catch(() => {}); });
-      hls.on(H.Events.ERROR, (_, d) => { if (d && d.fatal) setState("off"); });
+      hls.on(H.Events.MANIFEST_PARSED, ok);
+      hls.on(H.Events.ERROR, (_, d) => {
+        if (!d || !d.fatal) return;
+        fail(d.type === "networkError" ? "sin señal desde el servidor" : "error de reproducción");
+      });
     };
-    if (window.Hls) attach();
-    else {
-      const t = setInterval(() => { if (window.Hls) { clearInterval(t); attach(); } }, 300);
-      setTimeout(() => clearInterval(t), 8000);
-    }
-    return () => { if (hls) hls.destroy(); };
-  }, [court]);
+
+    // se revisa el manifiesto antes de montar el reproductor: así se distingue
+    // "cámara apagada" de "el navegador no puede leer el servidor"
+    fetch(url, { cache: "no-store" })
+      .then((r) => { if (!r.ok) throw new Error(r.status === 404 ? "la cámara no está transmitiendo" : "el servidor respondió " + r.status); return r.text(); })
+      .then((t) => {
+        if (!t.includes("#EXTM3U")) throw new Error("la respuesta no es una señal de video");
+        if (!/\.(ts|m4s)/.test(t)) throw new Error("cámara conectada pero sin transmitir");
+        if (window.Hls) { attach(); return; }
+        waiting = setInterval(() => { if (window.Hls) { clearInterval(waiting); attach(); } }, 250);
+      })
+      .catch((e) => fail(e && e.message ? e.message : "no se pudo contactar al servidor"));
+
+    return () => { dead = true; clearTimeout(timer); clearInterval(waiting); if (hls) { try { hls.destroy(); } catch (er) { } } };
+  }, [court, attempt]);
 
   return (
     <div className="court">
@@ -565,9 +603,14 @@ function LiveVideo({ court, label }) {
       {state !== "on" && (
         <>
           <CourtFrame />
-          <span className="court-off">
-            {state === "loading" ? "Conectando con la cámara…" : "Cancha sin transmisión en este momento"}
-          </span>
+          <div className="court-off">
+            {state === "loading" ? "Conectando con la cámara…" : (
+              <>
+                <span>{why || "Cancha sin transmisión en este momento"}</span>
+                <button className="retry" onClick={() => setAttempt((x) => x + 1)}>Reintentar</button>
+              </>
+            )}
+          </div>
         </>
       )}
       {state === "on" && (
