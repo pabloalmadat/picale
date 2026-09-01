@@ -451,8 +451,9 @@ const CSS = `
 .court { position:relative; background:#08080A; border:1px solid var(--line); }
 .court svg { display:block; width:100%; height:auto; }
 .court-video { display:block; width:100%; aspect-ratio:16/9; background:#000; }
-.court-video.hide { display:none; }
-.court-off { position:absolute; left:0; right:0; top:42%; text-align:center; font-size:12.5px; color:var(--muted); }
+
+.court-off { position:absolute; left:0; right:0; top:40%; text-align:center; font-size:12.5px; color:var(--muted); pointer-events:none; }
+.court-off button { pointer-events:auto; }
 .court-off span { display:block; padding:0 12px; }
 .retry { margin-top:9px; padding:5px 12px; border:1px solid var(--line2); font-size:11.5px; color:var(--ivory); }
 .retry:hover { background:rgba(245,242,236,.08); }
@@ -528,9 +529,11 @@ function CourtFrame() {
   );
 }
 
+const BUILD = "2026-08-31-v4";
+
 function LiveVideo({ court, label }) {
   const ref = useRef(null);
-  const [state, setState] = useState("loading");   // loading | on | off
+  const [on, setOn] = useState(false);
   const [why, setWhy] = useState("");
   const [attempt, setAttempt] = useState(0);
   const matchId = useActiveMatch(court);
@@ -538,82 +541,59 @@ function LiveVideo({ court, label }) {
   useEffect(() => {
     const url = streamUrl(court);
     const v = ref.current;
-    if (!url || !v) { setState("off"); setWhy("cancha sin cámara"); return; }
+    if (!url || !v) { setWhy("cancha sin cámara"); return; }
+    let hls = null, timer = null, done = false;
+    setOn(false); setWhy("");
 
-    let dead = false, hls = null, timer = null, waiting = null;
-    setState("loading"); setWhy("");
+    const ok = () => { done = true; clearTimeout(timer); setOn(true); setWhy(""); };
+    const fail = (r) => { if (done) return; done = true; clearTimeout(timer); setOn(false); setWhy(r); };
 
-    const fail = (reason) => {
-      if (dead) return;
-      dead = true;
-      clearTimeout(timer); clearInterval(waiting);
-      if (hls) { try { hls.destroy(); } catch (e) { } }
-      setWhy(reason || "");
-      setState("off");
-    };
-    const ok = () => {
-      if (dead) return;
-      clearTimeout(timer); clearInterval(waiting);
-      setState("on");
-      v.play().catch(() => { });
-    };
-
-    // si en 10 s no hay imagen, se deja de intentar en vez de quedarse colgado
-    timer = setTimeout(() => fail("la cámara no respondió a tiempo"), 10000);
+    v.addEventListener("playing", ok);
+    v.addEventListener("loadeddata", ok);
+    timer = setTimeout(() => fail("cancha sin transmisión en este momento"), 12000);
 
     const attach = () => {
-      if (dead) return;
-      if (v.canPlayType("application/vnd.apple.mpegurl")) {
-        v.src = url;
-        v.addEventListener("loadedmetadata", ok);
-        v.addEventListener("error", () => fail("el navegador no pudo abrir la señal"));
-        return;
-      }
       const H = window.Hls;
-      if (!H || !H.isSupported()) { fail("este navegador no reproduce HLS"); return; }
-      hls = new H({ liveDurationInfinity: true, manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 1 });
-      hls.loadSource(url);
-      hls.attachMedia(v);
-      hls.on(H.Events.MANIFEST_PARSED, ok);
-      hls.on(H.Events.ERROR, (_, d) => {
-        if (!d || !d.fatal) return;
-        fail(d.type === "networkError" ? "sin señal desde el servidor" : "error de reproducción");
-      });
+      if (H && H.isSupported()) {
+        hls = new H({ lowLatencyMode: true, manifestLoadingMaxRetry: 2 });
+        hls.loadSource(url);
+        hls.attachMedia(v);
+        hls.on(H.Events.MANIFEST_PARSED, () => { v.play().catch(() => { }); });
+        hls.on(H.Events.ERROR, (_, d) => {
+          if (!d || !d.fatal) return;
+          fail(d.type === "networkError" ? "cancha sin transmisión en este momento" : "no se pudo reproducir la señal");
+        });
+      } else {
+        v.src = url;                       // Safari reproduce HLS de forma nativa
+        v.play().catch(() => { });
+        v.addEventListener("error", () => fail("cancha sin transmisión en este momento"));
+      }
     };
 
-    // se revisa el manifiesto antes de montar el reproductor: así se distingue
-    // "cámara apagada" de "el navegador no puede leer el servidor"
-    fetch(url, { cache: "no-store" })
-      .then((r) => { if (!r.ok) throw new Error(r.status === 404 ? "la cámara no está transmitiendo" : "el servidor respondió " + r.status); return r.text(); })
-      .then((t) => {
-        if (!t.includes("#EXTM3U")) throw new Error("la respuesta no es una señal de video");
-        if (!/\.(ts|m4s)/.test(t)) throw new Error("cámara conectada pero sin transmitir");
-        if (window.Hls) { attach(); return; }
-        waiting = setInterval(() => { if (window.Hls) { clearInterval(waiting); attach(); } }, 250);
-      })
-      .catch((e) => fail(e && e.message ? e.message : "no se pudo contactar al servidor"));
+    if (window.Hls) attach();
+    else {
+      const w = setInterval(() => { if (window.Hls) { clearInterval(w); attach(); } }, 200);
+      setTimeout(() => clearInterval(w), 6000);
+    }
 
-    return () => { dead = true; clearTimeout(timer); clearInterval(waiting); if (hls) { try { hls.destroy(); } catch (er) { } } };
+    return () => {
+      clearTimeout(timer);
+      v.removeEventListener("playing", ok);
+      v.removeEventListener("loadeddata", ok);
+      if (hls) { try { hls.destroy(); } catch (e) { } }
+    };
   }, [court, attempt]);
 
   return (
     <div className="court">
-      <video ref={ref} muted playsInline autoPlay controls
-        className={`court-video${state === "on" ? "" : " hide"}`} />
-      {state !== "on" && (
-        <>
-          <CourtFrame />
-          <div className="court-off">
-            {state === "loading" ? "Conectando con la cámara…" : (
-              <>
-                <span>{why || "Cancha sin transmisión en este momento"}</span>
-                <button className="retry" onClick={() => setAttempt((x) => x + 1)}>Reintentar</button>
-              </>
-            )}
-          </div>
-        </>
+      <video ref={ref} muted playsInline autoPlay controls className="court-video" />
+      {!on && (
+        <div className="court-off">
+          <span>{why || "Conectando con la cámara…"}</span>
+          {why && <button className="retry" onClick={() => setAttempt((x) => x + 1)}>Reintentar</button>}
+        </div>
       )}
-      {state === "on" && (
+      {on && (
         <span className="court-badge">
           <i className="dot" style={{ background: "#fff" }} /> {matchId ? "PARTIDO EN CURSO" : "EN VIVO"}
         </span>
@@ -1389,7 +1369,7 @@ export default function App() {
             {NAV.map((n) => <button key={n.path} onClick={() => go(n.path)}>{n.label}</button>)}
           </div>
           <p className="foot-note" style={{ marginTop: 20, fontSize: 11.5 }}>
-            {LEAGUE.name} {LEAGUE.subtitle} · {LEAGUE.season} · picalereplay.com
+            {LEAGUE.name} {LEAGUE.subtitle} · {LEAGUE.season} · picalereplay.com · build {BUILD}
           </p>
         </div>
       </footer>
