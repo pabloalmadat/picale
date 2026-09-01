@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>PÍCALE · Replay en vivo para clubes de pádel</title>
-<meta name="description" content="La plataforma de replay en vivo, clips y torneos para clubes de pádel en México. Instala Pícale en tu club.">
+<meta name="description" content="Replay en vivo, clips y ligas para clubes de pádel en México. Sigue The Legends MTY Fall Season 2026 en vivo. Instala Pícale en tu club.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <script src="picale.js" defer></script>
@@ -112,6 +112,10 @@ nav{
 /* ── SOMOS TORNEO BANNER ── */
 .somos-torneo{
   --somos-y:#d4f000;
+}
+.legends-banner{
+  --somos-y:#F5F2EC;
+  padding:0 24px;margin:-40px 0 40px;position:relative;z-index:5;
   padding:0 24px;margin:-40px 0 40px;position:relative;z-index:5;
 }
 .somos-torneo-inner{
@@ -134,6 +138,8 @@ nav{
 .st-club{font-size:12px;color:var(--somos-y);letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:6px;}
 .st-title{font-family:var(--display);font-size:clamp(30px,5vw,52px);letter-spacing:2px;line-height:.92;color:#fff;margin-bottom:8px;}
 .st-title span{color:var(--somos-y);}
+.legends-banner .somos-torneo-inner{background:linear-gradient(135deg,#0b0b0c 0%,#141416 100%);border-color:rgba(245,242,236,.22);}
+.legends-banner .st-btn-y:hover{box-shadow:0 10px 30px rgba(245,242,236,.18);}
 .st-meta{font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.5;}
 .st-meta b{color:var(--text);}
 .st-actions{display:flex;gap:10px;flex-wrap:wrap;}
@@ -307,7 +313,7 @@ footer{
   <a href="/" class="nav-logo">PÍCALE<span>.</span></a>
   <div class="nav-links">
     <a href="#features">Funciones</a>
-    <a href="clubs.html?club=duo" style="color:#d4f000;">Court Final Tour</a>
+    <a href="legends.html" style="color:#F5F2EC;font-weight:600;">The Legends</a>
     <a href="rivals.html">Rivals</a>
     <a href="clubs.html">Clubes</a>
     <a href="#para-clubes">Para clubes</a>
@@ -342,17 +348,26 @@ footer{
   </div>
 </section>
 
-<!-- SOMOS TORNEO BANNER -->
-<div class="somos-torneo">
+<!-- THE LEGENDS BANNER -->
+<div class="somos-torneo legends-banner">
   <div class="somos-torneo-inner">
     <div>
-      <div class="st-live"><span class="d"></span> EN VIVO ESTE FIN</div>
-      <div class="st-club">DUO Padel Park · Ciudad Obregón</div>
-      <div class="st-title">COURT FINAL <span>TOUR</span></div>
-      <div class="st-meta"><b>28 al 30 de agosto</b> · transmisión en vivo · brackets y clips en tiempo real</div>
-      <div class="st-actions">
-        <a href="clubs.html?club=duo" class="st-btn st-btn-y">Ver torneo en vivo →</a>
+      <div class="st-live"><span class="d"></span> ARRANCA MAÑANA</div>
+      <div class="st-club">Somos Pádel + Cordillera PC · Monterrey</div>
+      <div class="st-title">THE <span>LEGENDS</span> MTY</div>
+      <div class="st-meta">
+        <b>Fall Season 2026</b> · del 1 de septiembre al 28 de octubre<br>
+        Varonil y femenil · 16 equipos · transmisión en vivo desde Somos Pádel
       </div>
+      <div class="st-actions">
+        <a href="legends.html" class="st-btn st-btn-y">Ver la liga →</a>
+        <a href="legends.html#/calendar" class="st-btn st-btn-g">Calendario</a>
+      </div>
+    </div>
+    <div class="st-prizes">
+      <div class="pz-lbl">Jornada 1</div>
+      <div class="pz-amt">01 SEP</div>
+      <div class="pz-sub">Somos Pádel · Monterrey</div>
     </div>
   </div>
 </div>
@@ -533,6 +548,7 @@ footer{
   <div class="footer-logo">PÍCALE<span>.</span></div>
   <div class="footer-links">
     <a href="clubs.html">Clubes</a>
+    <a href="legends.html">The Legends</a>
     <a href="rivals.html">Rivals</a>
     <a href="feed.html">Momentos</a>
     <a href="auth.html">Crear cuenta</a>
