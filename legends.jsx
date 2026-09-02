@@ -302,9 +302,48 @@ function teamMatches(team) {
   return divMatches(team.div).filter((m) => m.teamA.id === team.id || m.teamB.id === team.id);
 }
 
+/* ----------------------------------------------------------------------------
+   TIEMPO LOCAL
+   Todo se calcula en la hora de Monterrey, no en UTC: si no, a las 7 de la
+   noche el navegador ya cree que es el día siguiente y la jornada en curso
+   desaparece. Además la noche se considera parte del mismo día hasta las 6 am,
+   porque los partidos terminan pasada la medianoche.
+---------------------------------------------------------------------------- */
+const TZ = "America/Monterrey";
+
+function localNow() {
+  try { return new Date(new Date().toLocaleString("en-US", { timeZone: TZ })); }
+  catch (e) { return new Date(); }
+}
+
+function leagueToday() {
+  const d = localNow();
+  if (d.getHours() < 6) d.setDate(d.getDate() - 1);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+const minutesNow = () => { const d = localNow(); return d.getHours() * 60 + d.getMinutes(); };
+const toMin = (hm) => { const [h, m] = hm.split(":").map(Number); return h * 60 + m; };
+
+/* Un duelo está en curso desde 15 min antes del primer partido hasta 2 h
+   después del último, salvo que ya tenga resultado cargado. */
+function refreshLiveStatus() {
+  const today = leagueToday();
+  const now = minutesNow();
+  MATCHES.forEach((m) => {
+    if (RESULTS[m.id] || LIVE[m.id]) return;
+    if (m.date !== today || !m.rubbers.length) { m.status = "scheduled"; return; }
+    const from = toMin(m.from) - 15;
+    const to = toMin(m.to) + 120;
+    m.status = now >= from && now <= to ? "live" : "scheduled";
+  });
+}
+refreshLiveStatus();
+
 /* La jornada que sigue: la primera con fecha de hoy en adelante. */
 function nextDay(div, onlyStream) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = leagueToday();
   const days = divDays(div);
   const hit = days.find((d) => d.date >= today && (!onlyStream || hasStream(d)));
   return hit || days[days.length - 1];
@@ -745,7 +784,7 @@ function CourtFrame() {
   );
 }
 
-const BUILD = "2026-09-01-v7";
+const BUILD = "2026-09-01-v8";
 
 const ICONS = {
   home: "M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5",
@@ -1561,7 +1600,8 @@ export default function App() {
 
   useEffect(() => {
     const t = setInterval(() => setTick((x) => x + 1), 1000);
-    return () => clearInterval(t);
+    const s = setInterval(refreshLiveStatus, 30000);
+    return () => { clearInterval(t); clearInterval(s); };
   }, []);
 
   const go = (p) => {
