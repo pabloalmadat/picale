@@ -666,6 +666,125 @@ const RUBBERS = {
     court: 4,
     a: ["Laila Melisa Garza", "Brenda Urquiza"],
     b: ["Daniela González", "Karla V. Cardona"]
+  }],
+  // ---- Varonil · jornada 2 · miércoles 2 de septiembre · Somos Pádel
+  "varonil-j2-c1": [{
+    cat: "6ta/6ta",
+    time: "18:30",
+    court: 1,
+    a: ["Juan Carlos Arriola", "Jorge Garza"],
+    b: ["David Sepúlveda", "Gustavo Romo"]
+  }, {
+    cat: "4ta/4ta",
+    time: "18:30",
+    court: 2,
+    a: ["Juan C. Castro", "Roberto Márquez"],
+    b: ["Víctor M. Preciado", "Ian A. Tattersfield"]
+  }, {
+    cat: "2da/2da",
+    time: "20:00",
+    court: 1,
+    a: ["Germán Montoya", "Ezequiel Juárez"],
+    b: ["Mario A. González", "Mauricio Delgadillo"]
+  }, {
+    cat: "3ra/3ra",
+    time: "20:00",
+    court: 2,
+    a: ["David Villarreal", "Juan Pablo Abaroa"],
+    b: ["Raúl Partida", "Eduardo Madrazo"]
+  }, {
+    cat: "3ra/4ta",
+    time: "20:00",
+    court: 3,
+    a: ["César Álvarez", "Ricardo J. Elizondo"],
+    b: ["Erick Schaefer", "Pepe Figueira"]
+  }, {
+    cat: "1ra/1ra",
+    time: "21:30",
+    court: 1,
+    a: ["Marcelo Paras", "Fausto Couste"],
+    b: ["Javier Deulofeu", "Pablo Sánchez"]
+  }, {
+    cat: "5ta/5ta",
+    time: "21:30",
+    court: 2,
+    a: ["Julio Vea", "Jesús E. González"],
+    b: ["Andrés Delgadillo", "Mario Manzanilla"]
+  }],
+  "varonil-j2-c2": [{
+    cat: "3ra/3ra",
+    time: "18:30",
+    court: 5,
+    a: ["Alejandro Garza", "José F. González"],
+    b: ["Jerry Canavati", "Mauricio Palomares"]
+  }, {
+    cat: "3ra/4ta",
+    time: "18:30",
+    court: 6,
+    a: ["Mateo Lemaitre", "Eugenio González"],
+    b: ["Carlos Cortés", "Andrés González"]
+  }, {
+    cat: "4ta/4ta",
+    time: "20:00",
+    court: 5,
+    a: ["Luis Portugal", "Carlos Martínez"],
+    b: ["César Hernández", "Leonel Pico"]
+  }, {
+    cat: "5ta/5ta",
+    time: "20:00",
+    court: 6,
+    a: ["Alejandro Ruiz", "Marcelo Arias"],
+    b: ["Héctor Hernández", "Raúl Cortés"]
+  }, {
+    cat: "6ta/6ta",
+    time: "20:00",
+    court: 7,
+    a: ["Iker Vincent", "Eduardo E. Vázquez"],
+    b: ["Fernando Marcos", "Arturo Garza"]
+  }, {
+    cat: "1ra/1ra",
+    time: "21:30",
+    court: 5,
+    a: ["Óscar M. Cantú", "Christopher Caldera"],
+    b: ["Esteban Russek", "Luis Mercado"]
+  }, {
+    cat: "2da/2da",
+    time: "21:30",
+    court: 6,
+    a: ["Daniel Vallejo", "Alejandro de los Ríos"],
+    b: ["Fernando Molina", "Norman Alcántara"]
+  }],
+  // ---- Femenil · jornada 2
+  "femenil-j2-c1": [{
+    cat: "3ra/3ra",
+    time: "18:30",
+    court: 3,
+    a: ["María F. Mendoza", "Natalia Martínez"],
+    b: ["Gelymar Melo", "Vielka Tijerina"]
+  }, {
+    cat: "4ta/5ta",
+    time: "18:30",
+    court: 4,
+    a: ["Alondra Alanís", "Marcela González"],
+    b: ["Sofía Salinas", "Andrea Castillo"]
+  }, {
+    cat: "5ta/5ta",
+    time: "20:00",
+    court: 4,
+    a: ["Alejandra Támez", "Lizette Velázquez"],
+    b: ["Xime Ley", "Regina Ramos"]
+  }, {
+    cat: "4ta/4ta",
+    time: "21:30",
+    court: 3,
+    a: ["Claudia Acosta", "Yesenia Malváez"],
+    b: ["Emma Treviño", "Daniela Nuño"]
+  }, {
+    cat: "6ta/6ta",
+    time: "21:30",
+    court: 4,
+    a: ["Iveth Nogal", "Ximena Montalvo"],
+    b: ["Brenda Ramírez", "Carolina Carvallo"]
   }]
 };
 
@@ -874,16 +993,12 @@ const fmtShort = iso => new Date(iso + "T12:00:00").toLocaleDateString("es-MX", 
   month: "short"
 });
 const dayLabel = d => d.phase ? d.phase : `Jornada ${d.n}`;
-/* SEDE — supuesto: los martes se juega en Somos Pádel y los miércoles en
-   Cordillera PC. Cambia este mapa, o pon venue:"somos" en una jornada, para
-   ajustarlo. Pícale solo transmite lo que se juega en Somos Pádel. */
-const VENUE_BY_WEEKDAY = {
-  2: "somos",
-  3: "cordillera"
-};
+/* SEDE — las jornadas 1 y 2 se jugaron completas en Somos Pádel, martes y
+   miércoles por igual, así que esa es la sede por defecto. Para mandar una
+   jornada a Cordillera PC basta con ponerle venue:"cordillera". */
+const DEFAULT_VENUE = "somos";
 function venueOf(d) {
-  if (d.venue) return d.venue;
-  return VENUE_BY_WEEKDAY[new Date(d.date + "T12:00:00").getDay()] || null;
+  return d.venue || DEFAULT_VENUE;
 }
 const hasStream = d => venueOf(d) === "somos";
 const venueName = d => {
@@ -1358,7 +1473,7 @@ function CourtFrame() {
     strokeWidth: "2"
   }));
 }
-const BUILD = "2026-09-01-v8";
+const BUILD = "2026-09-02-v9";
 const ICONS = {
   home: "M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5",
   live: "M12 12h.01M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13",
