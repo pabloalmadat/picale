@@ -829,7 +829,7 @@ function CourtFrame() {
   );
 }
 
-const BUILD = "2026-09-02-v11";
+const BUILD = "2026-09-02-v12";
 
 const ICONS = {
   home: "M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5",
@@ -922,6 +922,14 @@ function LiveVideo({ court, label }) {
 
     v.addEventListener("playing", ok);
     v.addEventListener("loadeddata", ok);
+
+    /* Safari y algunos Android expanden el <video> por su cuenta y dejan el
+       marcador fuera. Se cancela y se expande el contenedor completo. */
+    const grabFull = () => {
+      try { if (v.webkitExitFullscreen) v.webkitExitFullscreen(); } catch (er) { }
+      toggleFull();
+    };
+    v.addEventListener("webkitbeginfullscreen", grabFull);
     timer = setTimeout(() => fail("cancha sin transmisión en este momento"), 12000);
 
     const attach = () => {
@@ -952,6 +960,7 @@ function LiveVideo({ court, label }) {
       clearTimeout(timer);
       v.removeEventListener("playing", ok);
       v.removeEventListener("loadeddata", ok);
+      v.removeEventListener("webkitbeginfullscreen", grabFull);
       if (hls) { try { hls.destroy(); } catch (e) { } }
     };
   }, [court, attempt]);
@@ -959,7 +968,8 @@ function LiveVideo({ court, label }) {
   return (
     <div className={`court${full ? " full" : ""}`} ref={shell}>
       <div className="court-stage" ref={box}>
-        <video ref={ref} muted playsInline autoPlay className="court-video" />
+        <video ref={ref} muted playsInline autoPlay disablePictureInPicture
+          controlsList="nodownload noplaybackrate" className="court-video" />
         {on && matchId && scale > 0 && (
           <div className="score-ovl">
             <iframe title={`Marcador cancha ${court}`} allowTransparency="true"

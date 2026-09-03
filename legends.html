@@ -1491,7 +1491,7 @@ function CourtFrame() {
     strokeWidth: "2"
   }));
 }
-const BUILD = "2026-09-02-v11";
+const BUILD = "2026-09-02-v12";
 const ICONS = {
   home: "M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5",
   live: "M12 12h.01M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13",
@@ -1608,6 +1608,16 @@ function LiveVideo({
     };
     v.addEventListener("playing", ok);
     v.addEventListener("loadeddata", ok);
+
+    /* Safari y algunos Android expanden el <video> por su cuenta y dejan el
+       marcador fuera. Se cancela y se expande el contenedor completo. */
+    const grabFull = () => {
+      try {
+        if (v.webkitExitFullscreen) v.webkitExitFullscreen();
+      } catch (er) {}
+      toggleFull();
+    };
+    v.addEventListener("webkitbeginfullscreen", grabFull);
     timer = setTimeout(() => fail("cancha sin transmisión en este momento"), 12000);
     const attach = () => {
       const H = window.Hls;
@@ -1644,6 +1654,7 @@ function LiveVideo({
       clearTimeout(timer);
       v.removeEventListener("playing", ok);
       v.removeEventListener("loadeddata", ok);
+      v.removeEventListener("webkitbeginfullscreen", grabFull);
       if (hls) {
         try {
           hls.destroy();
@@ -1662,6 +1673,8 @@ function LiveVideo({
     muted: true,
     playsInline: true,
     autoPlay: true,
+    disablePictureInPicture: true,
+    controlsList: "nodownload noplaybackrate",
     className: "court-video"
   }), on && matchId && scale > 0 && /*#__PURE__*/React.createElement("div", {
     className: "score-ovl"
