@@ -575,7 +575,22 @@ const CSS = `
 
 .court { position:relative; background:#08080A; border:1px solid var(--line); }
 .court svg { display:block; width:100%; height:auto; }
+.court-stage { position:relative; width:100%; }
 .court-video { display:block; width:100%; aspect-ratio:16/9; background:#000; }
+
+/* pantalla completa: el contenedor entero, con el marcador encima */
+.court.full { position:fixed; inset:0; z-index:999; background:#000; border-radius:0;
+  display:grid; place-items:center; }
+.court.full .court-stage { width:min(100vw, calc(100vh * 16 / 9)); }
+.court.full .court-cam { bottom:16px; right:20px; }
+
+.vctrl { position:absolute; bottom:10px; left:10px; display:flex; gap:6px; z-index:3; }
+.vctrl button { width:34px; height:34px; display:grid; place-items:center; font-size:14px;
+  background:rgba(8,8,10,.62); border:1px solid rgba(245,242,236,.18); border-radius:8px;
+  color:var(--ivory); backdrop-filter:blur(6px); }
+.vctrl button:hover { background:rgba(8,8,10,.85); }
+.vctrl svg { width:17px; height:17px; }
+.court.full .vctrl { bottom:18px; left:20px; }
 .score-ovl { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:2; }
 .score-ovl iframe { width:1920px; height:1080px; border:0; background:transparent;
   transform-origin:top left; pointer-events:none; }
@@ -814,7 +829,7 @@ function CourtFrame() {
   );
 }
 
-const BUILD = "2026-09-02-v10";
+const BUILD = "2026-09-02-v11";
 
 const ICONS = {
   home: "M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5",
@@ -857,11 +872,43 @@ function useOverlayScale(hostRef) {
 function LiveVideo({ court, label }) {
   const ref = useRef(null);
   const box = useRef(null);
+  const shell = useRef(null);
   const [on, setOn] = useState(false);
   const [why, setWhy] = useState("");
   const [attempt, setAttempt] = useState(0);
   const matchId = useActiveMatch(court);
   const scale = useOverlayScale(box);
+  const [full, setFull] = useState(false);
+  const [muted, setMuted] = useState(true);
+
+  /* La pantalla completa se pide sobre el contenedor, no sobre el <video>:
+     si se expande solo el video, el marcador se queda fuera. En iPhone, que
+     no permite pantalla completa en un div, se usa una capa fija equivalente. */
+  const toggleFull = () => {
+    const el = shell.current;
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      return;
+    }
+    const req = el && (el.requestFullscreen || el.webkitRequestFullscreen);
+    if (req) { req.call(el).then(() => setFull(true)).catch(() => setFull(true)); }
+    else setFull(true);
+  };
+
+  useEffect(() => {
+    const h = () => setFull(!!(document.fullscreenElement || document.webkitFullscreenElement));
+    const esc = (e) => { if (e.key === "Escape") setFull(false); };
+    document.addEventListener("fullscreenchange", h);
+    document.addEventListener("webkitfullscreenchange", h);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("fullscreenchange", h);
+      document.removeEventListener("webkitfullscreenchange", h);
+      document.removeEventListener("keydown", esc);
+    };
+  }, []);
+
+  useEffect(() => { if (ref.current) ref.current.muted = muted; }, [muted]);
 
   useEffect(() => {
     const url = streamUrl(court);
@@ -910,13 +957,30 @@ function LiveVideo({ court, label }) {
   }, [court, attempt]);
 
   return (
-    <div className="court" ref={box}>
-      <video ref={ref} muted playsInline autoPlay controls className="court-video" />
-      {on && matchId && scale > 0 && (
-        <div className="score-ovl">
-          <iframe title={`Marcador cancha ${court}`} allowTransparency="true"
-            src={`score-overlay.html?match_id=${matchId}`}
-            style={{ transform: `scale(${scale})` }} />
+    <div className={`court${full ? " full" : ""}`} ref={shell}>
+      <div className="court-stage" ref={box}>
+        <video ref={ref} muted playsInline autoPlay className="court-video" />
+        {on && matchId && scale > 0 && (
+          <div className="score-ovl">
+            <iframe title={`Marcador cancha ${court}`} allowTransparency="true"
+              src={`score-overlay.html?match_id=${matchId}`}
+              style={{ transform: `scale(${scale})` }} />
+          </div>
+        )}
+      </div>
+
+      {on && (
+        <div className="vctrl">
+          <button onClick={() => setMuted((m) => !m)} aria-label={muted ? "Activar sonido" : "Silenciar"}>
+            {muted ? "🔇" : "🔊"}
+          </button>
+          <button onClick={toggleFull} aria-label="Pantalla completa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              {full
+                ? <path d="M9 3v6H3M15 21v-6h6M3 15h6v6M21 9h-6V3" />
+                : <path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6" />}
+            </svg>
+          </button>
         </div>
       )}
       {!on && (
