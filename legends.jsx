@@ -576,6 +576,9 @@ const CSS = `
 .court { position:relative; background:#08080A; border:1px solid var(--line); }
 .court svg { display:block; width:100%; height:auto; }
 .court-video { display:block; width:100%; aspect-ratio:16/9; background:#000; }
+.score-ovl { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:2; }
+.score-ovl iframe { width:1920px; height:1080px; border:0; background:transparent;
+  transform-origin:top left; pointer-events:none; }
 
 .court-off { position:absolute; left:0; right:0; top:40%; text-align:center; font-size:12.5px; color:var(--muted); pointer-events:none; }
 .court-off button { pointer-events:auto; }
@@ -811,7 +814,7 @@ function CourtFrame() {
   );
 }
 
-const BUILD = "2026-09-02-v9";
+const BUILD = "2026-09-02-v10";
 
 const ICONS = {
   home: "M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5",
@@ -831,12 +834,34 @@ function Icon({ name }) {
   );
 }
 
+/* El marcador se dibuja en score-overlay.html a 1920×1080 y se escala al
+   ancho real del reproductor, igual que en clubs.html. */
+function useOverlayScale(hostRef) {
+  const [scale, setScale] = useState(0);
+  useEffect(() => {
+    const el = hostRef.current;
+    if (!el) return;
+    const fit = () => setScale(el.clientWidth / 1920);
+    fit();
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(fit);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [hostRef]);
+  return scale;
+}
+
 function LiveVideo({ court, label }) {
   const ref = useRef(null);
+  const box = useRef(null);
   const [on, setOn] = useState(false);
   const [why, setWhy] = useState("");
   const [attempt, setAttempt] = useState(0);
   const matchId = useActiveMatch(court);
+  const scale = useOverlayScale(box);
 
   useEffect(() => {
     const url = streamUrl(court);
@@ -885,8 +910,15 @@ function LiveVideo({ court, label }) {
   }, [court, attempt]);
 
   return (
-    <div className="court">
+    <div className="court" ref={box}>
       <video ref={ref} muted playsInline autoPlay controls className="court-video" />
+      {on && matchId && scale > 0 && (
+        <div className="score-ovl">
+          <iframe title={`Marcador cancha ${court}`} allowTransparency="true"
+            src={`score-overlay.html?match_id=${matchId}`}
+            style={{ transform: `scale(${scale})` }} />
+        </div>
+      )}
       {!on && (
         <div className="court-off">
           <span>{why || "Conectando con la cámara…"}</span>
