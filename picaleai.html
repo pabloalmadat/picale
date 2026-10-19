@@ -1,0 +1,554 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PÍCALE AI Monitor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+:root {
+  --bg:        #090c0e;
+  --surface:   #111518;
+  --card:      #161c20;
+  --border:    #1e2729;
+  --border2:   #273032;
+  --yellow:    #cef000;
+  --green:     #22c55e;
+  --green2:    #16a34a;
+  --red:       #ef4444;
+  --orange:    #f97316;
+  --blue:      #3b82f6;
+  --purple:    #a855f7;
+  --text:      #e2ede2;
+  --muted:     #5a6e5a;
+  --muted2:    #8a9e8a;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:      #f0f4f0;
+    --surface: #e4eae4;
+    --card:    #ffffff;
+    --border:  #d0d8d0;
+    --border2: #b8c4b8;
+    --text:    #1a2a1a;
+    --muted:   #6a806a;
+    --muted2:  #4a604a;
+    color-scheme: light;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#090c0e;--surface:#111518;--card:#161c20;--border:#1e2729;
+  --border2:#273032;--text:#e2ede2;--muted:#5a6e5a;--muted2:#8a9e8a;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 100vh;
+  padding-left:  max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-bottom: 32px;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 max(24px, env(safe-area-inset-left, 0px));
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.logo {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--yellow);
+  letter-spacing: -1px;
+}
+.logo-sub {
+  font-size: 0.85rem;
+  color: var(--muted2);
+  font-weight: 500;
+}
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dot-live {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 1.6s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+.dot-off { background: var(--muted); animation: none; }
+.status-text {
+  font-size: 0.8rem;
+  color: var(--muted2);
+  font-family: 'JetBrains Mono', monospace;
+}
+.last-update {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Summary bar ── */
+.summary-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px max(24px, env(safe-area-inset-left, 0px));
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1;
+}
+.stat-label {
+  font-size: 0.72rem;
+  color: var(--muted2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+.v-green  { color: var(--green); }
+.v-orange { color: var(--orange); }
+.v-yellow { color: var(--yellow); }
+.v-blue   { color: var(--blue); }
+.v-muted  { color: var(--muted2); }
+
+/* ── Grid de canchas ── */
+.courts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  padding: 20px 0;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.court-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.court-card.active {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 1px var(--purple), 0 4px 24px rgba(168,85,247,0.15);
+}
+.court-card.match {
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px var(--green), 0 4px 24px rgba(34,197,94,0.12);
+}
+
+.court-header {
+  padding: 12px 16px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.court-num {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--yellow);
+  letter-spacing: -0.5px;
+}
+.court-name {
+  font-size: 0.78rem;
+  color: var(--muted2);
+  font-weight: 500;
+}
+.court-status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.court-status-label {
+  font-size: 0.72rem;
+  color: var(--muted2);
+  font-weight: 500;
+}
+
+/* ── Heatmap placeholder ── */
+.heatmap-area {
+  width: 100%;
+  aspect-ratio: 16/7;
+  background: #0d1214;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.heatmap-area canvas {
+  width: 100%; height: 100%;
+  display: block;
+}
+.heatmap-area img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.heatmap-no-data {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+/* net line overlay */
+.heatmap-area::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.2);
+  pointer-events: none;
+}
+
+/* ── Court footer ── */
+.court-footer {
+  padding: 10px 16px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.players-count {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.players-icon { font-size: 0.9rem; }
+.match-badge {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(34,197,94,0.15);
+  color: var(--green);
+  border: 1px solid rgba(34,197,94,0.3);
+}
+.ai-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: rgba(168,85,247,0.15);
+  color: var(--purple);
+  border: 1px solid rgba(168,85,247,0.3);
+}
+.no-match {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+/* ── Error / offline state ── */
+.offline-banner {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 10px;
+  padding: 16px 20px;
+  font-size: 0.85rem;
+  color: var(--red);
+  text-align: center;
+  margin: 20px auto;
+  max-width: 600px;
+  display: none;
+}
+.offline-banner.show { display: block; }
+
+/* ── Footer ── */
+.page-footer {
+  text-align: center;
+  padding: 24px 0 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+.page-footer a {
+  color: var(--yellow);
+  text-decoration: none;
+}
+
+/* ── Skeleton loading ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--border) 25%, var(--border2) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (max-width: 480px) {
+  .courts-grid { grid-template-columns: 1fr; }
+  .summary-bar { gap: 20px; }
+  .stat-value  { font-size: 1.3rem; }
+}
+</style>
+
+<div class="header">
+  <div>
+    <div class="logo">PÍCALE</div>
+    <div class="logo-sub">Somos Pádel · Monitor IA</div>
+  </div>
+  <div class="header-right">
+    <div id="liveDot" class="dot-live dot-off"></div>
+    <div id="statusText" class="status-text">Conectando...</div>
+    <div id="lastUpdate" class="last-update"></div>
+  </div>
+</div>
+
+<div class="summary-bar">
+  <div class="stat">
+    <div class="stat-value v-green" id="sumCanchasActivas">—</div>
+    <div class="stat-label">Canchas con IA</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value v-yellow" id="sumTotalJugadores">—</div>
+    <div class="stat-label">Jugadores detectados</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value v-orange" id="sumPartidos">—</div>
+    <div class="stat-label">Partidos activos</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value v-blue" id="sumCanchasOnline">—</div>
+    <div class="stat-label">Cámaras online</div>
+  </div>
+</div>
+
+<div id="offlineBanner" class="offline-banner">
+  ⚠️ Sin conexión al sistema PÍCALE — reintentando cada 10s
+</div>
+
+<div class="courts-grid" id="courtsGrid">
+  <!-- Cards generadas por JS -->
+</div>
+
+<div class="page-footer">
+  Datos en tiempo real · actualización cada 5s ·
+  <a href="https://picalereplay.com" target="_blank">picalereplay.com</a>
+</div>
+
+<script>
+// ── Configuración ───────────────────────────────────────────────────────────
+const API_URL    = 'https://api.picalereplay.com/api/v1/edge/ai-status?club=somos_padel';
+const API_KEY    = '42761b9c01d0658610719edcca0146b3679e6443667f9857';
+const POLL_MS    = 5000;
+const COURT_NAMES = ['Cancha 1','Cancha 2','Cancha 3','Cancha 4',
+                     'Cancha 5','Cancha 6','Cancha 7','Cancha 8'];
+
+// ── Estado ──────────────────────────────────────────────────────────────────
+let lastData = null;
+let failCount = 0;
+
+// ── Inicializar cards vacías ─────────────────────────────────────────────────
+function initGrid() {
+  const grid = document.getElementById('courtsGrid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= 8; i++) {
+    grid.appendChild(makeCard(i));
+  }
+}
+
+function makeCard(num) {
+  const card = document.createElement('div');
+  card.className = 'court-card';
+  card.id = `card-${num}`;
+  card.innerHTML = `
+    <div class="court-header">
+      <div class="court-num">C${num}</div>
+      <div class="court-name">${COURT_NAMES[num-1]}</div>
+      <div class="court-status-dot" id="dot-${num}" style="background:var(--muted)"></div>
+      <div class="court-status-label" id="slabel-${num}">Offline</div>
+    </div>
+    <div class="heatmap-area" id="hm-${num}">
+      <div class="heatmap-no-data">Sin datos IA</div>
+    </div>
+    <div class="court-footer">
+      <span class="players-icon">👤</span>
+      <span class="players-count v-muted" id="players-${num}">—</span>
+      <span id="aibadge-${num}"></span>
+      <span id="matchbadge-${num}" class="no-match"></span>
+    </div>
+  `;
+  return card;
+}
+
+// ── Render datos ─────────────────────────────────────────────────────────────
+function renderData(data) {
+  lastData = data;
+  failCount = 0;
+
+  const dot   = document.getElementById('liveDot');
+  const stxt  = document.getElementById('statusText');
+  const lupd  = document.getElementById('lastUpdate');
+  const offl  = document.getElementById('offlineBanner');
+
+  dot.className = 'dot-live';
+  stxt.textContent = data.ai_running ? 'IA ACTIVA' : 'Sistema online';
+  stxt.style.color = data.ai_running ? 'var(--purple)' : 'var(--muted2)';
+
+  const ts = data.timestamp ? new Date(data.timestamp) : new Date();
+  lupd.textContent = ts.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  offl.classList.remove('show');
+
+  let canchasAI = 0, totalJugadores = 0, partidos = 0, camarasOK = 0;
+
+  (data.courts || []).forEach(c => {
+    const num = c.court_num;
+    const card       = document.getElementById(`card-${num}`);
+    const dot_c      = document.getElementById(`dot-${num}`);
+    const slabel     = document.getElementById(`slabel-${num}`);
+    const players    = document.getElementById(`players-${num}`);
+    const aibadge    = document.getElementById(`aibadge-${num}`);
+    const matchbadge = document.getElementById(`matchbadge-${num}`);
+    const hmArea     = document.getElementById(`hm-${num}`);
+
+    if (!card) return;
+
+    // Estado cámara
+    const online = (c.cam_status || '').includes('En vivo');
+    if (online) {
+      camarasOK++;
+      dot_c.style.background = 'var(--green)';
+      slabel.textContent = 'En vivo';
+      slabel.style.color = 'var(--green)';
+    } else {
+      dot_c.style.background = 'var(--muted)';
+      slabel.textContent = (c.cam_status || '').replace(/[^a-zA-Z ]/g,'').trim() || 'Offline';
+      slabel.style.color = 'var(--muted2)';
+    }
+
+    // Card border
+    card.classList.remove('active','match');
+    if (c.ai_active && c.match)       card.classList.add('match');
+    else if (c.ai_active)             card.classList.add('active');
+
+    // Jugadores
+    if (c.ai_active) {
+      canchasAI++;
+      players.textContent = c.players > 0 ? c.players : '0';
+      players.className   = 'players-count ' + (c.players > 0 ? 'v-yellow' : 'v-muted');
+      totalJugadores += (c.players || 0);
+      aibadge.innerHTML   = '<span class="ai-badge">🤖 IA</span>';
+    } else {
+      players.textContent = '—';
+      players.className   = 'players-count v-muted';
+      aibadge.innerHTML   = '';
+    }
+
+    // Partido
+    if (c.match) {
+      partidos++;
+      matchbadge.innerHTML = '<span class="match-badge">🎾 Partido</span>';
+    } else if (c.ai_active) {
+      matchbadge.innerHTML = '<span class="no-match">Sin partido</span>';
+    } else {
+      matchbadge.innerHTML = '';
+    }
+
+    // Heatmap: si hay imagen en data.heatmap_urls, mostrarla
+    if (data.heatmap_urls && data.heatmap_urls[num]) {
+      hmArea.innerHTML = `<img src="${data.heatmap_urls[num]}?t=${Date.now()}" alt="Heatmap C${num}" loading="lazy">`;
+    } else if (c.ai_active) {
+      hmArea.innerHTML = renderDemoHeatmap(c.players || 0, num);
+    } else {
+      hmArea.innerHTML = '<div class="heatmap-no-data">Sin datos IA</div>';
+    }
+  });
+
+  // Summary
+  document.getElementById('sumCanchasActivas').textContent  = canchasAI;
+  document.getElementById('sumTotalJugadores').textContent  = totalJugadores;
+  document.getElementById('sumPartidos').textContent         = partidos;
+  document.getElementById('sumCanchasOnline').textContent   = camarasOK;
+}
+
+// ── Heatmap visual de demo cuando no hay imagen real ───────────────────────
+function renderDemoHeatmap(players, courtNum) {
+  // Genera un canvas con puntos distribuidos aleatoriamente (seed por cancha)
+  const seed = courtNum * 1234 + Date.now() % 3000;
+  const W = 320, H = 140;
+  let dots = [];
+  const rng = (s) => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
+  let s = seed;
+  const n = players > 0 ? players * 4 : 0;
+  for (let i = 0; i < n; i++) {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    const x = (s & 0xffff) / 0xffff * W;
+    s = (s * 1664525 + 1013904223) >>> 0;
+    const y = (s & 0xffff) / 0xffff * H;
+    dots.push({x, y, r: 20 + (s & 0xf)});
+  }
+  const svgParts = dots.map(d => {
+    const cols = ['rgba(0,0,255,0.15)','rgba(0,255,255,0.2)','rgba(0,255,0,0.2)',
+                  'rgba(255,255,0,0.2)','rgba(255,128,0,0.2)','rgba(255,0,0,0.2)'];
+    const col = cols[Math.floor(d.r / 6) % cols.length];
+    return `<circle cx="${d.x.toFixed(1)}" cy="${d.y.toFixed(1)}" r="${d.r}" fill="${col}"/>`;
+  }).join('');
+  return `<svg width="${W}" height="${H}" style="width:100%;height:100%;background:#0d1214;">
+    <defs><filter id="hblur${courtNum}"><feGaussianBlur stdDeviation="8"/></filter></defs>
+    <g filter="url(#hblur${courtNum})">${svgParts}</g>
+    <line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+  </svg>`;
+}
+
+// ── Fetch ────────────────────────────────────────────────────────────────────
+async function fetchStatus() {
+  try {
+    const resp = await fetch(API_URL, {
+      headers: { 'x-edge-api-key': API_KEY },
+      cache: 'no-store',
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    renderData(data);
+  } catch (err) {
+    failCount++;
+    const dot   = document.getElementById('liveDot');
+    const stxt  = document.getElementById('statusText');
+    const offl  = document.getElementById('offlineBanner');
+    dot.className = 'dot-live dot-off';
+    stxt.textContent = `Error (${failCount})`;
+    stxt.style.color = 'var(--red)';
+    if (failCount >= 2) offl.classList.add('show');
+  }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+initGrid();
+fetchStatus();
+setInterval(fetchStatus, POLL_MS);
+</script>
+
+</body></html>
