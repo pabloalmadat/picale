@@ -1,826 +1,932 @@
 <title>PÍCALE AI Monitor</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Bebas+Neue&display=swap">
 
 <style>
 :root {
-  --bg:        #090c0e;
-  --surface:   #111518;
-  --card:      #161c20;
-  --border:    #1e2729;
-  --border2:   #273032;
-  --yellow:    #cef000;
-  --green:     #22c55e;
-  --green2:    #16a34a;
-  --red:       #ef4444;
-  --orange:    #f97316;
-  --blue:      #3b82f6;
-  --purple:    #a855f7;
-  --purple2:   #c084fc;
-  --text:      #e2ede2;
-  --muted:     #5a6e5a;
-  --muted2:    #8a9e8a;
+  --bg:      #07090a;
+  --surf:    #0d1214;
+  --card:    #111618;
+  --card2:   #161d20;
+  --border:  #1c2426;
+  --border2: #243032;
+  --yellow:  #d4f000;
+  --yello2:  #a8c000;
+  --green:   #1fcf5e;
+  --red:     #f03a3a;
+  --orange:  #ff7c2a;
+  --blue:    #3a8fff;
+  --purple:  #b060f8;
+  --cyan:    #00d4cc;
+  --text:    #dceadc;
+  --muted:   #4a5e4a;
+  --muted2:  #7a9a7a;
+  --court-bg:#0a1f0f;
+  --court-ln:#1aaa4a;
   color-scheme: dark;
 }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    --bg:      #f0f4f0; --surface: #e4eae4; --card: #ffffff;
-    --border:  #d0d8d0; --border2: #b8c4b8;
-    --text:    #1a2a1a; --muted:   #6a806a; --muted2: #4a604a;
-    color-scheme: light;
-  }
-}
-:root[data-theme="dark"] {
-  --bg:#090c0e;--surface:#111518;--card:#161c20;--border:#1e2729;
-  --border2:#273032;--text:#e2ede2;--muted:#5a6e5a;--muted2:#8a9e8a;
-  color-scheme: dark;
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#eef2ee;--surf:#e4eae4;--card:#fff;--card2:#f4f8f4;
+  --border:#d0d8d0;--border2:#b8c8b8;--text:#111a11;--muted:#6a806a;--muted2:#4a604a;
+  color-scheme:light;
+}}
+:root[data-theme="dark"]{
+  --bg:#07090a;--surf:#0d1214;--card:#111618;--card2:#161d20;
+  --border:#1c2426;--border2:#243032;--text:#dceadc;--muted:#4a5e4a;--muted2:#7a9a7a;
+  color-scheme:dark;
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Inter', system-ui, sans-serif;
-  min-height: 100vh;
-  padding-left:  max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-bottom: 40px;
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;min-height:100vh;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-bottom:40px;
 }
 
-/* ── Header ─────────────────────────────────────────────────────── */
-.header {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 0 max(24px, env(safe-area-inset-left, 0px));
-  display: flex; align-items: center; gap: 16px;
-  height: 60px; position: sticky; top: 0; z-index: 100;
+/* ─── Header ─────────────────────────────────────────── */
+.hdr{
+  background:var(--surf);border-bottom:1px solid var(--border);
+  padding:0 max(24px,env(safe-area-inset-left,0px));
+  display:flex;align-items:center;gap:14px;height:56px;
+  position:sticky;top:0;z-index:100;
 }
-.header-logo { font-size: 22px; font-weight: 900; color: var(--yellow); letter-spacing: -0.5px; }
-.header-sub  { font-size: 13px; color: var(--muted2); }
-.header-gap  { flex: 1; }
-.status-pill {
-  display: flex; align-items: center; gap: 6px;
-  padding: 5px 12px; border-radius: 20px;
-  font-size: 12px; font-weight: 600;
-  background: var(--card); border: 1px solid var(--border2);
+.hdr-logo{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--yellow);letter-spacing:2px;}
+.hdr-sub{font-size:11px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.8px;}
+.hdr-gap{flex:1}
+.pill{
+  display:flex;align-items:center;gap:6px;padding:4px 12px;
+  border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.4px;
+  background:var(--card);border:1px solid var(--border2);
 }
-.dot { width: 8px; height: 8px; border-radius: 50%; }
-.dot-green  { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
-.dot-red    { background: var(--red); }
-.dot-yellow { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-g{background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite}
+.dot-r{background:var(--red)}
+.dot-y{background:var(--yellow);box-shadow:0 0 8px var(--yellow);animation:blink 2s infinite}
+.dot-off{background:var(--muted)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* ── Navigation tabs ─────────────────────────────────────────────── */
-.nav-tabs {
-  display: flex; gap: 0;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 0 max(24px, env(safe-area-inset-left, 0px));
-  overflow-x: auto;
+/* ─── Tabs ────────────────────────────────────────────── */
+.tabs{
+  display:flex;background:var(--surf);border-bottom:1px solid var(--border);
+  padding:0 max(20px,env(safe-area-inset-left,0px));overflow-x:auto;
 }
-.nav-tab {
-  padding: 12px 20px; cursor: pointer;
-  font-size: 13px; font-weight: 600; color: var(--muted2);
-  border-bottom: 2px solid transparent;
-  white-space: nowrap; transition: all .2s;
-  background: none; border-top: none; border-left: none; border-right: none;
-  font-family: inherit;
+.tab{
+  padding:12px 18px;cursor:pointer;font-size:12px;font-weight:700;
+  color:var(--muted2);border-bottom:2px solid transparent;white-space:nowrap;
+  background:none;border-top:none;border-left:none;border-right:none;
+  font-family:inherit;letter-spacing:.5px;text-transform:uppercase;transition:all .2s;
 }
-.nav-tab:hover { color: var(--text); }
-.nav-tab.active { color: var(--yellow); border-bottom-color: var(--yellow); }
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--yellow);border-bottom-color:var(--yellow)}
 
-/* ── Main layout ─────────────────────────────────────────────────── */
-.main { padding: 20px max(0px, calc(max(16px,env(safe-area-inset-left,0px)) - 16px)); }
+/* ─── Layout ─────────────────────────────────────────── */
+.main{padding:16px 0}
 
-/* ── Summary bar ─────────────────────────────────────────────────── */
-.summary-bar {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
-  margin-bottom: 20px;
+/* ─── Summary bar ────────────────────────────────────── */
+.sbar{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.scard{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;
 }
-.summary-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 12px; padding: 16px 20px;
-}
-.summary-card .label { font-size: 11px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: .8px; color: var(--muted2); margin-bottom: 6px; }
-.summary-card .value { font-size: 32px; font-weight: 900; line-height: 1; }
-.summary-card .sub   { font-size: 11px; color: var(--muted); margin-top: 4px; }
-.val-green  { color: var(--green); }
-.val-yellow { color: var(--yellow); }
-.val-orange { color: var(--orange); }
-.val-blue   { color: var(--blue); }
-.val-purple { color: var(--purple2); }
+.scard .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted2);margin-bottom:4px}
+.scard .val{font-size:28px;font-weight:900;line-height:1}
+.scard .sub{font-size:10px;color:var(--muted);margin-top:3px}
+.vy{color:var(--yellow)} .vg{color:var(--green)} .vr{color:var(--red)}
+.vo{color:var(--orange)} .vb{color:var(--blue)} .vp{color:var(--purple)}
 
-/* ── Court grid ──────────────────────────────────────────────────── */
-.courts-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+/* ─── Court grid (overview) ──────────────────────────── */
+.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ccard{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;cursor:pointer;transition:all .25s;
 }
-.court-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 12px; overflow: hidden; transition: all .3s;
-  cursor: pointer;
-}
-.court-card:hover { border-color: var(--border2); transform: translateY(-1px); }
-.court-card.ai-active { border-color: var(--purple); box-shadow: 0 0 20px #a855f722; }
-.court-card.match-active { border-color: var(--green); box-shadow: 0 0 20px #22c55e22; }
-.court-card.pro-active   { border-color: var(--yellow); box-shadow: 0 0 24px #cef00033; }
+.ccard:hover{border-color:var(--border2);transform:translateY(-1px)}
+.ccard.pro{border-color:var(--yellow);box-shadow:0 0 24px #d4f00020}
+.ccard.aion{border-color:var(--purple);box-shadow:0 0 16px #b060f818}
+.ccard.match{border-color:var(--green);box-shadow:0 0 16px #1fcf5e18}
 
-.court-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 14px; border-bottom: 1px solid var(--border);
+.chdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 12px;border-bottom:1px solid var(--border);
 }
-.court-num  { font-size: 18px; font-weight: 900; color: var(--yellow); }
-.court-name { font-size: 11px; color: var(--muted2); }
-.badge {
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  padding: 2px 8px; border-radius: 20px; letter-spacing: .5px;
+.cnum{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--yellow)}
+.cnm{font-size:10px;color:var(--muted2);font-weight:600}
+.badge{
+  font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+  padding:2px 8px;border-radius:20px;
 }
-.badge-ai     { background: #a855f722; color: var(--purple2); border: 1px solid #a855f744; }
-.badge-match  { background: #22c55e22; color: var(--green); border: 1px solid #22c55e44; }
-.badge-pro    { background: #cef00022; color: var(--yellow); border: 1px solid #cef00044; }
-.badge-off    { background: var(--border); color: var(--muted); }
+.b-pro  {background:#d4f00018;color:var(--yellow);border:1px solid #d4f00040}
+.b-ai   {background:#b060f818;color:var(--purple);border:1px solid #b060f840}
+.b-match{background:#1fcf5e18;color:var(--green) ;border:1px solid #1fcf5e40}
+.b-off  {background:var(--border);color:var(--muted)}
 
-/* ── Court map (SVG) ─────────────────────────────────────────────── */
-.court-map-wrap { padding: 8px 10px; }
-.court-svg { width: 100%; height: auto; display: block; }
+/* court minimap */
+.cmap{padding:6px 8px}
+.csvg{width:100%;height:auto;display:block}
 
-/* ── Court footer ────────────────────────────────────────────────── */
-.court-footer { padding: 8px 14px 12px; }
-.court-players { font-size: 13px; font-weight: 600; color: var(--text); }
-.court-status  { font-size: 11px; color: var(--muted2); margin-top: 2px; }
-.court-last-shot { font-size: 11px; font-weight: 700; margin-top: 4px; }
+.cftr{padding:7px 12px 10px}
+.cpl{font-size:12px;font-weight:700}
+.cst{font-size:10px;color:var(--muted2);margin-top:1px}
+.cshot{font-size:10px;font-weight:800;margin-top:4px}
 
-/* ── PRO Detail panel ────────────────────────────────────────────── */
-.pro-panel {
-  display: none; margin-top: 20px;
-  background: var(--card); border: 1px solid var(--yellow);
-  border-radius: 16px; overflow: hidden;
-  box-shadow: 0 0 40px #cef00011;
-}
-.pro-panel.visible { display: block; }
-.pro-panel-header {
-  background: var(--surface); border-bottom: 1px solid var(--border);
-  padding: 14px 20px; display: flex; align-items: center; gap: 12px;
-}
-.pro-panel-header h2 { font-size: 16px; font-weight: 800; color: var(--yellow); }
-.pro-close {
-  margin-left: auto; cursor: pointer;
-  background: none; border: none; color: var(--muted2);
-  font-size: 20px; font-family: inherit; padding: 2px 8px; border-radius: 6px;
-}
-.pro-close:hover { background: var(--border); color: var(--text); }
+/* ─── PRO BROADCAST VIEW ─────────────────────────────── */
+.pro-view{display:none}
+.pro-view.on{display:block}
 
-.pro-body {
-  display: grid; grid-template-columns: 240px 1fr 220px; gap: 0;
+/* top bar */
+.pv-top{
+  display:flex;align-items:center;gap:12px;
+  background:linear-gradient(135deg,#0d1214,#111a1a);
+  border:1px solid var(--border2);border-radius:12px;
+  padding:12px 18px;margin-bottom:14px;
+}
+.pv-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--yellow);letter-spacing:2px}
+.pv-sub{font-size:11px;color:var(--muted2);font-weight:600}
+.pv-gap{flex:1}
+.pv-stat{text-align:center}
+.pv-stat .n{font-size:22px;font-weight:900;line-height:1}
+.pv-stat .l{font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted2);font-weight:700}
+
+/* main grid */
+.pv-grid{display:grid;grid-template-columns:200px 1fr 200px;gap:12px;align-items:start}
+
+/* ─── Player panels ──────────────────────────────────── */
+.pv-players{display:flex;flex-direction:column;gap:8px}
+.ppl{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;border-left:3px solid transparent;
+}
+.ppl-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.ppl-id{font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1}
+.ppl-side{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted2)}
+.ppl-shots{font-size:22px;font-weight:900;margin-left:auto;line-height:1}
+.ppl-bars{display:flex;flex-direction:column;gap:3px}
+.pbl-row{display:flex;align-items:center;gap:5px;font-size:9px}
+.pbl-lbl{min-width:32px;color:var(--muted2);font-weight:700;text-transform:uppercase}
+.pbl-track{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.pbl-fill{height:100%;border-radius:3px;transition:width .6s}
+.pbl-n{min-width:16px;text-align:right;color:var(--muted2)}
+
+/* ─── Center court ───────────────────────────────────── */
+.pv-center{display:flex;flex-direction:column;gap:12px}
+
+.court-wrap{
+  position:relative;
+  background:linear-gradient(180deg,#0a1f0f,#081a0c);
+  border:2px solid #1aaa4a44;border-radius:12px;overflow:hidden;
+  padding:10px;
+}
+.court-title{
+  font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;
+  color:var(--yellow);text-align:center;margin-bottom:6px;opacity:.8;
+}
+.big-court-svg{width:100%;height:auto;display:block}
+
+/* score band */
+.score-band{
+  display:grid;grid-template-columns:1fr auto 1fr;gap:0;
+  background:var(--surf);border:1px solid var(--border2);border-radius:10px;
+  overflow:hidden;
+}
+.team-score{padding:10px 16px;text-align:center}
+.ts-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--muted2)}
+.ts-name{font-size:13px;font-weight:800;margin:2px 0}
+.ts-score{font-family:'Bebas Neue',sans-serif;font-size:36px;line-height:1}
+.vs-sep{
+  display:flex;align-items:center;justify-content:center;
+  padding:0 16px;font-family:'Bebas Neue',sans-serif;font-size:16px;
+  color:var(--muted);background:var(--card);
 }
 
-/* Court 2D map (Pro) */
-.pro-court-col {
-  border-right: 1px solid var(--border);
-  padding: 16px;
+/* timeline */
+.tl-wrap{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  overflow:hidden;
 }
-.pro-court-title { font-size: 12px; font-weight: 700; color: var(--muted2);
-  text-transform: uppercase; letter-spacing: .7px; margin-bottom: 12px; }
-.pro-court-svg { width: 100%; height: auto; }
-.player-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
-.player-legend-item { display: flex; align-items: center; gap: 5px;
-  font-size: 11px; font-weight: 600; }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.tl-hdr{
+  padding:8px 12px;border-bottom:1px solid var(--border);
+  font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--muted2);
+  display:flex;align-items:center;gap:8px;
+}
+.tl-list{max-height:220px;overflow-y:auto}
+.tl-row{
+  display:flex;align-items:center;gap:8px;padding:7px 12px;
+  border-left:3px solid transparent;font-size:11px;
+  border-bottom:1px solid var(--border);
+}
+.tl-row:last-child{border-bottom:none}
+.tl-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2);min-width:50px}
+.tl-pid{font-weight:800;min-width:26px}
+.tl-type{font-weight:800;text-transform:uppercase;letter-spacing:.4px;min-width:58px}
+.tl-zone{font-size:10px;color:var(--muted2);min-width:50px}
+.tl-spd{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--cyan);margin-left:auto}
+.tl-clip{
+  margin-left:4px;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;
+  background:#d4f00020;color:var(--yellow);border:1px solid #d4f00040;cursor:pointer;
+  text-decoration:none;
+}
 
-/* Shot timeline */
-.pro-timeline-col { padding: 16px; overflow: hidden; }
-.pro-timeline-title { font-size: 12px; font-weight: 700; color: var(--muted2);
-  text-transform: uppercase; letter-spacing: .7px; margin-bottom: 10px; }
-.shot-type-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-.shot-chip {
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  padding: 3px 10px; border-radius: 20px; letter-spacing: .5px;
+/* ─── Heatmaps ────────────────────────────────────────── */
+.hm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hm-card{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  overflow:hidden;
 }
-.chip-smash  { background:#ef444422;color:#ef4444;border:1px solid #ef444444; }
-.chip-volea  { background:#f9731622;color:#f97316;border:1px solid #f9731644; }
-.chip-globo  { background:#3b82f622;color:#3b82f6;border:1px solid #3b82f644; }
-.chip-drive  { background:#22c55e22;color:#22c55e;border:1px solid #22c55e44; }
-.chip-revés  { background:#a855f722;color:#a855f7;border:1px solid #a855f744; }
-.chip-saque  { background:#cef00022;color:#cef000;border:1px solid #cef00044; }
+.hm-hdr{padding:7px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.hm-pid{font-family:'Bebas Neue',sans-serif;font-size:16px}
+.hm-sub{font-size:9px;color:var(--muted2);font-weight:700}
+.hm-total{margin-left:auto;font-size:18px;font-weight:900}
+.hm-svg{width:100%;height:auto;display:block;padding:4px 6px}
 
-.timeline-list { display: flex; flex-direction: column; gap: 4px;
-  max-height: 360px; overflow-y: auto; }
-.timeline-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px 10px; border-radius: 8px;
-  background: var(--surface); border-left: 3px solid transparent;
-  font-size: 12px;
+/* ─── Rally panel ─────────────────────────────────────── */
+.rally-panel{
+  background:var(--card2);border:1px solid var(--border2);border-radius:10px;
+  padding:12px 16px;
 }
-.tl-time  { font-family:'JetBrains Mono',monospace; color:var(--muted2); min-width:55px; }
-.tl-player { font-weight: 700; min-width: 70px; }
-.tl-type  { font-weight: 800; text-transform: uppercase; letter-spacing:.4px; min-width:65px; }
-.tl-zone  { font-size: 10px; color: var(--muted2); }
-.tl-conf  { margin-left: auto; font-size: 10px; color: var(--muted); }
+.rp-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.rp-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--muted2)}
+.rp-live{
+  font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;
+  background:#f03a3a22;color:var(--red);border:1px solid #f03a3a44;
+  animation:blink 1s infinite;
+}
+.rp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rp-stat{text-align:center}
+.rp-stat .n{font-size:22px;font-weight:900;line-height:1}
+.rp-stat .l{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted2);font-weight:700;margin-top:2px}
 
-/* Player stats */
-.pro-stats-col {
-  border-left: 1px solid var(--border); padding: 16px;
+/* mvp */
+.mvp-card{
+  background:linear-gradient(135deg,#d4f00010,#00000000);
+  border:1px solid #d4f00030;border-radius:10px;padding:12px 16px;
+  display:flex;align-items:center;gap:14px;
 }
-.pro-stats-title { font-size: 12px; font-weight: 700; color: var(--muted2);
-  text-transform: uppercase; letter-spacing: .7px; margin-bottom: 10px; }
-.player-stat-card {
-  background: var(--surface); border-radius: 10px; padding: 12px;
-  margin-bottom: 10px; border-left: 3px solid transparent;
-}
-.ps-header { display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 8px; }
-.ps-name  { font-size: 14px; font-weight: 800; }
-.ps-total { font-size: 11px; color: var(--muted2); }
-.ps-bars  { display: flex; flex-direction: column; gap: 4px; }
-.ps-bar-row { display: flex; align-items: center; gap: 6px; font-size: 10px; }
-.ps-bar-label { min-width: 42px; color: var(--muted2); text-transform: uppercase; font-weight: 600; }
-.ps-bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
-.ps-bar-fill  { height: 100%; border-radius: 3px; transition: width .5s; }
-.ps-bar-count { min-width: 20px; text-align: right; color: var(--muted2); }
+.mvp-star{font-size:28px}
+.mvp-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--yellow);margin-bottom:2px}
+.mvp-name{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--yellow);letter-spacing:1px}
+.mvp-desc{font-size:10px;color:var(--muted2);margin-top:1px}
+.mvp-score{margin-left:auto;text-align:center}
+.mvp-score .n{font-family:'Bebas Neue',sans-serif;font-size:40px;color:var(--yellow);line-height:1}
+.mvp-score .l{font-size:9px;color:var(--muted2);font-weight:700}
 
-/* ── Offline banner ──────────────────────────────────────────────── */
-.offline-banner {
-  display: none; position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
-  background: var(--red); color: #fff; font-size: 13px; font-weight: 700;
-  padding: 8px 20px; border-radius: 8px; z-index: 999;
-  box-shadow: 0 4px 20px #0006;
-}
-.offline-banner.visible { display: block; }
+/* shot type chips */
+.shot-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.sc{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;
+  padding:3px 10px;border-radius:20px;cursor:pointer;}
+.sc-smash {background:#f03a3a18;color:#f03a3a;border:1px solid #f03a3a44}
+.sc-volea  {background:#ff7c2a18;color:#ff7c2a;border:1px solid #ff7c2a44}
+.sc-globo  {background:#3a8fff18;color:#3a8fff;border:1px solid #3a8fff44}
+.sc-drive  {background:#1fcf5e18;color:#1fcf5e;border:1px solid #1fcf5e44}
+.sc-revés  {background:#b060f818;color:#b060f8;border:1px solid #b060f844}
+.sc-saque  {background:#d4f00018;color:#d4f000;border:1px solid #d4f00044}
 
-/* ── Responsive ──────────────────────────────────────────────────── */
-@media(max-width:900px){
-  .courts-grid   { grid-template-columns: repeat(2,1fr); }
-  .summary-bar   { grid-template-columns: repeat(2,1fr); }
-  .pro-body      { grid-template-columns: 1fr; }
-  .pro-court-col, .pro-stats-col { border: none; border-top: 1px solid var(--border); }
+/* intensity bar */
+.intens{margin-top:10px}
+.intens-lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--muted2);margin-bottom:4px}
+.intens-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.intens-fill{height:100%;border-radius:4px;transition:width .8s;
+  background:linear-gradient(90deg,#1fcf5e,#d4f000,#f03a3a)}
+
+/* ─── History ─────────────────────────────────────────── */
+.hist-list{display:flex;flex-direction:column;gap:10px;max-width:800px}
+.hist-card{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:14px 18px;display:flex;align-items:center;gap:16px;
 }
-@media(max-width:500px){
-  .courts-grid { grid-template-columns: 1fr; }
-  .summary-bar { grid-template-columns: 1fr 1fr; }
-}
+.hc-cancha{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--yellow)}
+.hc-info{flex:1}
+.hc-mid{font-size:11px;font-weight:700;color:var(--text)}
+.hc-sub{font-size:10px;color:var(--muted2);margin-top:2px}
+.hc-shots{font-size:28px;font-weight:900;color:var(--purple2)}
 
 /* scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--surface); }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--surf)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ─── Responsive ──────────────────────────────────────── */
+@media(max-width:1100px){.pv-grid{grid-template-columns:160px 1fr 160px}}
+@media(max-width:900px){
+  .cgrid{grid-template-columns:repeat(2,1fr)}
+  .sbar{grid-template-columns:repeat(3,1fr)}
+  .pv-grid{grid-template-columns:1fr;grid-template-rows:auto}
+  .pv-players{flex-direction:row;flex-wrap:wrap}
+  .ppl{flex:1;min-width:140px}
+}
+@media(max-width:500px){
+  .cgrid{grid-template-columns:1fr}
+  .sbar{grid-template-columns:repeat(2,1fr)}
+  .hm-grid{grid-template-columns:1fr}
+}
 </style>
 
-<!-- ── HTML ──────────────────────────────────────────────────────────────── -->
-<div class="offline-banner" id="offlineBanner">⚡ Sin conexión con el sistema</div>
+<!-- ─── OFFLINE BANNER ──────────────────────────────────────── -->
+<div id="offline" style="display:none;position:fixed;top:66px;left:50%;transform:translateX(-50%);
+  background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:7px 18px;
+  border-radius:8px;z-index:999;box-shadow:0 4px 20px #0008">⚡ Sin conexión</div>
 
-<!-- Header -->
-<div class="header">
-  <div class="header-logo">PÍCALE</div>
-  <div class="header-sub">AI Monitor · Somos Pádel</div>
-  <div class="header-gap"></div>
-  <div class="status-pill" id="connStatus">
-    <div class="dot dot-yellow"></div>
-    <span id="connText">Conectando…</span>
-  </div>
-  <div class="status-pill" style="margin-left:8px">
-    <div class="dot dot-green" id="aiDot" style="background:var(--muted)"></div>
-    <span id="aiText">IA: --</span>
-  </div>
+<!-- ─── HEADER ──────────────────────────────────────────────── -->
+<div class="hdr">
+  <div class="hdr-logo">PÍCALE</div>
+  <div class="hdr-sub">AI Monitor · Somos Pádel</div>
+  <div class="hdr-gap"></div>
+  <div class="pill" id="connPill"><div class="dot dot-off" id="connDot"></div><span id="connTxt">Conectando…</span></div>
+  <div class="pill" style="margin-left:8px"><div class="dot dot-off" id="aiDot"></div><span id="aiTxt">IA: --</span></div>
 </div>
 
-<!-- Nav tabs -->
-<div class="nav-tabs">
-  <button class="nav-tab active" onclick="showTab('overview')" id="tab-overview">Resumen</button>
-  <button class="nav-tab" onclick="showTab('pro')" id="tab-pro">🧠 AI PRO</button>
-  <button class="nav-tab" onclick="showTab('history')" id="tab-history">Historial</button>
+<!-- ─── TABS ────────────────────────────────────────────────── -->
+<div class="tabs">
+  <button class="tab on"  id="t-res"  onclick="showTab('res')">🏠 Resumen</button>
+  <button class="tab"     id="t-pro"  onclick="showTab('pro')">🧠 AI PRO</button>
+  <button class="tab"     id="t-hist" onclick="showTab('hist')">📊 Historial</button>
 </div>
 
-<!-- Main -->
+<!-- ─── MAIN ─────────────────────────────────────────────────── -->
 <div class="main">
 
-  <!-- === TAB: OVERVIEW === -->
-  <div id="view-overview">
-    <!-- Summary bar -->
-    <div class="summary-bar">
-      <div class="summary-card">
-        <div class="label">Canchas con IA</div>
-        <div class="value val-purple" id="sumAI">0</div>
-        <div class="sub">de 8 canchas activas</div>
-      </div>
-      <div class="summary-card">
-        <div class="label">Jugadores detectados</div>
-        <div class="value val-yellow" id="sumPlayers">0</div>
-        <div class="sub">en todas las canchas</div>
-      </div>
-      <div class="summary-card">
-        <div class="label">Partidos activos</div>
-        <div class="value val-green" id="sumMatches">0</div>
-        <div class="sub">≥3 jugadores detectados</div>
-      </div>
-      <div class="summary-card">
-        <div class="label">Cámaras online</div>
-        <div class="value val-blue" id="sumCams">0</div>
-        <div class="sub">estado de streaming</div>
-      </div>
-    </div>
-
-    <!-- Court grid -->
-    <div class="courts-grid" id="courtsGrid"></div>
+<!-- ══════════ TAB: RESUMEN ══════════ -->
+<div id="v-res">
+  <div class="sbar">
+    <div class="scard"><div class="lbl">Canchas IA</div><div class="val vy" id="s-ai">0</div><div class="sub">de 8</div></div>
+    <div class="scard"><div class="lbl">Jugadores</div><div class="val vg" id="s-pl">0</div><div class="sub">detectados</div></div>
+    <div class="scard"><div class="lbl">Partidos</div><div class="val vb" id="s-mt">0</div><div class="sub">en curso</div></div>
+    <div class="scard"><div class="lbl">Golpes hoy</div><div class="val vo" id="s-sh">0</div><div class="sub">AI PRO</div></div>
+    <div class="scard"><div class="lbl">Intensidad</div><div class="val vr" id="s-int">--</div><div class="sub">promedio</div></div>
   </div>
-
-  <!-- === TAB: AI PRO === -->
-  <div id="view-pro" style="display:none">
-    <!-- Si no hay pro activo -->
-    <div id="proEmpty" style="text-align:center;padding:60px 20px;color:var(--muted2)">
-      <div style="font-size:48px;margin-bottom:16px">🧠</div>
-      <div style="font-size:18px;font-weight:700;margin-bottom:8px">AI PRO no está activo</div>
-      <div style="font-size:13px">Activa AI PRO en el launcher en una cancha para ver el análisis avanzado</div>
-    </div>
-
-    <!-- Panel pro completo -->
-    <div id="proPanelContainer"></div>
-  </div>
-
-  <!-- === TAB: HISTORY === -->
-  <div id="view-history" style="display:none">
-    <div style="text-align:center;padding:40px;color:var(--muted2)">
-      <div style="font-size:36px;margin-bottom:12px">📊</div>
-      <div style="font-size:15px;font-weight:600">Historial de partidos</div>
-      <div style="font-size:12px;margin-top:8px">Los partidos guardados aparecerán aquí cuando AI PRO esté activo</div>
-    </div>
-    <div id="historyList" style="max-width:700px;margin:0 auto"></div>
-  </div>
-
+  <div class="cgrid" id="cgrid"></div>
 </div>
 
-<script>
-// ── Config ───────────────────────────────────────────────────────────────────
-const API   = 'https://api.picalereplay.com/api/v1/edge/ai-status?club=somos_padel';
-const KEY   = '42761b9c01d0658610719edcca0146b3679e6443667f9857';
-const POLL  = 5000;
-
-// ── State ────────────────────────────────────────────────────────────────────
-let data         = null;
-let failCount    = 0;
-let selectedCourt = null;
-let activeTab    = 'overview';
-
-// Colores
-const SHOT_COLORS = {
-  smash: '#ef4444', volea: '#f97316', globo: '#3b82f6',
-  drive: '#22c55e', 'revés': '#a855f7', saque: '#cef000'
-};
-const PLAYER_COLORS = ['#cef000','#22c55e','#3b82f6','#f97316'];
-const PLAYER_NAMES  = ['A','B','C','D'];
-
-// ── Tabs ─────────────────────────────────────────────────────────────────────
-function showTab(t) {
-  activeTab = t;
-  ['overview','pro','history'].forEach(v => {
-    document.getElementById('view-'+v).style.display = v===t ? '' : 'none';
-    document.getElementById('tab-'+v).classList.toggle('active', v===t);
-  });
-  if (data) renderAll(data);
-}
-
-// ── Fetch ─────────────────────────────────────────────────────────────────────
-async function fetchData() {
-  try {
-    const r = await fetch(API, { headers:{ 'x-edge-api-key': KEY }, cache:'no-store' });
-    if (!r.ok) throw new Error(r.status);
-    const d = await r.json();
-    data = d;
-    failCount = 0;
-    document.getElementById('offlineBanner').classList.remove('visible');
-    updateConnectionStatus(true, d.timestamp);
-    renderAll(d);
-  } catch(e) {
-    failCount++;
-    if (failCount >= 2) {
-      document.getElementById('offlineBanner').classList.add('visible');
-      updateConnectionStatus(false);
-    }
-  }
-}
-
-function updateConnectionStatus(ok, ts) {
-  const dot  = document.getElementById('connStatus').querySelector('.dot');
-  const text = document.getElementById('connText');
-  if (ok) {
-    dot.className  = 'dot dot-green';
-    const t = ts ? ts.slice(11,19) : '--';
-    text.textContent = 'Online · ' + t;
-  } else {
-    dot.className  = 'dot dot-red';
-    text.textContent = 'Sin conexión';
-  }
-}
-
-// ── Render all ────────────────────────────────────────────────────────────────
-function renderAll(d) {
-  const courts = d.courts || [];
-  const pro    = d.pro || {};
-
-  // IA status badge
-  const aiActive = courts.filter(c=>c.ai_active).length;
-  const aiDot  = document.getElementById('aiDot');
-  const aiText = document.getElementById('aiText');
-  if (aiActive > 0) {
-    aiDot.className = 'dot dot-yellow';
-    aiText.textContent = `IA: ${aiActive} canchas`;
-  } else {
-    aiDot.style.background = 'var(--muted)';
-    aiDot.className = 'dot';
-    aiText.textContent = 'IA: inactivo';
-  }
-
-  if (activeTab === 'overview') renderOverview(courts, pro);
-  if (activeTab === 'pro')      renderPro(pro, courts);
-  if (activeTab === 'history')  renderHistory(pro);
-}
-
-// ── OVERVIEW ──────────────────────────────────────────────────────────────────
-function renderOverview(courts, pro) {
-  const aiCount      = courts.filter(c=>c.ai_active).length;
-  const totalPlayers = courts.reduce((s,c)=>s+c.players,0);
-  const matches      = courts.filter(c=>c.match).length;
-  const onlineCams   = courts.filter(c=>c.cam_status && c.cam_status.includes('vivo')).length;
-
-  document.getElementById('sumAI').textContent      = aiCount;
-  document.getElementById('sumPlayers').textContent = totalPlayers;
-  document.getElementById('sumMatches').textContent = matches;
-  document.getElementById('sumCams').textContent    = onlineCams;
-
-  const grid = document.getElementById('courtsGrid');
-  if (grid.children.length !== courts.length) {
-    grid.innerHTML = '';
-    courts.forEach(c => grid.appendChild(makeCourtCard(c)));
-  } else {
-    courts.forEach((c,i) => updateCourtCard(grid.children[i], c, pro));
-  }
-}
-
-function makeCourtCard(court) {
-  const div = document.createElement('div');
-  div.className = 'court-card';
-  div.dataset.court = court.court_num;
-  div.onclick = () => selectCourt(court.court_num);
-  div.innerHTML = `
-    <div class="court-header">
+<!-- ══════════ TAB: AI PRO ══════════ -->
+<div id="v-pro" class="pro-view">
+  <!-- selector cancha si hay varias -->
+  <div id="proEmpty" style="text-align:center;padding:60px;color:var(--muted2)">
+    <div style="font-size:48px;margin-bottom:12px">🧠</div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:6px">AI PRO no está activo</div>
+    <div style="font-size:12px">Actívalo desde el launcher en la cancha deseada</div>
+  </div>
+  <div id="proContent" style="display:none">
+    <!-- Top bar -->
+    <div class="pv-top">
       <div>
-        <div class="court-num">C${court.court_num}</div>
-        <div class="court-name">Cancha ${court.court_num}</div>
+        <div class="pv-title" id="pv-cancha">CANCHA 5 · AI PRO</div>
+        <div class="pv-sub" id="pv-matchid">Partido --</div>
       </div>
-      <div class="badge badge-off" id="badge-${court.court_num}">OFFLINE</div>
+      <div class="pv-gap"></div>
+      <div class="pv-stat"><div class="n vy" id="pv-npl">0</div><div class="l">Jugadores</div></div>
+      <div style="width:1px;background:var(--border);margin:0 8px;align-self:stretch"></div>
+      <div class="pv-stat"><div class="n vo" id="pv-nsh">0</div><div class="l">Golpes</div></div>
+      <div style="width:1px;background:var(--border);margin:0 8px;align-self:stretch"></div>
+      <div class="pv-stat"><div class="n vg" id="pv-dur">0:00</div><div class="l">Duración</div></div>
+      <div style="width:1px;background:var(--border);margin:0 8px;align-self:stretch"></div>
+      <div class="pv-stat"><div class="n vb" id="pv-ral">0</div><div class="l">Rallies</div></div>
     </div>
-    <div class="court-map-wrap" id="map-${court.court_num}">
-      ${makeCourtSVG(court)}
-    </div>
-    <div class="court-footer">
-      <div class="court-players" id="players-${court.court_num}">--</div>
-      <div class="court-status"  id="status-${court.court_num}">--</div>
-      <div class="court-last-shot" id="shot-${court.court_num}"></div>
-    </div>`;
-  return div;
-}
 
-function updateCourtCard(el, court, pro) {
-  const n = court.court_num;
-  const proData = pro[String(n)];
-  const isPro   = proData && proData.n_players !== undefined;
+    <!-- Main 3-col grid -->
+    <div class="pv-grid">
 
-  el.className = 'court-card' +
-    (isPro ? ' pro-active' : court.ai_active ? ' ai-active' : '') +
-    (court.match ? ' match-active' : '');
+      <!-- LEFT: equipo A+B -->
+      <div class="pv-players" id="pv-left"></div>
 
-  const badge = document.getElementById('badge-'+n);
-  if (isPro) {
-    badge.className = 'badge badge-pro'; badge.textContent = '🧠 PRO';
-  } else if (court.match) {
-    badge.className = 'badge badge-match'; badge.textContent = '🎾 PARTIDO';
-  } else if (court.ai_active) {
-    badge.className = 'badge badge-ai'; badge.textContent = 'IA ON';
-  } else {
-    badge.className = 'badge badge-off';
-    badge.textContent = court.cam_status?.includes('vivo') ? 'EN VIVO' : 'OFFLINE';
-  }
-
-  const pl = document.getElementById('players-'+n);
-  const st = document.getElementById('status-'+n);
-  const sh = document.getElementById('shot-'+n);
-
-  if (isPro) {
-    pl.textContent = `👤 ${proData.n_players} jugadores`;
-    pl.style.color = 'var(--yellow)';
-    const last = (proData.recent_shots||[])[0];
-    if (last) {
-      const col = SHOT_COLORS[last.shot_type]||'#fff';
-      sh.innerHTML = `<span style="color:${col}">▶ J-${last.player}: ${last.shot_type.toUpperCase()}</span>`;
-    }
-  } else if (court.ai_active) {
-    pl.textContent = `👤 ${court.players} jugadores`;
-    pl.style.color = court.players >= 2 ? 'var(--text)' : 'var(--muted2)';
-    sh.textContent = '';
-  } else {
-    pl.textContent = 'IA inactiva'; pl.style.color='var(--muted)'; sh.textContent='';
-  }
-  st.textContent = court.cam_status || '--';
-
-  // Redraw SVG map
-  document.getElementById('map-'+n).innerHTML = makeCourtSVG(court, proData);
-}
-
-function makeCourtSVG(court, proData) {
-  // Mini court SVG 180×90
-  const W=180, H=90, px=8, py=6;
-  const cw=W-2*px, ch=H-2*py;
-  let svg = `<svg class="court-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-
-  // Court background
-  svg += `<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="#1a3a2a" rx="2"/>`;
-  // Net line
-  svg += `<line x1="${px}" y1="${py+ch/2}" x2="${px+cw}" y2="${py+ch/2}" stroke="#fff" stroke-width="1.5" stroke-dasharray="4,3"/>`;
-  // Sidelines
-  svg += `<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="none" stroke="#22c55e" stroke-width="1.5"/>`;
-  // Service lines
-  const sl = ch * 0.3;
-  svg += `<line x1="${px}" y1="${py+sl}" x2="${px+cw}" y2="${py+sl}" stroke="#555" stroke-width=".8" stroke-dasharray="3,3"/>`;
-  svg += `<line x1="${px}" y1="${py+ch-sl}" x2="${px+cw}" y2="${py+ch-sl}" stroke="#555" stroke-width=".8" stroke-dasharray="3,3"/>`;
-  // Center vertical
-  svg += `<line x1="${px+cw/2}" y1="${py}" x2="${px+cw/2}" y2="${py+ch}" stroke="#333" stroke-width=".6" stroke-dasharray="3,3"/>`;
-
-  if (proData) {
-    // Shot markers (recent shots, small dots)
-    (proData.recent_shots||[]).slice(0,15).forEach(ev => {
-      if (ev.pos_x == null || ev.pos_y == null) return;
-      const cx = px + (ev.pos_x / 10) * cw;
-      const cy = py + (ev.pos_y / 20) * ch;
-      const col = SHOT_COLORS[ev.shot_type]||'#fff';
-      svg += `<circle cx="${cx}" cy="${cy}" r="3" fill="${col}88" stroke="${col}" stroke-width=".8"/>`;
-    });
-
-    // Live players
-    (proData.players||[]).forEach((p,i) => {
-      if (p.pos_x == null || p.pos_y == null) return;
-      const cx  = px + (p.pos_x / 10) * cw;
-      const cy  = py + (p.pos_y / 20) * ch;
-      const idx = PLAYER_NAMES.indexOf(p.id);
-      const col = PLAYER_COLORS[idx>=0?idx:i] || '#fff';
-      svg += `<circle cx="${cx}" cy="${cy}" r="6" fill="${col}cc" stroke="${col}" stroke-width="1.5"/>`;
-      svg += `<text x="${cx}" y="${cy+4}" font-family="Inter,sans-serif" font-size="7" font-weight="800" fill="#000" text-anchor="middle">${p.id}</text>`;
-    });
-
-  } else if (court.ai_active) {
-    // Heatmap placeholder (dots en zona central si hay jugadores)
-    if (court.players > 0) {
-      const dotsY = [py+ch*0.25, py+ch*0.75];
-      dotsY.forEach(dy => {
-        svg += `<circle cx="${px+cw/2}" cy="${dy}" r="7" fill="#a855f755" stroke="#a855f7" stroke-width="1"/>`;
-        svg += `<circle cx="${px+cw*0.25}" cy="${dy}" r="5" fill="#22c55e55" stroke="#22c55e" stroke-width="1"/>`;
-      });
-    }
-  }
-
-  svg += '</svg>';
-  return svg;
-}
-
-// ── PRO PANEL ─────────────────────────────────────────────────────────────────
-function renderPro(pro, courts) {
-  const container = document.getElementById('proPanelContainer');
-  const empty     = document.getElementById('proEmpty');
-  const proKeys   = Object.keys(pro);
-
-  if (proKeys.length === 0) {
-    container.innerHTML = '';
-    empty.style.display = '';
-    return;
-  }
-  empty.style.display = 'none';
-
-  // Render uno por uno (puede haber varios)
-  container.innerHTML = '';
-  proKeys.forEach(cn => {
-    const proData = pro[cn];
-    const court   = courts.find(c=>String(c.court_num)===String(cn)) || {};
-    container.appendChild(makeProPanel(cn, proData, court));
-  });
-}
-
-function makeProPanel(cn, pd, court) {
-  const div = document.createElement('div');
-  div.className = 'pro-panel visible';
-  div.style.marginBottom = '20px';
-
-  const stats   = pd.match_stats || {};
-  const recent  = pd.recent_shots || [];
-  const players = pd.players || [];
-  const totalS  = stats.total_shots || recent.length;
-  const matchId = pd.match_id;
-
-  // Build player stats from recent shots if no match_stats
-  const playerShotsMap = {};
-  PLAYER_NAMES.forEach(p => { playerShotsMap[p] = {total:0, byType:{}}; });
-  if (stats.players) {
-    Object.entries(stats.players).forEach(([pid, ps]) => {
-      playerShotsMap[pid] = { total: ps.shots, byType: ps.by_type };
-    });
-  } else {
-    recent.forEach(ev => {
-      const p = ev.player;
-      if (!playerShotsMap[p]) playerShotsMap[p] = {total:0, byType:{}};
-      playerShotsMap[p].total++;
-      playerShotsMap[p].byType[ev.shot_type] = (playerShotsMap[p].byType[ev.shot_type]||0)+1;
-    });
-  }
-
-  const maxShots = Math.max(1, ...PLAYER_NAMES.map(p=>playerShotsMap[p]?.total||0));
-
-  div.innerHTML = `
-    <div class="pro-panel-header">
-      <span style="font-size:20px">🧠</span>
-      <h2>AI PRO — Cancha ${cn}</h2>
-      ${matchId ? `<span class="badge badge-pro" style="font-size:11px">Partido #${matchId}</span>` : ''}
-      <span style="font-size:12px;color:var(--muted2);margin-left:8px">${pd.n_players||0} jugadores · ${totalS} golpes</span>
-    </div>
-    <div class="pro-body">
-      <!-- Court map -->
-      <div class="pro-court-col">
-        <div class="pro-court-title">Mapa en tiempo real</div>
-        ${makeProCourtSVG(pd)}
-        <div class="player-legend">
-          ${PLAYER_NAMES.map((p,i)=>`
-            <div class="player-legend-item">
-              <div class="legend-dot" style="background:${PLAYER_COLORS[i]}"></div>
-              <span style="color:${PLAYER_COLORS[i]}">J-${p}</span>
-            </div>`).join('')}
-        </div>
-        <!-- Shot type legend -->
-        <div style="margin-top:12px">
-          <div class="pro-court-title" style="margin-bottom:6px">Tipos de golpe</div>
-          <div class="shot-type-chips" style="gap:4px">
-            ${Object.entries(SHOT_COLORS).map(([t,c])=>`
-              <span class="shot-chip chip-${t}" style="font-size:9px;padding:2px 7px">${t}</span>`).join('')}
+      <!-- CENTER -->
+      <div class="pv-center">
+        <!-- Score band -->
+        <div class="score-band">
+          <div class="team-score">
+            <div class="ts-label">Equipo Azul</div>
+            <div class="ts-name" id="sc-aname">J-A / J-B</div>
+            <div class="ts-score vb" id="sc-a">0</div>
+          </div>
+          <div class="vs-sep">VS</div>
+          <div class="team-score">
+            <div class="ts-label">Equipo Rojo</div>
+            <div class="ts-name" id="sc-bname">J-C / J-D</div>
+            <div class="ts-score vr" id="sc-b">0</div>
           </div>
         </div>
-      </div>
 
-      <!-- Timeline -->
-      <div class="pro-timeline-col">
-        <div class="pro-timeline-title">Timeline de golpes</div>
-        <div class="timeline-list">
-          ${recent.length === 0
-            ? '<div style="color:var(--muted2);font-size:12px;padding:20px">Sin golpes detectados todavía...</div>'
-            : recent.map(ev => {
-                const ts  = ev.ts ? ev.ts.slice(11,19) : '--';
-                const col = SHOT_COLORS[ev.shot_type]||'#fff';
-                const idx = PLAYER_NAMES.indexOf(ev.player);
-                const pcol= PLAYER_COLORS[idx>=0?idx:0]||'#fff';
-                const zone = getZone(ev.pos_y);
-                const conf = ev.confidence ? Math.round(ev.confidence*100)+'%' : '';
-                return `<div class="timeline-row" style="border-left-color:${col}">
-                  <span class="tl-time">${ts}</span>
-                  <span class="tl-player" style="color:${pcol}">J-${ev.player}</span>
-                  <span class="tl-type" style="color:${col}">${ev.shot_type.toUpperCase()}</span>
-                  <span class="tl-zone">${zone}</span>
-                  <span class="tl-conf">${conf}</span>
-                </div>`;
-              }).join('')
-          }
+        <!-- Big court -->
+        <div class="court-wrap">
+          <div class="court-title">🎾 MAPA EN TIEMPO REAL</div>
+          <svg id="bigCourt" class="big-court-svg" viewBox="0 0 320 520" xmlns="http://www.w3.org/2000/svg">
+            <!-- filled in by JS -->
+          </svg>
+        </div>
+
+        <!-- Rally live -->
+        <div class="rally-panel">
+          <div class="rp-hdr">
+            <span class="rp-title">Rally actual</span>
+            <span class="rp-live" id="rly-live" style="display:none">● EN CURSO</span>
+          </div>
+          <div class="rp-stats">
+            <div class="rp-stat"><div class="n vo" id="rly-shots">0</div><div class="l">Golpes</div></div>
+            <div class="rp-stat"><div class="n vy" id="rly-dur">0s</div><div class="l">Duración</div></div>
+            <div class="rp-stat"><div class="n vg" id="rly-spd">0.0</div><div class="l">Vel m/s</div></div>
+            <div class="rp-stat"><div class="n vb" id="rly-int">--</div><div class="l">Intensidad</div></div>
+          </div>
+          <div class="intens">
+            <div class="intens-lbl">Intensidad del rally</div>
+            <div class="intens-bar"><div class="intens-fill" id="rly-fill" style="width:0%"></div></div>
+          </div>
+          <div class="shot-chips" id="rly-chips"></div>
+        </div>
+
+        <!-- MVP -->
+        <div class="mvp-card" id="mvpCard" style="display:none">
+          <div class="mvp-star">⭐</div>
+          <div>
+            <div class="mvp-label">MVP del partido</div>
+            <div class="mvp-name" id="mvp-name">--</div>
+            <div class="mvp-desc" id="mvp-desc">--</div>
+          </div>
+          <div class="mvp-score">
+            <div class="n" id="mvp-score">9.0</div>
+            <div class="l">/10</div>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="tl-wrap">
+          <div class="tl-hdr">
+            <span>⚡ Timeline de golpes</span>
+            <span id="tl-count" style="margin-left:auto;color:var(--yellow)">0 golpes</span>
+          </div>
+          <div class="tl-list" id="tlList"></div>
         </div>
       </div>
 
-      <!-- Player stats -->
-      <div class="pro-stats-col">
-        <div class="pro-stats-title">Stats por jugador</div>
-        ${PLAYER_NAMES.map((pid,i) => {
-          const ps  = playerShotsMap[pid]||{total:0,byType:{}};
-          const col = PLAYER_COLORS[i];
-          const pct = maxShots > 0 ? Math.round(ps.total/maxShots*100) : 0;
-          const byTypeHtml = Object.entries(SHOT_COLORS).map(([st,sc])=>{
-            const cnt = ps.byType[st]||0;
-            const bpct = ps.total > 0 ? Math.round(cnt/ps.total*100) : 0;
-            return `<div class="ps-bar-row">
-              <span class="ps-bar-label">${st}</span>
-              <div class="ps-bar-track">
-                <div class="ps-bar-fill" style="width:${bpct}%;background:${sc}"></div>
-              </div>
-              <span class="ps-bar-count">${cnt}</span>
-            </div>`;
-          }).join('');
-
-          return `<div class="player-stat-card" style="border-left-color:${col}">
-            <div class="ps-header">
-              <span class="ps-name" style="color:${col}">Jugador ${pid}</span>
-              <span class="ps-total">${ps.total} golpe${ps.total!==1?'s':''}</span>
-            </div>
-            <div class="ps-bars">${byTypeHtml}</div>
-          </div>`;
-        }).join('')}
+      <!-- RIGHT: equipo C+D + heatmaps -->
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="pv-players" id="pv-right"></div>
+        <div class="hm-grid" id="hmGrid"></div>
       </div>
-    </div>`;
-  return div;
-}
 
-function makeProCourtSVG(pd) {
-  const W=200, H=340, px=12, py=10;
-  const cw=W-2*px, ch=H-2*py;
-  let svg = `<svg class="pro-court-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+    </div>
+  </div>
+</div>
 
-  // Background
-  svg += `<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="#132b1e" rx="3"/>`;
-  // Outline
-  svg += `<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="none" stroke="#22c55e" stroke-width="2"/>`;
-  // Net
-  svg += `<line x1="${px}" y1="${py+ch/2}" x2="${px+cw}" y2="${py+ch/2}" stroke="#fff" stroke-width="2" stroke-dasharray="6,4"/>`;
-  // Service lines
-  const sl = ch*0.3;
-  svg += `<line x1="${px}" y1="${py+sl}" x2="${px+cw}" y2="${py+sl}" stroke="#444" stroke-width="1" stroke-dasharray="4,4"/>`;
-  svg += `<line x1="${px}" y1="${py+ch-sl}" x2="${px+cw}" y2="${py+ch-sl}" stroke="#444" stroke-width="1" stroke-dasharray="4,4"/>`;
-  // Center
-  svg += `<line x1="${px+cw/2}" y1="${py}" x2="${px+cw/2}" y2="${py+ch}" stroke="#2a2a2a" stroke-width=".8"/>`;
+<!-- ══════════ TAB: HISTORIAL ══════════ -->
+<div id="v-hist" style="display:none">
+  <div class="hist-list" id="histList">
+    <div style="color:var(--muted2);font-size:13px;padding:40px;text-align:center">
+      Los partidos guardados aparecerán aquí
+    </div>
+  </div>
+</div>
 
-  // Labels
-  svg += `<text x="${px+cw/2}" y="${py-3}" font-family="Inter" font-size="7" fill="#555" text-anchor="middle">FONDO</text>`;
-  svg += `<text x="${px+cw/2}" y="${py+ch+9}" font-family="Inter" font-size="7" fill="#555" text-anchor="middle">FONDO</text>`;
-  svg += `<text x="${px-8}" y="${py+ch/2+3}" font-family="Inter" font-size="7" fill="#888" text-anchor="middle" transform="rotate(-90,${px-8},${py+ch/2})">RED</text>`;
+</div><!-- /main -->
 
-  // Golpes recientes (trail)
-  (pd.recent_shots||[]).slice(0,20).forEach((ev,idx) => {
-    if (ev.pos_x==null||ev.pos_y==null) return;
-    const cx  = px + (ev.pos_x/10)*cw;
-    const cy  = py + (ev.pos_y/20)*ch;
-    const col = SHOT_COLORS[ev.shot_type]||'#fff';
-    const op  = Math.max(0.2, 1 - idx*0.04);
-    const r   = 4;
-    svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" opacity="${op.toFixed(2)}"/>`;
-    // Tipo abreviado
-    const abbr = {smash:'SM',volea:'VO',globo:'GL',drive:'DR','revés':'RE',saque:'SQ'}[ev.shot_type]||'?';
-    if (idx < 5) svg += `<text x="${cx+6}" y="${cy+3}" font-family="Inter" font-size="6" fill="${col}" opacity="${op.toFixed(2)}">${abbr}</text>`;
+<script>
+// ─── Config ──────────────────────────────────────────────────────
+const API  = 'https://api.picalereplay.com/api/v1/edge/ai-status?club=somos_padel';
+const KEY  = '42761b9c01d0658610719edcca0146b3679e6443667f9857';
+const POLL = 5000;
+
+const SCOL = {smash:'#f03a3a',volea:'#ff7c2a',globo:'#3a8fff',drive:'#1fcf5e','revés':'#b060f8',saque:'#d4f000'};
+const PCOL = ['#d4f000','#1fcf5e','#3a8fff','#ff7c2a']; // A B C D
+const PNAM = ['A','B','C','D'];
+const PSID = ['Lado Izquierdo','Lado Derecho','Lado Izquierdo','Lado Derecho'];
+
+// ─── State ───────────────────────────────────────────────────────
+let lastData = null, failN = 0, activeTab = 'res';
+let heatmaps = {A:[],B:[],C:[],D:[]};  // acumula posiciones por jugador
+let rallyShots = [], rallyStart = null, totalRallies = 0;
+let matchSeconds = 0, matchTimer = null;
+
+// ─── Tabs ─────────────────────────────────────────────────────────
+function showTab(t) {
+  activeTab = t;
+  ['res','pro','hist'].forEach(v=>{
+    document.getElementById('v-'+v).style.display = v===t?'':'none';
+    document.getElementById('t-'+v).classList.toggle('on',v===t);
   });
-
-  // Jugadores vivos
-  (pd.players||[]).forEach((p,i) => {
-    if (p.pos_x==null||p.pos_y==null) return;
-    const cx  = px + (p.pos_x/10)*cw;
-    const cy  = py + (p.pos_y/20)*ch;
-    const idx = PLAYER_NAMES.indexOf(p.id);
-    const col = PLAYER_COLORS[idx>=0?idx:i]||'#fff';
-    // Glow
-    svg += `<circle cx="${cx}" cy="${cy}" r="12" fill="${col}" opacity=".15"/>`;
-    svg += `<circle cx="${cx}" cy="${cy}" r="8" fill="${col}cc" stroke="${col}" stroke-width="2"/>`;
-    svg += `<text x="${cx}" y="${cy+4}" font-family="Inter" font-size="9" font-weight="800" fill="#000" text-anchor="middle">${p.id}</text>`;
-    if (p.last_shot) {
-      const sc = SHOT_COLORS[p.last_shot]||'#fff';
-      svg += `<text x="${cx}" y="${cy-13}" font-family="Inter" font-size="7" font-weight="700" fill="${sc}" text-anchor="middle">${p.last_shot}</text>`;
-    }
-  });
-
-  svg += '</svg>';
-  return svg;
+  if(lastData) renderAll(lastData);
 }
 
-function getZone(y) {
-  if (y==null) return '';
-  if (Math.abs(y-10)<2.5) return 'red';
-  if (y<2.5||y>17.5) return 'fondo';
-  return 'medio';
-}
-
-// ── HISTORY ───────────────────────────────────────────────────────────────────
-function renderHistory(pro) {
-  const list = document.getElementById('historyList');
-  if (!list) return;
-  // Mostrar resumen de datos pro actuales
-  const keys = Object.keys(pro);
-  if (keys.length === 0) return;
-
-  list.innerHTML = '';
-  keys.forEach(cn => {
-    const pd = pro[cn];
-    const stats = pd.match_stats||{};
-    if (!stats.match_id) return;
-    const div = document.createElement('div');
-    div.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px';
-    div.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div>
-          <span style="font-weight:800;font-size:15px;color:var(--yellow)">Cancha ${cn}</span>
-          <span style="font-size:12px;color:var(--muted2);margin-left:10px">Partido #${stats.match_id}</span>
-        </div>
-        <span style="font-size:13px;font-weight:700;color:var(--purple2)">${stats.total_shots||0} golpes</span>
-      </div>
-      <div style="font-size:11px;color:var(--muted2)">Inicio: ${stats.started||'--'}</div>`;
-    list.appendChild(div);
-  });
-}
-
-// ── Court selection ───────────────────────────────────────────────────────────
-function selectCourt(n) {
-  // Al hacer click en una cancha, ir a tab PRO si tiene pro data
-  const d = data;
-  if (d && d.pro && d.pro[String(n)]) {
-    showTab('pro');
+// ─── Fetch ────────────────────────────────────────────────────────
+async function fetchData(){
+  try{
+    const r = await fetch(API,{headers:{'x-edge-api-key':KEY},cache:'no-store'});
+    if(!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    lastData = d; failN = 0;
+    document.getElementById('offline').style.display='none';
+    setConn(true, d.timestamp);
+    renderAll(d);
+  }catch(e){
+    failN++;
+    if(failN>=2){ document.getElementById('offline').style.display=''; setConn(false); }
   }
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+function setConn(ok,ts){
+  const dot = document.getElementById('connDot');
+  const txt = document.getElementById('connTxt');
+  dot.className = ok ? 'dot dot-g' : 'dot dot-r';
+  txt.textContent = ok ? 'Online · '+(ts||'').slice(11,19) : 'Sin conexión';
+}
+
+// ─── Render all ───────────────────────────────────────────────────
+function renderAll(d){
+  const courts = d.courts||[];
+  const pro    = d.pro||{};
+  const aiN    = courts.filter(c=>c.ai_active).length;
+  const aiDot  = document.getElementById('aiDot');
+  aiDot.className = aiN>0 ? 'dot dot-y' : 'dot dot-off';
+  document.getElementById('aiTxt').textContent = aiN>0 ? `IA: ${aiN} canchas` : 'IA: inactivo';
+
+  if(activeTab==='res')  renderOverview(courts,pro);
+  if(activeTab==='pro')  renderPro(pro,courts);
+  if(activeTab==='hist') renderHist(pro);
+}
+
+// ─── OVERVIEW ─────────────────────────────────────────────────────
+function renderOverview(courts, pro){
+  let totalPl=0, totalSh=0, totalMt=0, totalInt=0, intN=0;
+  courts.forEach(c=>{ totalPl+=c.players||0; if(c.match) totalMt++; });
+  Object.values(pro).forEach(pd=>{
+    totalSh += (pd.recent_shots||[]).length;
+    if(pd.rally_intensity){ totalInt+=pd.rally_intensity; intN++; }
+  });
+  document.getElementById('s-ai').textContent = courts.filter(c=>c.ai_active).length;
+  document.getElementById('s-pl').textContent = totalPl;
+  document.getElementById('s-mt').textContent = totalMt;
+  document.getElementById('s-sh').textContent = totalSh;
+  document.getElementById('s-int').textContent = intN ? Math.round(totalInt/intN*10)/10 : '--';
+
+  const grid = document.getElementById('cgrid');
+  if(grid.children.length !== courts.length){
+    grid.innerHTML='';
+    courts.forEach(c=>grid.appendChild(mkCourtCard(c)));
+  }
+  courts.forEach((c,i)=>updateCourtCard(grid.children[i],c,pro));
+}
+
+function mkCourtCard(c){
+  const d=document.createElement('div');
+  d.className='ccard'; d.dataset.c=c.court_num;
+  d.onclick=()=>{ if(lastData&&lastData.pro&&lastData.pro[c.court_num]){ showTab('pro'); } };
+  d.innerHTML=`
+    <div class="chdr">
+      <div><div class="cnum">C${c.court_num}</div><div class="cnm">Cancha ${c.court_num}</div></div>
+      <div class="badge b-off" id="bd-${c.court_num}">OFFLINE</div>
+    </div>
+    <div class="cmap" id="mp-${c.court_num}">${mkMiniSVG(c,null)}</div>
+    <div class="cftr">
+      <div class="cpl" id="cp-${c.court_num}">--</div>
+      <div class="cst" id="cs-${c.court_num}">--</div>
+      <div class="cshot" id="csh-${c.court_num}"></div>
+    </div>`;
+  return d;
+}
+
+function updateCourtCard(el,c,pro){
+  const n=c.court_num, pd=pro[String(n)];
+  const isPro=!!(pd&&pd.n_players!==undefined);
+  el.className='ccard'+(isPro?' pro':c.ai_active?' aion':c.match?' match':'');
+  const bd=document.getElementById('bd-'+n);
+  if(isPro){bd.className='badge b-pro';bd.textContent='🧠 PRO';}
+  else if(c.match){bd.className='badge b-match';bd.textContent='🎾 PARTIDO';}
+  else if(c.ai_active){bd.className='badge b-ai';bd.textContent='IA ON';}
+  else{bd.className='badge b-off';bd.textContent=c.cam_status?.includes('vivo')?'EN VIVO':'OFFLINE';}
+  document.getElementById('mp-'+n).innerHTML=mkMiniSVG(c,pd);
+  const cp=document.getElementById('cp-'+n);
+  const last=(pd?.recent_shots||[])[0];
+  if(isPro){
+    cp.textContent=`👤 ${pd.n_players} jugadores`;
+    cp.style.color='var(--yellow)';
+    if(last){
+      const col=SCOL[last.shot_type]||'#fff';
+      document.getElementById('csh-'+n).innerHTML=`<span style="color:${col}">▶ J-${last.player}: ${last.shot_type.toUpperCase()}</span>`;
+    }
+  } else {
+    cp.textContent=c.ai_active?`👤 ${c.players} jugadores`:'IA inactiva';
+    cp.style.color=c.ai_active?'var(--text)':'var(--muted)';
+    document.getElementById('csh-'+n).textContent='';
+  }
+  document.getElementById('cs-'+n).textContent=c.cam_status||'--';
+}
+
+function mkMiniSVG(c,pd){
+  const W=180,H=110,px=8,py=6,cw=W-2*px,ch=H-2*py;
+  let s=`<svg class="csvg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  s+=`<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="#0a1f0f" rx="3"/>`;
+  s+=`<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="none" stroke="#1aaa4a" stroke-width="1.5"/>`;
+  s+=`<line x1="${px}" y1="${py+ch/2}" x2="${px+cw}" y2="${py+ch/2}" stroke="#fff" stroke-width="1.5" stroke-dasharray="5,3"/>`;
+  const sl=ch*.3;
+  s+=`<line x1="${px}" y1="${py+sl}" x2="${px+cw}" y2="${py+sl}" stroke="#333" stroke-width=".7" stroke-dasharray="3,3"/>`;
+  s+=`<line x1="${px}" y1="${py+ch-sl}" x2="${px+cw}" y2="${py+ch-sl}" stroke="#333" stroke-width=".7" stroke-dasharray="3,3"/>`;
+  s+=`<line x1="${px+cw/2}" y1="${py}" x2="${px+cw/2}" y2="${py+ch}" stroke="#222" stroke-width=".6" stroke-dasharray="3,3"/>`;
+
+  if(pd){
+    // heatmap acumulado suave
+    (pd.positions||[]).slice(-60).forEach(pos=>{
+      if(pos.x==null) return;
+      const idx=PNAM.indexOf(pos.id); const col=PCOL[idx>=0?idx:0];
+      const cx=px+(pos.x/10)*cw, cy=py+(pos.y/20)*ch;
+      s+=`<circle cx="${cx}" cy="${cy}" r="4" fill="${col}" opacity=".18"/>`;
+    });
+    // shot dots
+    (pd.recent_shots||[]).slice(0,10).forEach((ev,i)=>{
+      if(ev.pos_x==null) return;
+      const cx=px+(ev.pos_x/10)*cw, cy=py+(ev.pos_y/20)*ch;
+      const col=SCOL[ev.shot_type]||'#fff';
+      s+=`<circle cx="${cx}" cy="${cy}" r="3.5" fill="${col}" opacity="${Math.max(.25,1-i*.07)}"/>`;
+    });
+    // live players
+    (pd.players||[]).forEach((p,i)=>{
+      if(p.pos_x==null) return;
+      const cx=px+(p.pos_x/10)*cw, cy=py+(p.pos_y/20)*ch;
+      const col=PCOL[PNAM.indexOf(p.id)>=0?PNAM.indexOf(p.id):i]||'#fff';
+      s+=`<circle cx="${cx}" cy="${cy}" r="7" fill="${col}cc" stroke="${col}" stroke-width="1.5"/>`;
+      s+=`<text x="${cx}" y="${cy+3.5}" font-family="Inter,sans-serif" font-size="7" font-weight="800" fill="#000" text-anchor="middle">${p.id}</text>`;
+    });
+  } else if(c.ai_active && c.players>0){
+    [.25,.75].forEach(fy=>[.3,.7].forEach(fx=>{
+      s+=`<circle cx="${px+cw*fx}" cy="${py+ch*fy}" r="6" fill="#b060f8" opacity=".25"/>`;
+    }));
+  }
+  s+='</svg>'; return s;
+}
+
+// ─── PRO BROADCAST ────────────────────────────────────────────────
+function renderPro(pro, courts){
+  const keys=Object.keys(pro);
+  const empty=document.getElementById('proEmpty');
+  const cont =document.getElementById('proContent');
+  if(keys.length===0){ empty.style.display=''; cont.style.display='none'; return; }
+  empty.style.display='none'; cont.style.display='';
+
+  // tomar el primer pro (o el que tenga más datos)
+  const cn = keys.reduce((best,k)=>{
+    const n=(pro[k].recent_shots||[]).length;
+    return (!best||n>(pro[best].recent_shots||[]).length)?k:best;
+  }, null);
+  const pd = pro[cn];
+
+  // header
+  document.getElementById('pv-cancha').textContent=`CANCHA ${cn} · AI PRO`;
+  document.getElementById('pv-matchid').textContent=pd.match_id?`Partido #${pd.match_id}`:'Sin partido';
+  document.getElementById('pv-npl').textContent=pd.n_players||0;
+  const shots=pd.recent_shots||[];
+  document.getElementById('pv-nsh').textContent=shots.length;
+  document.getElementById('pv-ral').textContent=pd.rally_count||totalRallies;
+
+  // Acumular heatmap
+  (pd.players||[]).forEach(p=>{ if(p.pos_x!=null){ if(!heatmaps[p.id]) heatmaps[p.id]=[]; heatmaps[p.id].push([p.pos_x,p.pos_y]); if(heatmaps[p.id].length>200) heatmaps[p.id].shift(); } });
+
+  // timer
+  if(!matchTimer && pd.match_id){
+    matchTimer=setInterval(()=>{ matchSeconds++; document.getElementById('pv-dur').textContent=fmt(matchSeconds); },1000);
+  }
+
+  // player panels
+  const stats = pd.match_stats||{};
+  const pmap  = {};
+  PNAM.forEach(p=>{ pmap[p]={total:0,byType:{}}; });
+  if(stats.players){ Object.entries(stats.players).forEach(([pid,ps])=>{ pmap[pid]={total:ps.shots||0,byType:ps.by_type||{}}; }); }
+  else { shots.forEach(ev=>{ if(!pmap[ev.player]) pmap[ev.player]={total:0,byType:{}}; pmap[ev.player].total++; pmap[ev.player].byType[ev.shot_type]=(pmap[ev.player].byType[ev.shot_type]||0)+1; }); }
+
+  const maxSh=Math.max(1,...PNAM.map(p=>pmap[p]?.total||0));
+  const liveP=pd.players||[];
+
+  document.getElementById('pv-left').innerHTML  = mkPlayerPanel('A',pmap,liveP,maxSh)+mkPlayerPanel('B',pmap,liveP,maxSh);
+  document.getElementById('pv-right').innerHTML = mkPlayerPanel('C',pmap,liveP,maxSh)+mkPlayerPanel('D',pmap,liveP,maxSh);
+
+  // Score (naive: shots per team)
+  const teamA=(pmap['A'].total||0)+(pmap['B'].total||0);
+  const teamB=(pmap['C'].total||0)+(pmap['D'].total||0);
+  document.getElementById('sc-a').textContent=teamA;
+  document.getElementById('sc-b').textContent=teamB;
+
+  // Big court
+  drawBigCourt(pd);
+
+  // Rally
+  const rly=shots.slice(0,8);
+  const rlyDur=rly.length>1?Math.round((new Date(rly[0].ts)-new Date(rly[rly.length-1].ts))/1000):0;
+  const rlySpd=rly.reduce((s,e)=>s+(e.speed_m||0),0)/(rly.length||1);
+  const intPct=Math.min(100,Math.round((rly.length/10)*100));
+  document.getElementById('rly-shots').textContent=rly.length;
+  document.getElementById('rly-dur').textContent=Math.abs(rlyDur)+'s';
+  document.getElementById('rly-spd').textContent=(rlySpd).toFixed(1);
+  const intLbl=['Baja','Media','Alta','Máxima'][Math.floor(intPct/26)]||'Máxima';
+  document.getElementById('rly-int').textContent=intLbl;
+  document.getElementById('rly-fill').style.width=intPct+'%';
+  document.getElementById('rly-live').style.display=rly.length>0?'':'none';
+  document.getElementById('rly-chips').innerHTML=rly.map(e=>`<span class="sc sc-${e.shot_type}">${e.shot_type}</span>`).join('');
+
+  // MVP
+  const mvpPid=PNAM.reduce((b,p)=>((pmap[p]?.total||0)>(pmap[b]?.total||0)?p:b),'A');
+  const mvpPt=pmap[mvpPid]?.total||0;
+  if(mvpPt>0){
+    document.getElementById('mvpCard').style.display='flex';
+    document.getElementById('mvp-name').textContent=`Jugador ${mvpPid}`;
+    const topShot=Object.entries(pmap[mvpPid]?.byType||{}).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('mvp-desc').textContent=topShot?`${topShot[1]} ${topShot[0]}s`:'';
+    const sc=Math.min(10,(mvpPt/Math.max(1,shots.length)*10+5)).toFixed(1);
+    document.getElementById('mvp-score').textContent=sc;
+  }
+
+  // Timeline
+  document.getElementById('tl-count').textContent=shots.length+' golpes';
+  document.getElementById('tlList').innerHTML=shots.slice(0,40).map(ev=>{
+    const ts=ev.ts?ev.ts.slice(11,19):'--';
+    const col=SCOL[ev.shot_type]||'#fff';
+    const idx=PNAM.indexOf(ev.player); const pcol=PCOL[idx>=0?idx:0]||'#fff';
+    const zone=getZone(ev.pos_y);
+    const spd=ev.speed_m?ev.speed_m.toFixed(1)+' m/s':'';
+    const clip=ev.clip_path?`<a class="tl-clip" href="#">▶ CLIP</a>`:'';
+    return `<div class="tl-row" style="border-left-color:${col}">
+      <span class="tl-time">${ts}</span>
+      <span class="tl-pid" style="color:${pcol}">J-${ev.player}</span>
+      <span class="tl-type" style="color:${col}">${ev.shot_type.toUpperCase()}</span>
+      <span class="tl-zone">${zone}</span>
+      <span class="tl-spd">${spd}</span>
+      ${clip}
+    </div>`;
+  }).join('');
+
+  // Heatmaps
+  document.getElementById('hmGrid').innerHTML=PNAM.map((p,i)=>mkHeatmapCard(p,i,pmap[p],heatmaps[p]||[])).join('');
+}
+
+function mkPlayerPanel(pid,pmap,liveP,maxSh){
+  const ps=pmap[pid]||{total:0,byType:{}};
+  const i=PNAM.indexOf(pid); const col=PCOL[i];
+  const lp=liveP.find(p=>p.id===pid);
+  const pct=maxSh>0?Math.round(ps.total/maxSh*100):0;
+  const bars=Object.entries(SCOL).map(([st,sc])=>{
+    const cnt=ps.byType[st]||0;
+    const bp=ps.total>0?Math.round(cnt/ps.total*100):0;
+    return `<div class="pbl-row"><span class="pbl-lbl">${st.slice(0,3)}</span>
+      <div class="pbl-track"><div class="pbl-fill" style="width:${bp}%;background:${sc}"></div></div>
+      <span class="pbl-n">${cnt}</span></div>`;
+  }).join('');
+  const lastShot=lp?.last_shot||'';
+  const lsCol=SCOL[lastShot]||'transparent';
+  return `<div class="ppl" style="border-left-color:${col}">
+    <div class="ppl-hdr">
+      <div>
+        <div class="ppl-id" style="color:${col}">J-${pid}</div>
+        <div class="ppl-side">${PSID[i]}</div>
+        ${lastShot?`<div style="font-size:9px;font-weight:800;color:${lsCol};margin-top:2px">↳ ${lastShot.toUpperCase()}</div>`:''}
+      </div>
+      <div class="ppl-shots" style="color:${col}">${ps.total}</div>
+    </div>
+    <div class="ppl-bars">${bars}</div>
+  </div>`;
+}
+
+function mkHeatmapCard(pid,i,ps,positions){
+  const col=PCOL[i];
+  const W=120,H=160,px=6,py=5,cw=W-2*px,ch=H-2*py;
+  let s=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">`;
+  s+=`<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="#0a1f0f" rx="2"/>`;
+  s+=`<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="none" stroke="#1aaa4a" stroke-width="1"/>`;
+  s+=`<line x1="${px}" y1="${py+ch/2}" x2="${px+cw}" y2="${py+ch/2}" stroke="#ffffff40" stroke-width="1" stroke-dasharray="4,3"/>`;
+
+  // Heatmap dots (gaussiana simple)
+  positions.slice(-100).forEach((pos,idx)=>{
+    const cx=px+(pos[0]/10)*cw, cy=py+(pos[1]/20)*ch;
+    const op=Math.max(.06,0.35-idx*.003);
+    s+=`<circle cx="${cx}" cy="${cy}" r="8" fill="${col}" opacity="${op.toFixed(2)}"/>`;
+  });
+  // Last pos highlight
+  if(positions.length>0){
+    const last=positions[positions.length-1];
+    const cx=px+(last[0]/10)*cw, cy=py+(last[1]/20)*ch;
+    s+=`<circle cx="${cx}" cy="${cy}" r="5" fill="${col}" stroke="#fff" stroke-width="1.5"/>`;
+    s+=`<text x="${cx}" y="${cy+3.5}" font-family="Inter,sans-serif" font-size="6" font-weight="800" fill="#000" text-anchor="middle">${pid}</text>`;
+  }
+  s+='</svg>';
+  return `<div class="hm-card">
+    <div class="hm-hdr">
+      <span class="hm-pid" style="color:${col}">J-${pid}</span>
+      <span class="hm-sub">Zona de juego</span>
+      <span class="hm-total" style="color:${col}">${ps.total}</span>
+    </div>
+    <div class="hm-svg">${s}</div>
+  </div>`;
+}
+
+function drawBigCourt(pd){
+  const W=320,H=520,px=20,py=16,cw=W-2*px,ch=H-2*py;
+  let s='';
+
+  // Fondo gradiente
+  s+=`<defs>
+    <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f3020"/>
+      <stop offset="50%" stop-color="#0a2518"/>
+      <stop offset="100%" stop-color="#0f3020"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  // Court bg
+  s+=`<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="url(#cg)" rx="4"/>`;
+  // Outer border
+  s+=`<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="none" stroke="#1fcf5e" stroke-width="2"/>`;
+  // Service lines (30% from each end)
+  const sl=ch*.28;
+  s+=`<line x1="${px}" y1="${py+sl}" x2="${px+cw}" y2="${py+sl}" stroke="#1fcf5e88" stroke-width="1"/>`;
+  s+=`<line x1="${px}" y1="${py+ch-sl}" x2="${px+cw}" y2="${py+ch-sl}" stroke="#1fcf5e88" stroke-width="1"/>`;
+  // Net
+  s+=`<rect x="${px-3}" y="${py+ch/2-3}" width="${cw+6}" height="6" fill="#111" rx="2"/>`;
+  s+=`<line x1="${px-2}" y1="${py+ch/2}" x2="${px+cw+2}" y2="${py+ch/2}" stroke="#fff" stroke-width="2.5" stroke-dasharray="8,5"/>`;
+  // Center line
+  s+=`<line x1="${px+cw/2}" y1="${py}" x2="${px+cw/2}" y2="${py+ch}" stroke="#1fcf5e44" stroke-width="1" stroke-dasharray="6,4"/>`;
+  // Labels
+  s+=`<text x="${px+cw/2}" y="${py-5}" font-family="Inter" font-size="9" fill="#1fcf5e88" text-anchor="middle" font-weight="700">FONDO</text>`;
+  s+=`<text x="${px+cw/2}" y="${py+ch+12}" font-family="Inter" font-size="9" fill="#1fcf5e88" text-anchor="middle" font-weight="700">FONDO</text>`;
+  s+=`<text x="${px+cw/2}" y="${py+ch/2-7}" font-family="Inter" font-size="8" fill="#ffffff88" text-anchor="middle" font-weight="600">RED</text>`;
+
+  // Corner boxes (zonas de pared)
+  const bw=cw*.15, bh=ch*.08;
+  [[px,py],[px+cw-bw,py],[px,py+ch-bh],[px+cw-bw,py+ch-bh]].forEach(([bx,by])=>{
+    s+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="#ffffff06" stroke="#1fcf5e33" stroke-width="1"/>`;
+  });
+
+  // Shot heatmap trail
+  const shots=pd.recent_shots||[];
+  shots.slice(0,30).forEach((ev,idx)=>{
+    if(ev.pos_x==null) return;
+    const cx=px+(ev.pos_x/10)*cw, cy=py+(ev.pos_y/20)*ch;
+    const col=SCOL[ev.shot_type]||'#fff';
+    const op=Math.max(.12,1-idx*.04);
+    const r=idx===0?9:6;
+    s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" opacity="${op.toFixed(2)}" filter="${idx<3?'url(#glow)':''}"/>`;
+    if(idx===0){
+      const abbr={smash:'SM',volea:'VO',globo:'GL',drive:'DR','revés':'RE',saque:'SQ'}[ev.shot_type]||'';
+      s+=`<text x="${cx}" y="${cy+3.5}" font-family="Inter" font-size="8" font-weight="800" fill="#000" text-anchor="middle">${abbr}</text>`;
+    }
+  });
+
+  // Live players
+  (pd.players||[]).forEach((p,i)=>{
+    if(p.pos_x==null) return;
+    const cx=px+(p.pos_x/10)*cw, cy=py+(p.pos_y/20)*ch;
+    const idx=PNAM.indexOf(p.id); const col=PCOL[idx>=0?idx:i]||'#fff';
+    // glow ring
+    s+=`<circle cx="${cx}" cy="${cy}" r="18" fill="${col}" opacity=".10"/>`;
+    s+=`<circle cx="${cx}" cy="${cy}" r="12" fill="${col}" opacity=".20"/>`;
+    s+=`<circle cx="${cx}" cy="${cy}" r="8" fill="${col}dd" stroke="${col}" stroke-width="2" filter="url(#glow)"/>`;
+    s+=`<text x="${cx}" y="${cy+4}" font-family="Inter,sans-serif" font-size="10" font-weight="900" fill="#000" text-anchor="middle">${p.id}</text>`;
+    // last shot label
+    if(p.last_shot){
+      const sc=SCOL[p.last_shot]||'#fff';
+      s+=`<rect x="${cx-18}" y="${cy-26}" width="36" height="13" rx="3" fill="#000000cc"/>`;
+      s+=`<text x="${cx}" y="${cy-17}" font-family="Inter" font-size="8" font-weight="800" fill="${sc}" text-anchor="middle">${p.last_shot.toUpperCase()}</text>`;
+    }
+    // velocity arrow
+    if(p.vel_x!=null && (Math.abs(p.vel_x)+Math.abs(p.vel_y))>.2){
+      const vx=p.vel_x*12, vy=p.vel_y*12;
+      s+=`<line x1="${cx}" y1="${cy}" x2="${cx+vx}" y2="${cy+vy}" stroke="${col}" stroke-width="1.5" opacity=".6"/>`;
+    }
+  });
+
+  document.getElementById('bigCourt').innerHTML=s;
+}
+
+// ─── HISTORIAL ────────────────────────────────────────────────────
+function renderHist(pro){
+  const list=document.getElementById('histList');
+  const pkeys=Object.keys(pro).filter(k=>pro[k].match_id);
+  if(!pkeys.length){ list.innerHTML='<div style="color:var(--muted2);font-size:13px;padding:40px;text-align:center">Los partidos guardados aparecerán aquí</div>'; return; }
+  list.innerHTML=pkeys.map(cn=>{
+    const pd=pro[cn]; const st=pd.match_stats||{};
+    const shots=(pd.recent_shots||[]).length;
+    const topPid=PNAM.reduce((b,p)=>{
+      const pp=st.players?.[p]?.shots||0, bp=st.players?.[b]?.shots||0;
+      return pp>bp?p:b;
+    },'A');
+    const topCol=PCOL[PNAM.indexOf(topPid)];
+    return `<div class="hist-card">
+      <div class="hc-cancha">C${cn}</div>
+      <div class="hc-info">
+        <div class="hc-mid">Partido #${pd.match_id} · ${shots} golpes</div>
+        <div class="hc-sub">Inicio: ${st.started||'--'} · MVP: <span style="color:${topCol};font-weight:800">J-${topPid}</span></div>
+        <div class="shot-chips" style="margin-top:6px">
+          ${Object.entries(SCOL).map(([t,c])=>{
+            const cnt=st.players?Object.values(st.players).reduce((s,p)=>s+(p.by_type?.[t]||0),0):0;
+            return cnt>0?`<span class="sc sc-${t}">${t}: ${cnt}</span>`:'';
+          }).join('')}
+        </div>
+      </div>
+      <div class="hc-shots" style="color:var(--purple)">${shots}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────
+function getZone(y){ if(y==null)return''; if(Math.abs(y-10)<2.5)return'🔴 Red'; if(y<2.5||y>17.5)return'📍 Fondo'; return'📐 Medio'; }
+function fmt(s){ return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}` }
+
+// ─── Boot ─────────────────────────────────────────────────────────
 fetchData();
 setInterval(fetchData, POLL);
 </script>
