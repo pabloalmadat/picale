@@ -359,7 +359,7 @@ body{
 </div>
 
 <!-- ══════════ TAB: AI PRO ══════════ -->
-<div id="v-pro" class="pro-view">
+<div id="v-pro" style="display:none">
   <!-- selector cancha si hay varias -->
   <div id="proEmpty" style="text-align:center;padding:60px;color:var(--muted2)">
     <div style="font-size:48px;margin-bottom:12px">🧠</div>
@@ -503,6 +503,10 @@ function showTab(t) {
     document.getElementById('t-'+v).classList.toggle('on',v===t);
   });
   if(lastData) renderAll(lastData);
+  else if(t==='pro'){
+    document.getElementById('proEmpty').style.display='';
+    document.getElementById('proContent').style.display='none';
+  }
 }
 
 // ─── Fetch ────────────────────────────────────────────────────────
