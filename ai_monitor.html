@@ -742,7 +742,8 @@ function renderPro(pro, courts){
     const idx=PNAM.indexOf(ev.player); const pcol=PCOL[idx>=0?idx:0]||'#fff';
     const zone=getZone(ev.pos_y);
     const spd=ev.speed_m?ev.speed_m.toFixed(1)+' m/s':'';
-    const clip=ev.clip_path?`<a class="tl-clip" href="#">▶ CLIP</a>`:'';
+    const clipUrl=ev.clip_url||(ev.clip_path&&ev.clip_path.startsWith('http')?ev.clip_path:null);
+    const clip=clipUrl?`<a class="tl-clip" href="${clipUrl}" target="_blank">▶ CLIP</a>`:'';
     return `<div class="tl-row" style="border-left-color:${col}">
       <span class="tl-time">${ts}</span>
       <span class="tl-pid" style="color:${pcol}">J-${ev.player}</span>
