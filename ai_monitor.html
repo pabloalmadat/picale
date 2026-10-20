@@ -786,24 +786,34 @@ function mkPlayerPanel(pid,pmap,liveP,maxSh){
 
 function mkHeatmapCard(pid,i,ps,positions){
   const col=PCOL[i];
-  const W=120,H=160,px=6,py=5,cw=W-2*px,ch=H-2*py;
+  const W=120,H=160;
+  // Trapezoid mini (misma perspectiva que el court grande, escalada)
+  const TL={x:16,y:6}, TR={x:104,y:6}, BR={x:114,y:154}, BL={x:6,y:154};
+  function m2sv(mx,my){
+    const t=my/20;
+    const lx=BL.x+(TL.x-BL.x)*t, rx=BR.x+(TR.x-BR.x)*t;
+    const y=BL.y+(TL.y-BL.y)*t;
+    return {x:lx+(rx-lx)*(mx/10), y};
+  }
   let s=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">`;
-  s+=`<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="#0a1f0f" rx="2"/>`;
-  s+=`<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="none" stroke="#1aaa4a" stroke-width="1"/>`;
-  s+=`<line x1="${px}" y1="${py+ch/2}" x2="${px+cw}" y2="${py+ch/2}" stroke="#ffffff40" stroke-width="1" stroke-dasharray="4,3"/>`;
+  s+=`<polygon points="${TL.x},${TL.y} ${TR.x},${TR.y} ${BR.x},${BR.y} ${BL.x},${BL.y}" fill="#0a1f0f"/>`;
+  s+=`<polygon points="${TL.x},${TL.y} ${TR.x},${TR.y} ${BR.x},${BR.y} ${BL.x},${BL.y}" fill="none" stroke="#1aaa4a" stroke-width="1"/>`;
+  // Red
+  const nl=m2sv(0,10), nr=m2sv(10,10);
+  s+=`<line x1="${nl.x}" y1="${nl.y}" x2="${nr.x}" y2="${nr.y}" stroke="#ffffff40" stroke-width="1" stroke-dasharray="4,3"/>`;
 
-  // Heatmap dots (gaussiana simple)
+  // Heatmap dots
   positions.slice(-100).forEach((pos,idx)=>{
-    const cx=px+(pos[0]/10)*cw, cy=py+(pos[1]/20)*ch;
+    const p=m2sv(pos[0],pos[1]);
     const op=Math.max(.06,0.35-idx*.003);
-    s+=`<circle cx="${cx}" cy="${cy}" r="8" fill="${col}" opacity="${op.toFixed(2)}"/>`;
+    s+=`<circle cx="${p.x}" cy="${p.y}" r="8" fill="${col}" opacity="${op.toFixed(2)}"/>`;
   });
   // Last pos highlight
   if(positions.length>0){
     const last=positions[positions.length-1];
-    const cx=px+(last[0]/10)*cw, cy=py+(last[1]/20)*ch;
-    s+=`<circle cx="${cx}" cy="${cy}" r="5" fill="${col}" stroke="#fff" stroke-width="1.5"/>`;
-    s+=`<text x="${cx}" y="${cy+3.5}" font-family="Inter,sans-serif" font-size="6" font-weight="800" fill="#000" text-anchor="middle">${pid}</text>`;
+    const p=m2sv(last[0],last[1]);
+    s+=`<circle cx="${p.x}" cy="${p.y}" r="5" fill="${col}" stroke="#fff" stroke-width="1.5"/>`;
+    s+=`<text x="${p.x}" y="${p.y+3.5}" font-family="Inter,sans-serif" font-size="6" font-weight="800" fill="#000" text-anchor="middle">${pid}</text>`;
   }
   s+='</svg>';
   return `<div class="hm-card">
@@ -817,79 +827,106 @@ function mkHeatmapCard(pid,i,ps,positions){
 }
 
 function drawBigCourt(pd){
-  const W=320,H=520,px=20,py=16,cw=W-2*px,ch=H-2*py;
-  let s='';
+  // SVG canvas
+  const W=320, H=520;
+  // Cancha trapezoidal — igual perspectiva que la cámara real
+  // Fondo (arriba) más angosto, frente (abajo) más ancho
+  const TL={x:54, y:28};   // top-left  (fondo izq)
+  const TR={x:266,y:28};   // top-right (fondo der)
+  const BR={x:306,y:492};  // bottom-right (frente der)
+  const BL={x:14, y:492};  // bottom-left  (frente izq)
 
-  // Fondo gradiente
+  // Helper: interpola posición métrica → SVG usando perspectiva trapezoidal
+  // mx 0..10 (ancho), my 0..20 (largo: 0=frente, 20=fondo)
+  function m2s(mx, my){
+    const t = my/20; // 0=frente(abajo), 1=fondo(arriba)
+    const lx = BL.x + (TL.x-BL.x)*t;
+    const rx = BR.x + (TR.x-BR.x)*t;
+    const y  = BL.y + (TL.y-BL.y)*t;
+    const x  = lx  + (rx-lx)*(mx/10);
+    return {x,y};
+  }
+
+  let s='';
   s+=`<defs>
     <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0f3020"/>
-      <stop offset="50%" stop-color="#0a2518"/>
-      <stop offset="100%" stop-color="#0f3020"/>
+      <stop offset="0%" stop-color="#0a2010"/>
+      <stop offset="50%" stop-color="#082015"/>
+      <stop offset="100%" stop-color="#0a2010"/>
     </linearGradient>
     <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/>
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <clipPath id="courtClip">
+      <polygon points="${TL.x},${TL.y} ${TR.x},${TR.y} ${BR.x},${BR.y} ${BL.x},${BL.y}"/>
+    </clipPath>
   </defs>`;
 
-  // Court bg
-  s+=`<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="url(#cg)" rx="4"/>`;
-  // Outer border
-  s+=`<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="none" stroke="#1fcf5e" stroke-width="2"/>`;
-  // Service lines (30% from each end)
-  const sl=ch*.28;
-  s+=`<line x1="${px}" y1="${py+sl}" x2="${px+cw}" y2="${py+sl}" stroke="#1fcf5e88" stroke-width="1"/>`;
-  s+=`<line x1="${px}" y1="${py+ch-sl}" x2="${px+cw}" y2="${py+ch-sl}" stroke="#1fcf5e88" stroke-width="1"/>`;
-  // Net
-  s+=`<rect x="${px-3}" y="${py+ch/2-3}" width="${cw+6}" height="6" fill="#111" rx="2"/>`;
-  s+=`<line x1="${px-2}" y1="${py+ch/2}" x2="${px+cw+2}" y2="${py+ch/2}" stroke="#fff" stroke-width="2.5" stroke-dasharray="8,5"/>`;
-  // Center line
-  s+=`<line x1="${px+cw/2}" y1="${py}" x2="${px+cw/2}" y2="${py+ch}" stroke="#1fcf5e44" stroke-width="1" stroke-dasharray="6,4"/>`;
-  // Labels
-  s+=`<text x="${px+cw/2}" y="${py-5}" font-family="Inter" font-size="9" fill="#1fcf5e88" text-anchor="middle" font-weight="700">FONDO</text>`;
-  s+=`<text x="${px+cw/2}" y="${py+ch+12}" font-family="Inter" font-size="9" fill="#1fcf5e88" text-anchor="middle" font-weight="700">FONDO</text>`;
-  s+=`<text x="${px+cw/2}" y="${py+ch/2-7}" font-family="Inter" font-size="8" fill="#ffffff88" text-anchor="middle" font-weight="600">RED</text>`;
+  // Relleno de cancha
+  s+=`<polygon points="${TL.x},${TL.y} ${TR.x},${TR.y} ${BR.x},${BR.y} ${BL.x},${BL.y}" fill="url(#cg)"/>`;
+  // Borde exterior (verde neón)
+  s+=`<polygon points="${TL.x},${TL.y} ${TR.x},${TR.y} ${BR.x},${BR.y} ${BL.x},${BL.y}" fill="none" stroke="#1fcf5e" stroke-width="2.5"/>`;
 
-  // Corner boxes (zonas de pared)
-  const bw=cw*.15, bh=ch*.08;
-  [[px,py],[px+cw-bw,py],[px,py+ch-bh],[px+cw-bw,py+ch-bh]].forEach(([bx,by])=>{
-    s+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="#ffffff06" stroke="#1fcf5e33" stroke-width="1"/>`;
+  // Red (y=10m = mitad)
+  const nl=m2s(0,10), nr=m2s(10,10);
+  s+=`<line x1="${nl.x}" y1="${nl.y}" x2="${nr.x}" y2="${nr.y}" stroke="#fff" stroke-width="2.5" stroke-dasharray="8,5"/>`;
+  s+=`<rect x="${nl.x-2}" y="${nl.y-3}" width="${nr.x-nl.x+4}" height="6" fill="#111" rx="2"/>`;
+  s+=`<line x1="${nl.x}" y1="${nl.y}" x2="${nr.x}" y2="${nr.y}" stroke="#fff" stroke-width="2" stroke-dasharray="8,5"/>`;
+
+  // Líneas de servicio (y=6m y y=14m, o sea 30% desde cada fondo)
+  const sl1l=m2s(0,6), sl1r=m2s(10,6);
+  const sl2l=m2s(0,14), sl2r=m2s(10,14);
+  s+=`<line x1="${sl1l.x}" y1="${sl1l.y}" x2="${sl1r.x}" y2="${sl1r.y}" stroke="#1fcf5e66" stroke-width="1"/>`;
+  s+=`<line x1="${sl2l.x}" y1="${sl2l.y}" x2="${sl2r.x}" y2="${sl2r.y}" stroke="#1fcf5e66" stroke-width="1"/>`;
+
+  // Línea central vertical
+  const ct=m2s(5,0), cb=m2s(5,20);
+  s+=`<line x1="${ct.x}" y1="${ct.y}" x2="${cb.x}" y2="${cb.y}" stroke="#1fcf5e33" stroke-width="1" stroke-dasharray="5,4"/>`;
+
+  // Cajas de esquina (paredes de fondo)
+  const bw=10*.15; // metros
+  [[0,20,bw,20-2.5],[10-bw,20,10,20-2.5],[0,0,bw,2.5],[10-bw,0,10,2.5]].forEach(([x0,y0,x1,y1])=>{
+    const p0=m2s(x0,y0), p1=m2s(x1,y0), p2=m2s(x1,y1), p3=m2s(x0,y1);
+    s+=`<polygon points="${p0.x},${p0.y} ${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}" fill="#ffffff05" stroke="#1fcf5e33" stroke-width="1"/>`;
   });
+
+  // Labels
+  const fondo1=m2s(5,19.2), fondo2=m2s(5,.8), redL=m2s(5,10);
+  s+=`<text x="${fondo1.x}" y="${fondo1.y}" font-family="Inter" font-size="9" fill="#1fcf5e88" text-anchor="middle" font-weight="700">FONDO</text>`;
+  s+=`<text x="${fondo2.x}" y="${fondo2.y+4}" font-family="Inter" font-size="9" fill="#1fcf5e88" text-anchor="middle" font-weight="700">FONDO</text>`;
+  s+=`<text x="${redL.x}" y="${redL.y-5}" font-family="Inter" font-size="8" fill="#ffffff88" text-anchor="middle" font-weight="600">RED</text>`;
 
   // Shot heatmap trail
   const shots=pd.recent_shots||[];
   shots.slice(0,30).forEach((ev,idx)=>{
     if(ev.pos_x==null) return;
-    const cx=px+(ev.pos_x/10)*cw, cy=py+(ev.pos_y/20)*ch;
+    const p=m2s(ev.pos_x, ev.pos_y);
     const col=SCOL[ev.shot_type]||'#fff';
     const op=Math.max(.12,1-idx*.04);
     const r=idx===0?9:6;
-    s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" opacity="${op.toFixed(2)}" filter="${idx<3?'url(#glow)':''}"/>`;
+    s+=`<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${col}" opacity="${op.toFixed(2)}" filter="${idx<3?'url(#glow)':''}"/>`;
     if(idx===0){
       const abbr={smash:'SM',volea:'VO',globo:'GL',drive:'DR','revés':'RE',saque:'SQ'}[ev.shot_type]||'';
-      s+=`<text x="${cx}" y="${cy+3.5}" font-family="Inter" font-size="8" font-weight="800" fill="#000" text-anchor="middle">${abbr}</text>`;
+      s+=`<text x="${p.x}" y="${p.y+3.5}" font-family="Inter" font-size="8" font-weight="800" fill="#000" text-anchor="middle">${abbr}</text>`;
     }
   });
 
   // Live players
   (pd.players||[]).forEach((p,i)=>{
     if(p.pos_x==null) return;
-    const cx=px+(p.pos_x/10)*cw, cy=py+(p.pos_y/20)*ch;
+    const sv=m2s(p.pos_x, p.pos_y);
     const idx=PNAM.indexOf(p.id); const col=PCOL[idx>=0?idx:i]||'#fff';
-    // glow ring
-    s+=`<circle cx="${cx}" cy="${cy}" r="18" fill="${col}" opacity=".10"/>`;
-    s+=`<circle cx="${cx}" cy="${cy}" r="12" fill="${col}" opacity=".20"/>`;
-    s+=`<circle cx="${cx}" cy="${cy}" r="8" fill="${col}dd" stroke="${col}" stroke-width="2" filter="url(#glow)"/>`;
-    s+=`<text x="${cx}" y="${cy+4}" font-family="Inter,sans-serif" font-size="10" font-weight="900" fill="#000" text-anchor="middle">${p.id}</text>`;
-    // last shot label
+    s+=`<circle cx="${sv.x}" cy="${sv.y}" r="18" fill="${col}" opacity=".10"/>`;
+    s+=`<circle cx="${sv.x}" cy="${sv.y}" r="12" fill="${col}" opacity=".20"/>`;
+    s+=`<circle cx="${sv.x}" cy="${sv.y}" r="8" fill="${col}dd" stroke="${col}" stroke-width="2" filter="url(#glow)"/>`;
+    s+=`<text x="${sv.x}" y="${sv.y+4}" font-family="Inter,sans-serif" font-size="10" font-weight="900" fill="#000" text-anchor="middle">${p.id}</text>`;
     if(p.last_shot){
       const sc=SCOL[p.last_shot]||'#fff';
-      s+=`<rect x="${cx-18}" y="${cy-26}" width="36" height="13" rx="3" fill="#000000cc"/>`;
-      s+=`<text x="${cx}" y="${cy-17}" font-family="Inter" font-size="8" font-weight="800" fill="${sc}" text-anchor="middle">${p.last_shot.toUpperCase()}</text>`;
+      s+=`<rect x="${sv.x-18}" y="${sv.y-26}" width="36" height="13" rx="3" fill="#000000cc"/>`;
+      s+=`<text x="${sv.x}" y="${sv.y-17}" font-family="Inter" font-size="8" font-weight="800" fill="${sc}" text-anchor="middle">${p.last_shot.toUpperCase()}</text>`;
     }
-    // velocity arrow
     if(p.vel_x!=null && (Math.abs(p.vel_x)+Math.abs(p.vel_y))>.2){
-      const vx=p.vel_x*12, vy=p.vel_y*12;
-      s+=`<line x1="${cx}" y1="${cy}" x2="${cx+vx}" y2="${cy+vy}" stroke="${col}" stroke-width="1.5" opacity=".6"/>`;
+      const t2=m2s(p.pos_x+p.vel_x*1.5, Math.min(20,Math.max(0,p.pos_y+p.vel_y*1.5)));
+      s+=`<line x1="${sv.x}" y1="${sv.y}" x2="${t2.x}" y2="${t2.y}" stroke="${col}" stroke-width="1.5" opacity=".6"/>`;
     }
   });
 
