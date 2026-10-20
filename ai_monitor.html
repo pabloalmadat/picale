@@ -16,6 +16,7 @@
   --orange:    #f97316;
   --blue:      #3b82f6;
   --purple:    #a855f7;
+  --purple2:   #c084fc;
   --text:      #e2ede2;
   --muted:     #5a6e5a;
   --muted2:    #8a9e8a;
@@ -23,14 +24,9 @@
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg:      #f0f4f0;
-    --surface: #e4eae4;
-    --card:    #ffffff;
-    --border:  #d0d8d0;
-    --border2: #b8c4b8;
-    --text:    #1a2a1a;
-    --muted:   #6a806a;
-    --muted2:  #4a604a;
+    --bg:      #f0f4f0; --surface: #e4eae4; --card: #ffffff;
+    --border:  #d0d8d0; --border2: #b8c4b8;
+    --text:    #1a2a1a; --muted:   #6a806a; --muted2: #4a604a;
     color-scheme: light;
   }
 }
@@ -40,7 +36,7 @@
   color-scheme: dark;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 body {
   background: var(--bg);
@@ -49,503 +45,782 @@ body {
   min-height: 100vh;
   padding-left:  max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-bottom: 32px;
+  padding-bottom: 40px;
 }
 
-/* ── Header ── */
+/* ── Header ─────────────────────────────────────────────────────── */
 .header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 0 max(24px, env(safe-area-inset-left, 0px));
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  height: 64px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  display: flex; align-items: center; gap: 16px;
+  height: 60px; position: sticky; top: 0; z-index: 100;
 }
-.logo {
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: var(--yellow);
-  letter-spacing: -1px;
+.header-logo { font-size: 22px; font-weight: 900; color: var(--yellow); letter-spacing: -0.5px; }
+.header-sub  { font-size: 13px; color: var(--muted2); }
+.header-gap  { flex: 1; }
+.status-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 12px; font-weight: 600;
+  background: var(--card); border: 1px solid var(--border2);
 }
-.logo-sub {
-  font-size: 0.85rem;
-  color: var(--muted2);
-  font-weight: 500;
-}
-.header-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.dot-live {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--green);
-  animation: pulse 1.6s ease-in-out infinite;
-  flex-shrink: 0;
-}
-@keyframes pulse {
-  0%,100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: 0.5; transform: scale(0.8); }
-}
-.dot-off { background: var(--muted); animation: none; }
-.status-text {
-  font-size: 0.8rem;
-  color: var(--muted2);
-  font-family: 'JetBrains Mono', monospace;
-}
-.last-update {
-  font-size: 0.75rem;
-  color: var(--muted);
-  font-family: 'JetBrains Mono', monospace;
-}
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-green  { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+.dot-red    { background: var(--red); }
+.dot-yellow { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
 
-/* ── Summary bar ── */
-.summary-bar {
+/* ── Navigation tabs ─────────────────────────────────────────────── */
+.nav-tabs {
+  display: flex; gap: 0;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: 12px max(24px, env(safe-area-inset-left, 0px));
-  display: flex;
-  gap: 32px;
-  flex-wrap: wrap;
+  padding: 0 max(24px, env(safe-area-inset-left, 0px));
+  overflow-x: auto;
 }
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.nav-tab {
+  padding: 12px 20px; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: var(--muted2);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap; transition: all .2s;
+  background: none; border-top: none; border-left: none; border-right: none;
+  font-family: inherit;
 }
-.stat-value {
-  font-size: 1.6rem;
-  font-weight: 900;
-  line-height: 1;
-}
-.stat-label {
-  font-size: 0.72rem;
-  color: var(--muted2);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600;
-}
-.v-green  { color: var(--green); }
-.v-orange { color: var(--orange); }
-.v-yellow { color: var(--yellow); }
-.v-blue   { color: var(--blue); }
-.v-muted  { color: var(--muted2); }
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--yellow); border-bottom-color: var(--yellow); }
 
-/* ── Grid de canchas ── */
+/* ── Main layout ─────────────────────────────────────────────────── */
+.main { padding: 20px max(0px, calc(max(16px,env(safe-area-inset-left,0px)) - 16px)); }
+
+/* ── Summary bar ─────────────────────────────────────────────────── */
+.summary-bar {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  margin-bottom: 20px;
+}
+.summary-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 20px;
+}
+.summary-card .label { font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--muted2); margin-bottom: 6px; }
+.summary-card .value { font-size: 32px; font-weight: 900; line-height: 1; }
+.summary-card .sub   { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.val-green  { color: var(--green); }
+.val-yellow { color: var(--yellow); }
+.val-orange { color: var(--orange); }
+.val-blue   { color: var(--blue); }
+.val-purple { color: var(--purple2); }
+
+/* ── Court grid ──────────────────────────────────────────────────── */
 .courts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
-  padding: 20px 0;
-  max-width: 1400px;
-  margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
 }
-
 .court-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; transition: all .3s;
+  cursor: pointer;
 }
-.court-card.active {
-  border-color: var(--purple);
-  box-shadow: 0 0 0 1px var(--purple), 0 4px 24px rgba(168,85,247,0.15);
-}
-.court-card.match {
-  border-color: var(--green);
-  box-shadow: 0 0 0 1px var(--green), 0 4px 24px rgba(34,197,94,0.12);
-}
+.court-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+.court-card.ai-active { border-color: var(--purple); box-shadow: 0 0 20px #a855f722; }
+.court-card.match-active { border-color: var(--green); box-shadow: 0 0 20px #22c55e22; }
+.court-card.pro-active   { border-color: var(--yellow); box-shadow: 0 0 24px #cef00033; }
 
 .court-header {
-  padding: 12px 16px 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
 }
-.court-num {
-  font-size: 1.1rem;
-  font-weight: 900;
-  color: var(--yellow);
-  letter-spacing: -0.5px;
+.court-num  { font-size: 18px; font-weight: 900; color: var(--yellow); }
+.court-name { font-size: 11px; color: var(--muted2); }
+.badge {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 20px; letter-spacing: .5px;
 }
-.court-name {
-  font-size: 0.78rem;
-  color: var(--muted2);
-  font-weight: 500;
+.badge-ai     { background: #a855f722; color: var(--purple2); border: 1px solid #a855f744; }
+.badge-match  { background: #22c55e22; color: var(--green); border: 1px solid #22c55e44; }
+.badge-pro    { background: #cef00022; color: var(--yellow); border: 1px solid #cef00044; }
+.badge-off    { background: var(--border); color: var(--muted); }
+
+/* ── Court map (SVG) ─────────────────────────────────────────────── */
+.court-map-wrap { padding: 8px 10px; }
+.court-svg { width: 100%; height: auto; display: block; }
+
+/* ── Court footer ────────────────────────────────────────────────── */
+.court-footer { padding: 8px 14px 12px; }
+.court-players { font-size: 13px; font-weight: 600; color: var(--text); }
+.court-status  { font-size: 11px; color: var(--muted2); margin-top: 2px; }
+.court-last-shot { font-size: 11px; font-weight: 700; margin-top: 4px; }
+
+/* ── PRO Detail panel ────────────────────────────────────────────── */
+.pro-panel {
+  display: none; margin-top: 20px;
+  background: var(--card); border: 1px solid var(--yellow);
+  border-radius: 16px; overflow: hidden;
+  box-shadow: 0 0 40px #cef00011;
 }
-.court-status-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  margin-left: auto;
-  flex-shrink: 0;
+.pro-panel.visible { display: block; }
+.pro-panel-header {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 14px 20px; display: flex; align-items: center; gap: 12px;
 }
-.court-status-label {
-  font-size: 0.72rem;
-  color: var(--muted2);
-  font-weight: 500;
+.pro-panel-header h2 { font-size: 16px; font-weight: 800; color: var(--yellow); }
+.pro-close {
+  margin-left: auto; cursor: pointer;
+  background: none; border: none; color: var(--muted2);
+  font-size: 20px; font-family: inherit; padding: 2px 8px; border-radius: 6px;
+}
+.pro-close:hover { background: var(--border); color: var(--text); }
+
+.pro-body {
+  display: grid; grid-template-columns: 240px 1fr 220px; gap: 0;
 }
 
-/* ── Heatmap placeholder ── */
-.heatmap-area {
-  width: 100%;
-  aspect-ratio: 16/7;
-  background: #0d1214;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
+/* Court 2D map (Pro) */
+.pro-court-col {
+  border-right: 1px solid var(--border);
+  padding: 16px;
 }
-.heatmap-area canvas {
-  width: 100%; height: 100%;
-  display: block;
-}
-.heatmap-area img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.heatmap-no-data {
-  font-size: 0.78rem;
-  color: var(--muted);
-  font-family: 'JetBrains Mono', monospace;
-}
-/* net line overlay */
-.heatmap-area::after {
-  content: '';
-  position: absolute;
-  top: 50%; left: 0; right: 0;
-  height: 1px;
-  background: rgba(255,255,255,0.2);
-  pointer-events: none;
-}
+.pro-court-title { font-size: 12px; font-weight: 700; color: var(--muted2);
+  text-transform: uppercase; letter-spacing: .7px; margin-bottom: 12px; }
+.pro-court-svg { width: 100%; height: auto; }
+.player-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.player-legend-item { display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
-/* ── Court footer ── */
-.court-footer {
-  padding: 10px 16px 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* Shot timeline */
+.pro-timeline-col { padding: 16px; overflow: hidden; }
+.pro-timeline-title { font-size: 12px; font-weight: 700; color: var(--muted2);
+  text-transform: uppercase; letter-spacing: .7px; margin-bottom: 10px; }
+.shot-type-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.shot-chip {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 20px; letter-spacing: .5px;
 }
-.players-count {
-  font-size: 1.2rem;
-  font-weight: 700;
-}
-.players-icon { font-size: 0.9rem; }
-.match-badge {
-  margin-left: auto;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 20px;
-  background: rgba(34,197,94,0.15);
-  color: var(--green);
-  border: 1px solid rgba(34,197,94,0.3);
-}
-.ai-badge {
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 20px;
-  background: rgba(168,85,247,0.15);
-  color: var(--purple);
-  border: 1px solid rgba(168,85,247,0.3);
-}
-.no-match {
-  margin-left: auto;
-  font-size: 0.7rem;
-  color: var(--muted);
-}
+.chip-smash  { background:#ef444422;color:#ef4444;border:1px solid #ef444444; }
+.chip-volea  { background:#f9731622;color:#f97316;border:1px solid #f9731644; }
+.chip-globo  { background:#3b82f622;color:#3b82f6;border:1px solid #3b82f644; }
+.chip-drive  { background:#22c55e22;color:#22c55e;border:1px solid #22c55e44; }
+.chip-revés  { background:#a855f722;color:#a855f7;border:1px solid #a855f744; }
+.chip-saque  { background:#cef00022;color:#cef000;border:1px solid #cef00044; }
 
-/* ── Error / offline state ── */
+.timeline-list { display: flex; flex-direction: column; gap: 4px;
+  max-height: 360px; overflow-y: auto; }
+.timeline-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: 8px;
+  background: var(--surface); border-left: 3px solid transparent;
+  font-size: 12px;
+}
+.tl-time  { font-family:'JetBrains Mono',monospace; color:var(--muted2); min-width:55px; }
+.tl-player { font-weight: 700; min-width: 70px; }
+.tl-type  { font-weight: 800; text-transform: uppercase; letter-spacing:.4px; min-width:65px; }
+.tl-zone  { font-size: 10px; color: var(--muted2); }
+.tl-conf  { margin-left: auto; font-size: 10px; color: var(--muted); }
+
+/* Player stats */
+.pro-stats-col {
+  border-left: 1px solid var(--border); padding: 16px;
+}
+.pro-stats-title { font-size: 12px; font-weight: 700; color: var(--muted2);
+  text-transform: uppercase; letter-spacing: .7px; margin-bottom: 10px; }
+.player-stat-card {
+  background: var(--surface); border-radius: 10px; padding: 12px;
+  margin-bottom: 10px; border-left: 3px solid transparent;
+}
+.ps-header { display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px; }
+.ps-name  { font-size: 14px; font-weight: 800; }
+.ps-total { font-size: 11px; color: var(--muted2); }
+.ps-bars  { display: flex; flex-direction: column; gap: 4px; }
+.ps-bar-row { display: flex; align-items: center; gap: 6px; font-size: 10px; }
+.ps-bar-label { min-width: 42px; color: var(--muted2); text-transform: uppercase; font-weight: 600; }
+.ps-bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.ps-bar-fill  { height: 100%; border-radius: 3px; transition: width .5s; }
+.ps-bar-count { min-width: 20px; text-align: right; color: var(--muted2); }
+
+/* ── Offline banner ──────────────────────────────────────────────── */
 .offline-banner {
-  background: rgba(239,68,68,0.1);
-  border: 1px solid rgba(239,68,68,0.3);
-  border-radius: 10px;
-  padding: 16px 20px;
-  font-size: 0.85rem;
-  color: var(--red);
-  text-align: center;
-  margin: 20px auto;
-  max-width: 600px;
-  display: none;
+  display: none; position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+  background: var(--red); color: #fff; font-size: 13px; font-weight: 700;
+  padding: 8px 20px; border-radius: 8px; z-index: 999;
+  box-shadow: 0 4px 20px #0006;
 }
-.offline-banner.show { display: block; }
+.offline-banner.visible { display: block; }
 
-/* ── Footer ── */
-.page-footer {
-  text-align: center;
-  padding: 24px 0 0;
-  font-size: 0.72rem;
-  color: var(--muted);
-  letter-spacing: 0.05em;
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media(max-width:900px){
+  .courts-grid   { grid-template-columns: repeat(2,1fr); }
+  .summary-bar   { grid-template-columns: repeat(2,1fr); }
+  .pro-body      { grid-template-columns: 1fr; }
+  .pro-court-col, .pro-stats-col { border: none; border-top: 1px solid var(--border); }
 }
-.page-footer a {
-  color: var(--yellow);
-  text-decoration: none;
-}
-
-/* ── Skeleton loading ── */
-.skeleton {
-  background: linear-gradient(90deg, var(--border) 25%, var(--border2) 50%, var(--border) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 6px;
-}
-@keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-@media (max-width: 480px) {
+@media(max-width:500px){
   .courts-grid { grid-template-columns: 1fr; }
-  .summary-bar { gap: 20px; }
-  .stat-value  { font-size: 1.3rem; }
+  .summary-bar { grid-template-columns: 1fr 1fr; }
 }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 </style>
 
+<!-- ── HTML ──────────────────────────────────────────────────────────────── -->
+<div class="offline-banner" id="offlineBanner">⚡ Sin conexión con el sistema</div>
+
+<!-- Header -->
 <div class="header">
-  <div>
-    <div class="logo">PÍCALE</div>
-    <div class="logo-sub">Somos Pádel · Monitor IA</div>
+  <div class="header-logo">PÍCALE</div>
+  <div class="header-sub">AI Monitor · Somos Pádel</div>
+  <div class="header-gap"></div>
+  <div class="status-pill" id="connStatus">
+    <div class="dot dot-yellow"></div>
+    <span id="connText">Conectando…</span>
   </div>
-  <div class="header-right">
-    <div id="liveDot" class="dot-live dot-off"></div>
-    <div id="statusText" class="status-text">Conectando...</div>
-    <div id="lastUpdate" class="last-update"></div>
-  </div>
-</div>
-
-<div class="summary-bar">
-  <div class="stat">
-    <div class="stat-value v-green" id="sumCanchasActivas">—</div>
-    <div class="stat-label">Canchas con IA</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value v-yellow" id="sumTotalJugadores">—</div>
-    <div class="stat-label">Jugadores detectados</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value v-orange" id="sumPartidos">—</div>
-    <div class="stat-label">Partidos activos</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value v-blue" id="sumCanchasOnline">—</div>
-    <div class="stat-label">Cámaras online</div>
+  <div class="status-pill" style="margin-left:8px">
+    <div class="dot dot-green" id="aiDot" style="background:var(--muted)"></div>
+    <span id="aiText">IA: --</span>
   </div>
 </div>
 
-<div id="offlineBanner" class="offline-banner">
-  ⚠️ Sin conexión al sistema PÍCALE — reintentando cada 10s
+<!-- Nav tabs -->
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="showTab('overview')" id="tab-overview">Resumen</button>
+  <button class="nav-tab" onclick="showTab('pro')" id="tab-pro">🧠 AI PRO</button>
+  <button class="nav-tab" onclick="showTab('history')" id="tab-history">Historial</button>
 </div>
 
-<div class="courts-grid" id="courtsGrid">
-  <!-- Cards generadas por JS -->
-</div>
+<!-- Main -->
+<div class="main">
 
-<div class="page-footer">
-  Datos en tiempo real · actualización cada 5s ·
-  <a href="https://picalereplay.com" target="_blank">picalereplay.com</a>
+  <!-- === TAB: OVERVIEW === -->
+  <div id="view-overview">
+    <!-- Summary bar -->
+    <div class="summary-bar">
+      <div class="summary-card">
+        <div class="label">Canchas con IA</div>
+        <div class="value val-purple" id="sumAI">0</div>
+        <div class="sub">de 8 canchas activas</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Jugadores detectados</div>
+        <div class="value val-yellow" id="sumPlayers">0</div>
+        <div class="sub">en todas las canchas</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Partidos activos</div>
+        <div class="value val-green" id="sumMatches">0</div>
+        <div class="sub">≥3 jugadores detectados</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Cámaras online</div>
+        <div class="value val-blue" id="sumCams">0</div>
+        <div class="sub">estado de streaming</div>
+      </div>
+    </div>
+
+    <!-- Court grid -->
+    <div class="courts-grid" id="courtsGrid"></div>
+  </div>
+
+  <!-- === TAB: AI PRO === -->
+  <div id="view-pro" style="display:none">
+    <!-- Si no hay pro activo -->
+    <div id="proEmpty" style="text-align:center;padding:60px 20px;color:var(--muted2)">
+      <div style="font-size:48px;margin-bottom:16px">🧠</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px">AI PRO no está activo</div>
+      <div style="font-size:13px">Activa AI PRO en el launcher en una cancha para ver el análisis avanzado</div>
+    </div>
+
+    <!-- Panel pro completo -->
+    <div id="proPanelContainer"></div>
+  </div>
+
+  <!-- === TAB: HISTORY === -->
+  <div id="view-history" style="display:none">
+    <div style="text-align:center;padding:40px;color:var(--muted2)">
+      <div style="font-size:36px;margin-bottom:12px">📊</div>
+      <div style="font-size:15px;font-weight:600">Historial de partidos</div>
+      <div style="font-size:12px;margin-top:8px">Los partidos guardados aparecerán aquí cuando AI PRO esté activo</div>
+    </div>
+    <div id="historyList" style="max-width:700px;margin:0 auto"></div>
+  </div>
+
 </div>
 
 <script>
-// ── Configuración ───────────────────────────────────────────────────────────
-const API_URL    = 'https://api.picalereplay.com/api/v1/edge/ai-status?club=somos_padel';
-const API_KEY    = '42761b9c01d0658610719edcca0146b3679e6443667f9857';
-const POLL_MS    = 5000;
-const COURT_NAMES = ['Cancha 1','Cancha 2','Cancha 3','Cancha 4',
-                     'Cancha 5','Cancha 6','Cancha 7','Cancha 8'];
+// ── Config ───────────────────────────────────────────────────────────────────
+const API   = 'https://api.picalereplay.com/api/v1/edge/ai-status?club=somos_padel';
+const KEY   = '42761b9c01d0658610719edcca0146b3679e6443667f9857';
+const POLL  = 5000;
 
-// ── Estado ──────────────────────────────────────────────────────────────────
-let lastData = null;
-let failCount = 0;
+// ── State ────────────────────────────────────────────────────────────────────
+let data         = null;
+let failCount    = 0;
+let selectedCourt = null;
+let activeTab    = 'overview';
 
-// ── Inicializar cards vacías ─────────────────────────────────────────────────
-function initGrid() {
-  const grid = document.getElementById('courtsGrid');
-  grid.innerHTML = '';
-  for (let i = 1; i <= 8; i++) {
-    grid.appendChild(makeCard(i));
+// Colores
+const SHOT_COLORS = {
+  smash: '#ef4444', volea: '#f97316', globo: '#3b82f6',
+  drive: '#22c55e', 'revés': '#a855f7', saque: '#cef000'
+};
+const PLAYER_COLORS = ['#cef000','#22c55e','#3b82f6','#f97316'];
+const PLAYER_NAMES  = ['A','B','C','D'];
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+function showTab(t) {
+  activeTab = t;
+  ['overview','pro','history'].forEach(v => {
+    document.getElementById('view-'+v).style.display = v===t ? '' : 'none';
+    document.getElementById('tab-'+v).classList.toggle('active', v===t);
+  });
+  if (data) renderAll(data);
+}
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
+async function fetchData() {
+  try {
+    const r = await fetch(API, { headers:{ 'x-edge-api-key': KEY }, cache:'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    data = d;
+    failCount = 0;
+    document.getElementById('offlineBanner').classList.remove('visible');
+    updateConnectionStatus(true, d.timestamp);
+    renderAll(d);
+  } catch(e) {
+    failCount++;
+    if (failCount >= 2) {
+      document.getElementById('offlineBanner').classList.add('visible');
+      updateConnectionStatus(false);
+    }
   }
 }
 
-function makeCard(num) {
-  const card = document.createElement('div');
-  card.className = 'court-card';
-  card.id = `card-${num}`;
-  card.innerHTML = `
-    <div class="court-header">
-      <div class="court-num">C${num}</div>
-      <div class="court-name">${COURT_NAMES[num-1]}</div>
-      <div class="court-status-dot" id="dot-${num}" style="background:var(--muted)"></div>
-      <div class="court-status-label" id="slabel-${num}">Offline</div>
-    </div>
-    <div class="heatmap-area" id="hm-${num}">
-      <div class="heatmap-no-data">Sin datos IA</div>
-    </div>
-    <div class="court-footer">
-      <span class="players-icon">👤</span>
-      <span class="players-count v-muted" id="players-${num}">—</span>
-      <span id="aibadge-${num}"></span>
-      <span id="matchbadge-${num}" class="no-match"></span>
-    </div>
-  `;
-  return card;
+function updateConnectionStatus(ok, ts) {
+  const dot  = document.getElementById('connStatus').querySelector('.dot');
+  const text = document.getElementById('connText');
+  if (ok) {
+    dot.className  = 'dot dot-green';
+    const t = ts ? ts.slice(11,19) : '--';
+    text.textContent = 'Online · ' + t;
+  } else {
+    dot.className  = 'dot dot-red';
+    text.textContent = 'Sin conexión';
+  }
 }
 
-// ── Render datos ─────────────────────────────────────────────────────────────
-function renderData(data) {
-  lastData = data;
-  failCount = 0;
+// ── Render all ────────────────────────────────────────────────────────────────
+function renderAll(d) {
+  const courts = d.courts || [];
+  const pro    = d.pro || {};
 
-  const dot   = document.getElementById('liveDot');
-  const stxt  = document.getElementById('statusText');
-  const lupd  = document.getElementById('lastUpdate');
-  const offl  = document.getElementById('offlineBanner');
+  // IA status badge
+  const aiActive = courts.filter(c=>c.ai_active).length;
+  const aiDot  = document.getElementById('aiDot');
+  const aiText = document.getElementById('aiText');
+  if (aiActive > 0) {
+    aiDot.className = 'dot dot-yellow';
+    aiText.textContent = `IA: ${aiActive} canchas`;
+  } else {
+    aiDot.style.background = 'var(--muted)';
+    aiDot.className = 'dot';
+    aiText.textContent = 'IA: inactivo';
+  }
 
-  dot.className = 'dot-live';
-  stxt.textContent = data.ai_running ? 'IA ACTIVA' : 'Sistema online';
-  stxt.style.color = data.ai_running ? 'var(--purple)' : 'var(--muted2)';
+  if (activeTab === 'overview') renderOverview(courts, pro);
+  if (activeTab === 'pro')      renderPro(pro, courts);
+  if (activeTab === 'history')  renderHistory(pro);
+}
 
-  const ts = data.timestamp ? new Date(data.timestamp) : new Date();
-  lupd.textContent = ts.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  offl.classList.remove('show');
+// ── OVERVIEW ──────────────────────────────────────────────────────────────────
+function renderOverview(courts, pro) {
+  const aiCount      = courts.filter(c=>c.ai_active).length;
+  const totalPlayers = courts.reduce((s,c)=>s+c.players,0);
+  const matches      = courts.filter(c=>c.match).length;
+  const onlineCams   = courts.filter(c=>c.cam_status && c.cam_status.includes('vivo')).length;
 
-  let canchasAI = 0, totalJugadores = 0, partidos = 0, camarasOK = 0;
+  document.getElementById('sumAI').textContent      = aiCount;
+  document.getElementById('sumPlayers').textContent = totalPlayers;
+  document.getElementById('sumMatches').textContent = matches;
+  document.getElementById('sumCams').textContent    = onlineCams;
 
-  (data.courts || []).forEach(c => {
-    const num = c.court_num;
-    const card       = document.getElementById(`card-${num}`);
-    const dot_c      = document.getElementById(`dot-${num}`);
-    const slabel     = document.getElementById(`slabel-${num}`);
-    const players    = document.getElementById(`players-${num}`);
-    const aibadge    = document.getElementById(`aibadge-${num}`);
-    const matchbadge = document.getElementById(`matchbadge-${num}`);
-    const hmArea     = document.getElementById(`hm-${num}`);
+  const grid = document.getElementById('courtsGrid');
+  if (grid.children.length !== courts.length) {
+    grid.innerHTML = '';
+    courts.forEach(c => grid.appendChild(makeCourtCard(c)));
+  } else {
+    courts.forEach((c,i) => updateCourtCard(grid.children[i], c, pro));
+  }
+}
 
-    if (!card) return;
+function makeCourtCard(court) {
+  const div = document.createElement('div');
+  div.className = 'court-card';
+  div.dataset.court = court.court_num;
+  div.onclick = () => selectCourt(court.court_num);
+  div.innerHTML = `
+    <div class="court-header">
+      <div>
+        <div class="court-num">C${court.court_num}</div>
+        <div class="court-name">Cancha ${court.court_num}</div>
+      </div>
+      <div class="badge badge-off" id="badge-${court.court_num}">OFFLINE</div>
+    </div>
+    <div class="court-map-wrap" id="map-${court.court_num}">
+      ${makeCourtSVG(court)}
+    </div>
+    <div class="court-footer">
+      <div class="court-players" id="players-${court.court_num}">--</div>
+      <div class="court-status"  id="status-${court.court_num}">--</div>
+      <div class="court-last-shot" id="shot-${court.court_num}"></div>
+    </div>`;
+  return div;
+}
 
-    // Estado cámara
-    const online = (c.cam_status || '').includes('En vivo');
-    if (online) {
-      camarasOK++;
-      dot_c.style.background = 'var(--green)';
-      slabel.textContent = 'En vivo';
-      slabel.style.color = 'var(--green)';
-    } else {
-      dot_c.style.background = 'var(--muted)';
-      slabel.textContent = (c.cam_status || '').replace(/[^a-zA-Z ]/g,'').trim() || 'Offline';
-      slabel.style.color = 'var(--muted2)';
+function updateCourtCard(el, court, pro) {
+  const n = court.court_num;
+  const proData = pro[String(n)];
+  const isPro   = proData && proData.n_players !== undefined;
+
+  el.className = 'court-card' +
+    (isPro ? ' pro-active' : court.ai_active ? ' ai-active' : '') +
+    (court.match ? ' match-active' : '');
+
+  const badge = document.getElementById('badge-'+n);
+  if (isPro) {
+    badge.className = 'badge badge-pro'; badge.textContent = '🧠 PRO';
+  } else if (court.match) {
+    badge.className = 'badge badge-match'; badge.textContent = '🎾 PARTIDO';
+  } else if (court.ai_active) {
+    badge.className = 'badge badge-ai'; badge.textContent = 'IA ON';
+  } else {
+    badge.className = 'badge badge-off';
+    badge.textContent = court.cam_status?.includes('vivo') ? 'EN VIVO' : 'OFFLINE';
+  }
+
+  const pl = document.getElementById('players-'+n);
+  const st = document.getElementById('status-'+n);
+  const sh = document.getElementById('shot-'+n);
+
+  if (isPro) {
+    pl.textContent = `👤 ${proData.n_players} jugadores`;
+    pl.style.color = 'var(--yellow)';
+    const last = (proData.recent_shots||[])[0];
+    if (last) {
+      const col = SHOT_COLORS[last.shot_type]||'#fff';
+      sh.innerHTML = `<span style="color:${col}">▶ J-${last.player}: ${last.shot_type.toUpperCase()}</span>`;
     }
+  } else if (court.ai_active) {
+    pl.textContent = `👤 ${court.players} jugadores`;
+    pl.style.color = court.players >= 2 ? 'var(--text)' : 'var(--muted2)';
+    sh.textContent = '';
+  } else {
+    pl.textContent = 'IA inactiva'; pl.style.color='var(--muted)'; sh.textContent='';
+  }
+  st.textContent = court.cam_status || '--';
 
-    // Card border
-    card.classList.remove('active','match');
-    if (c.ai_active && c.match)       card.classList.add('match');
-    else if (c.ai_active)             card.classList.add('active');
+  // Redraw SVG map
+  document.getElementById('map-'+n).innerHTML = makeCourtSVG(court, proData);
+}
 
-    // Jugadores
-    if (c.ai_active) {
-      canchasAI++;
-      players.textContent = c.players > 0 ? c.players : '0';
-      players.className   = 'players-count ' + (c.players > 0 ? 'v-yellow' : 'v-muted');
-      totalJugadores += (c.players || 0);
-      aibadge.innerHTML   = '<span class="ai-badge">🤖 IA</span>';
-    } else {
-      players.textContent = '—';
-      players.className   = 'players-count v-muted';
-      aibadge.innerHTML   = '';
+function makeCourtSVG(court, proData) {
+  // Mini court SVG 180×90
+  const W=180, H=90, px=8, py=6;
+  const cw=W-2*px, ch=H-2*py;
+  let svg = `<svg class="court-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Court background
+  svg += `<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="#1a3a2a" rx="2"/>`;
+  // Net line
+  svg += `<line x1="${px}" y1="${py+ch/2}" x2="${px+cw}" y2="${py+ch/2}" stroke="#fff" stroke-width="1.5" stroke-dasharray="4,3"/>`;
+  // Sidelines
+  svg += `<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="none" stroke="#22c55e" stroke-width="1.5"/>`;
+  // Service lines
+  const sl = ch * 0.3;
+  svg += `<line x1="${px}" y1="${py+sl}" x2="${px+cw}" y2="${py+sl}" stroke="#555" stroke-width=".8" stroke-dasharray="3,3"/>`;
+  svg += `<line x1="${px}" y1="${py+ch-sl}" x2="${px+cw}" y2="${py+ch-sl}" stroke="#555" stroke-width=".8" stroke-dasharray="3,3"/>`;
+  // Center vertical
+  svg += `<line x1="${px+cw/2}" y1="${py}" x2="${px+cw/2}" y2="${py+ch}" stroke="#333" stroke-width=".6" stroke-dasharray="3,3"/>`;
+
+  if (proData) {
+    // Shot markers (recent shots, small dots)
+    (proData.recent_shots||[]).slice(0,15).forEach(ev => {
+      if (ev.pos_x == null || ev.pos_y == null) return;
+      const cx = px + (ev.pos_x / 10) * cw;
+      const cy = py + (ev.pos_y / 20) * ch;
+      const col = SHOT_COLORS[ev.shot_type]||'#fff';
+      svg += `<circle cx="${cx}" cy="${cy}" r="3" fill="${col}88" stroke="${col}" stroke-width=".8"/>`;
+    });
+
+    // Live players
+    (proData.players||[]).forEach((p,i) => {
+      if (p.pos_x == null || p.pos_y == null) return;
+      const cx  = px + (p.pos_x / 10) * cw;
+      const cy  = py + (p.pos_y / 20) * ch;
+      const idx = PLAYER_NAMES.indexOf(p.id);
+      const col = PLAYER_COLORS[idx>=0?idx:i] || '#fff';
+      svg += `<circle cx="${cx}" cy="${cy}" r="6" fill="${col}cc" stroke="${col}" stroke-width="1.5"/>`;
+      svg += `<text x="${cx}" y="${cy+4}" font-family="Inter,sans-serif" font-size="7" font-weight="800" fill="#000" text-anchor="middle">${p.id}</text>`;
+    });
+
+  } else if (court.ai_active) {
+    // Heatmap placeholder (dots en zona central si hay jugadores)
+    if (court.players > 0) {
+      const dotsY = [py+ch*0.25, py+ch*0.75];
+      dotsY.forEach(dy => {
+        svg += `<circle cx="${px+cw/2}" cy="${dy}" r="7" fill="#a855f755" stroke="#a855f7" stroke-width="1"/>`;
+        svg += `<circle cx="${px+cw*0.25}" cy="${dy}" r="5" fill="#22c55e55" stroke="#22c55e" stroke-width="1"/>`;
+      });
     }
+  }
 
-    // Partido
-    if (c.match) {
-      partidos++;
-      matchbadge.innerHTML = '<span class="match-badge">🎾 Partido</span>';
-    } else if (c.ai_active) {
-      matchbadge.innerHTML = '<span class="no-match">Sin partido</span>';
-    } else {
-      matchbadge.innerHTML = '';
-    }
+  svg += '</svg>';
+  return svg;
+}
 
-    // Heatmap: si hay imagen en data.heatmap_urls, mostrarla
-    if (data.heatmap_urls && data.heatmap_urls[num]) {
-      hmArea.innerHTML = `<img src="${data.heatmap_urls[num]}?t=${Date.now()}" alt="Heatmap C${num}" loading="lazy">`;
-    } else if (c.ai_active) {
-      hmArea.innerHTML = renderDemoHeatmap(c.players || 0, num);
-    } else {
-      hmArea.innerHTML = '<div class="heatmap-no-data">Sin datos IA</div>';
+// ── PRO PANEL ─────────────────────────────────────────────────────────────────
+function renderPro(pro, courts) {
+  const container = document.getElementById('proPanelContainer');
+  const empty     = document.getElementById('proEmpty');
+  const proKeys   = Object.keys(pro);
+
+  if (proKeys.length === 0) {
+    container.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Render uno por uno (puede haber varios)
+  container.innerHTML = '';
+  proKeys.forEach(cn => {
+    const proData = pro[cn];
+    const court   = courts.find(c=>String(c.court_num)===String(cn)) || {};
+    container.appendChild(makeProPanel(cn, proData, court));
+  });
+}
+
+function makeProPanel(cn, pd, court) {
+  const div = document.createElement('div');
+  div.className = 'pro-panel visible';
+  div.style.marginBottom = '20px';
+
+  const stats   = pd.match_stats || {};
+  const recent  = pd.recent_shots || [];
+  const players = pd.players || [];
+  const totalS  = stats.total_shots || recent.length;
+  const matchId = pd.match_id;
+
+  // Build player stats from recent shots if no match_stats
+  const playerShotsMap = {};
+  PLAYER_NAMES.forEach(p => { playerShotsMap[p] = {total:0, byType:{}}; });
+  if (stats.players) {
+    Object.entries(stats.players).forEach(([pid, ps]) => {
+      playerShotsMap[pid] = { total: ps.shots, byType: ps.by_type };
+    });
+  } else {
+    recent.forEach(ev => {
+      const p = ev.player;
+      if (!playerShotsMap[p]) playerShotsMap[p] = {total:0, byType:{}};
+      playerShotsMap[p].total++;
+      playerShotsMap[p].byType[ev.shot_type] = (playerShotsMap[p].byType[ev.shot_type]||0)+1;
+    });
+  }
+
+  const maxShots = Math.max(1, ...PLAYER_NAMES.map(p=>playerShotsMap[p]?.total||0));
+
+  div.innerHTML = `
+    <div class="pro-panel-header">
+      <span style="font-size:20px">🧠</span>
+      <h2>AI PRO — Cancha ${cn}</h2>
+      ${matchId ? `<span class="badge badge-pro" style="font-size:11px">Partido #${matchId}</span>` : ''}
+      <span style="font-size:12px;color:var(--muted2);margin-left:8px">${pd.n_players||0} jugadores · ${totalS} golpes</span>
+    </div>
+    <div class="pro-body">
+      <!-- Court map -->
+      <div class="pro-court-col">
+        <div class="pro-court-title">Mapa en tiempo real</div>
+        ${makeProCourtSVG(pd)}
+        <div class="player-legend">
+          ${PLAYER_NAMES.map((p,i)=>`
+            <div class="player-legend-item">
+              <div class="legend-dot" style="background:${PLAYER_COLORS[i]}"></div>
+              <span style="color:${PLAYER_COLORS[i]}">J-${p}</span>
+            </div>`).join('')}
+        </div>
+        <!-- Shot type legend -->
+        <div style="margin-top:12px">
+          <div class="pro-court-title" style="margin-bottom:6px">Tipos de golpe</div>
+          <div class="shot-type-chips" style="gap:4px">
+            ${Object.entries(SHOT_COLORS).map(([t,c])=>`
+              <span class="shot-chip chip-${t}" style="font-size:9px;padding:2px 7px">${t}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="pro-timeline-col">
+        <div class="pro-timeline-title">Timeline de golpes</div>
+        <div class="timeline-list">
+          ${recent.length === 0
+            ? '<div style="color:var(--muted2);font-size:12px;padding:20px">Sin golpes detectados todavía...</div>'
+            : recent.map(ev => {
+                const ts  = ev.ts ? ev.ts.slice(11,19) : '--';
+                const col = SHOT_COLORS[ev.shot_type]||'#fff';
+                const idx = PLAYER_NAMES.indexOf(ev.player);
+                const pcol= PLAYER_COLORS[idx>=0?idx:0]||'#fff';
+                const zone = getZone(ev.pos_y);
+                const conf = ev.confidence ? Math.round(ev.confidence*100)+'%' : '';
+                return `<div class="timeline-row" style="border-left-color:${col}">
+                  <span class="tl-time">${ts}</span>
+                  <span class="tl-player" style="color:${pcol}">J-${ev.player}</span>
+                  <span class="tl-type" style="color:${col}">${ev.shot_type.toUpperCase()}</span>
+                  <span class="tl-zone">${zone}</span>
+                  <span class="tl-conf">${conf}</span>
+                </div>`;
+              }).join('')
+          }
+        </div>
+      </div>
+
+      <!-- Player stats -->
+      <div class="pro-stats-col">
+        <div class="pro-stats-title">Stats por jugador</div>
+        ${PLAYER_NAMES.map((pid,i) => {
+          const ps  = playerShotsMap[pid]||{total:0,byType:{}};
+          const col = PLAYER_COLORS[i];
+          const pct = maxShots > 0 ? Math.round(ps.total/maxShots*100) : 0;
+          const byTypeHtml = Object.entries(SHOT_COLORS).map(([st,sc])=>{
+            const cnt = ps.byType[st]||0;
+            const bpct = ps.total > 0 ? Math.round(cnt/ps.total*100) : 0;
+            return `<div class="ps-bar-row">
+              <span class="ps-bar-label">${st}</span>
+              <div class="ps-bar-track">
+                <div class="ps-bar-fill" style="width:${bpct}%;background:${sc}"></div>
+              </div>
+              <span class="ps-bar-count">${cnt}</span>
+            </div>`;
+          }).join('');
+
+          return `<div class="player-stat-card" style="border-left-color:${col}">
+            <div class="ps-header">
+              <span class="ps-name" style="color:${col}">Jugador ${pid}</span>
+              <span class="ps-total">${ps.total} golpe${ps.total!==1?'s':''}</span>
+            </div>
+            <div class="ps-bars">${byTypeHtml}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  return div;
+}
+
+function makeProCourtSVG(pd) {
+  const W=200, H=340, px=12, py=10;
+  const cw=W-2*px, ch=H-2*py;
+  let svg = `<svg class="pro-court-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Background
+  svg += `<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="#132b1e" rx="3"/>`;
+  // Outline
+  svg += `<rect x="${px}" y="${py}" width="${cw}" height="${ch}" fill="none" stroke="#22c55e" stroke-width="2"/>`;
+  // Net
+  svg += `<line x1="${px}" y1="${py+ch/2}" x2="${px+cw}" y2="${py+ch/2}" stroke="#fff" stroke-width="2" stroke-dasharray="6,4"/>`;
+  // Service lines
+  const sl = ch*0.3;
+  svg += `<line x1="${px}" y1="${py+sl}" x2="${px+cw}" y2="${py+sl}" stroke="#444" stroke-width="1" stroke-dasharray="4,4"/>`;
+  svg += `<line x1="${px}" y1="${py+ch-sl}" x2="${px+cw}" y2="${py+ch-sl}" stroke="#444" stroke-width="1" stroke-dasharray="4,4"/>`;
+  // Center
+  svg += `<line x1="${px+cw/2}" y1="${py}" x2="${px+cw/2}" y2="${py+ch}" stroke="#2a2a2a" stroke-width=".8"/>`;
+
+  // Labels
+  svg += `<text x="${px+cw/2}" y="${py-3}" font-family="Inter" font-size="7" fill="#555" text-anchor="middle">FONDO</text>`;
+  svg += `<text x="${px+cw/2}" y="${py+ch+9}" font-family="Inter" font-size="7" fill="#555" text-anchor="middle">FONDO</text>`;
+  svg += `<text x="${px-8}" y="${py+ch/2+3}" font-family="Inter" font-size="7" fill="#888" text-anchor="middle" transform="rotate(-90,${px-8},${py+ch/2})">RED</text>`;
+
+  // Golpes recientes (trail)
+  (pd.recent_shots||[]).slice(0,20).forEach((ev,idx) => {
+    if (ev.pos_x==null||ev.pos_y==null) return;
+    const cx  = px + (ev.pos_x/10)*cw;
+    const cy  = py + (ev.pos_y/20)*ch;
+    const col = SHOT_COLORS[ev.shot_type]||'#fff';
+    const op  = Math.max(0.2, 1 - idx*0.04);
+    const r   = 4;
+    svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" opacity="${op.toFixed(2)}"/>`;
+    // Tipo abreviado
+    const abbr = {smash:'SM',volea:'VO',globo:'GL',drive:'DR','revés':'RE',saque:'SQ'}[ev.shot_type]||'?';
+    if (idx < 5) svg += `<text x="${cx+6}" y="${cy+3}" font-family="Inter" font-size="6" fill="${col}" opacity="${op.toFixed(2)}">${abbr}</text>`;
+  });
+
+  // Jugadores vivos
+  (pd.players||[]).forEach((p,i) => {
+    if (p.pos_x==null||p.pos_y==null) return;
+    const cx  = px + (p.pos_x/10)*cw;
+    const cy  = py + (p.pos_y/20)*ch;
+    const idx = PLAYER_NAMES.indexOf(p.id);
+    const col = PLAYER_COLORS[idx>=0?idx:i]||'#fff';
+    // Glow
+    svg += `<circle cx="${cx}" cy="${cy}" r="12" fill="${col}" opacity=".15"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="8" fill="${col}cc" stroke="${col}" stroke-width="2"/>`;
+    svg += `<text x="${cx}" y="${cy+4}" font-family="Inter" font-size="9" font-weight="800" fill="#000" text-anchor="middle">${p.id}</text>`;
+    if (p.last_shot) {
+      const sc = SHOT_COLORS[p.last_shot]||'#fff';
+      svg += `<text x="${cx}" y="${cy-13}" font-family="Inter" font-size="7" font-weight="700" fill="${sc}" text-anchor="middle">${p.last_shot}</text>`;
     }
   });
 
-  // Summary
-  document.getElementById('sumCanchasActivas').textContent  = canchasAI;
-  document.getElementById('sumTotalJugadores').textContent  = totalJugadores;
-  document.getElementById('sumPartidos').textContent         = partidos;
-  document.getElementById('sumCanchasOnline').textContent   = camarasOK;
+  svg += '</svg>';
+  return svg;
 }
 
-// ── Heatmap visual de demo cuando no hay imagen real ───────────────────────
-function renderDemoHeatmap(players, courtNum) {
-  // Genera un canvas con puntos distribuidos aleatoriamente (seed por cancha)
-  const seed = courtNum * 1234 + Date.now() % 3000;
-  const W = 320, H = 140;
-  let dots = [];
-  const rng = (s) => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
-  let s = seed;
-  const n = players > 0 ? players * 4 : 0;
-  for (let i = 0; i < n; i++) {
-    s = (s * 1664525 + 1013904223) >>> 0;
-    const x = (s & 0xffff) / 0xffff * W;
-    s = (s * 1664525 + 1013904223) >>> 0;
-    const y = (s & 0xffff) / 0xffff * H;
-    dots.push({x, y, r: 20 + (s & 0xf)});
-  }
-  const svgParts = dots.map(d => {
-    const cols = ['rgba(0,0,255,0.15)','rgba(0,255,255,0.2)','rgba(0,255,0,0.2)',
-                  'rgba(255,255,0,0.2)','rgba(255,128,0,0.2)','rgba(255,0,0,0.2)'];
-    const col = cols[Math.floor(d.r / 6) % cols.length];
-    return `<circle cx="${d.x.toFixed(1)}" cy="${d.y.toFixed(1)}" r="${d.r}" fill="${col}"/>`;
-  }).join('');
-  return `<svg width="${W}" height="${H}" style="width:100%;height:100%;background:#0d1214;">
-    <defs><filter id="hblur${courtNum}"><feGaussianBlur stdDeviation="8"/></filter></defs>
-    <g filter="url(#hblur${courtNum})">${svgParts}</g>
-    <line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-  </svg>`;
+function getZone(y) {
+  if (y==null) return '';
+  if (Math.abs(y-10)<2.5) return 'red';
+  if (y<2.5||y>17.5) return 'fondo';
+  return 'medio';
 }
 
-// ── Fetch ────────────────────────────────────────────────────────────────────
-async function fetchStatus() {
-  try {
-    const resp = await fetch(API_URL, {
-      headers: { 'x-edge-api-key': API_KEY },
-      cache: 'no-store',
-    });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    renderData(data);
-  } catch (err) {
-    failCount++;
-    const dot   = document.getElementById('liveDot');
-    const stxt  = document.getElementById('statusText');
-    const offl  = document.getElementById('offlineBanner');
-    dot.className = 'dot-live dot-off';
-    stxt.textContent = `Error (${failCount})`;
-    stxt.style.color = 'var(--red)';
-    if (failCount >= 2) offl.classList.add('show');
+// ── HISTORY ───────────────────────────────────────────────────────────────────
+function renderHistory(pro) {
+  const list = document.getElementById('historyList');
+  if (!list) return;
+  // Mostrar resumen de datos pro actuales
+  const keys = Object.keys(pro);
+  if (keys.length === 0) return;
+
+  list.innerHTML = '';
+  keys.forEach(cn => {
+    const pd = pro[cn];
+    const stats = pd.match_stats||{};
+    if (!stats.match_id) return;
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px';
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <span style="font-weight:800;font-size:15px;color:var(--yellow)">Cancha ${cn}</span>
+          <span style="font-size:12px;color:var(--muted2);margin-left:10px">Partido #${stats.match_id}</span>
+        </div>
+        <span style="font-size:13px;font-weight:700;color:var(--purple2)">${stats.total_shots||0} golpes</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted2)">Inicio: ${stats.started||'--'}</div>`;
+    list.appendChild(div);
+  });
+}
+
+// ── Court selection ───────────────────────────────────────────────────────────
+function selectCourt(n) {
+  // Al hacer click en una cancha, ir a tab PRO si tiene pro data
+  const d = data;
+  if (d && d.pro && d.pro[String(n)]) {
+    showTab('pro');
   }
 }
 
-// ── Init ─────────────────────────────────────────────────────────────────────
-initGrid();
-fetchStatus();
-setInterval(fetchStatus, POLL_MS);
+// ── Init ──────────────────────────────────────────────────────────────────────
+fetchData();
+setInterval(fetchData, POLL);
 </script>
