@@ -289,6 +289,48 @@ body{
 .intens-fill{height:100%;border-radius:4px;transition:width .8s;
   background:linear-gradient(90deg,#1fcf5e,#d4f000,#f03a3a)}
 
+/* ─── Video tab ──────────────────────────────────────────  */
+.vid-wrap{
+  background:#000;border:1px solid var(--border2);border-radius:12px;
+  overflow:hidden;position:relative;max-width:960px;margin:0 auto 16px;
+  aspect-ratio:16/9;
+}
+.vid-wrap img{width:100%;height:100%;object-fit:contain;display:block}
+.vid-overlay{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#000c;color:#555;font-size:14px;font-weight:700;text-align:center;
+  pointer-events:none;
+}
+.vid-overlay.hidden{display:none}
+
+.vid-bar{
+  max-width:960px;margin:0 auto 14px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.vid-bar select{
+  background:var(--card);color:var(--text);border:1px solid var(--border2);
+  border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;
+  font-family:inherit;cursor:pointer;
+}
+.vid-url{
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2);
+  background:var(--card);border:1px solid var(--border);border-radius:8px;
+  padding:7px 12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.vid-status{font-size:11px;font-weight:700}
+
+.vid-tips{
+  max-width:960px;margin:0 auto;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+}
+.vid-tip{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:12px 14px;font-size:11px;
+}
+.vid-tip strong{display:block;color:var(--yellow);margin-bottom:4px;font-size:12px}
+.vid-tip span{color:var(--muted2);line-height:1.5}
+
 /* ─── History ─────────────────────────────────────────── */
 .hist-list{display:flex;flex-direction:column;gap:10px;max-width:800px}
 .hist-card{
@@ -340,6 +382,7 @@ body{
 <div class="tabs">
   <button class="tab on"  id="t-res"  onclick="showTab('res')">🏠 Resumen</button>
   <button class="tab"     id="t-pro"  onclick="showTab('pro')">🧠 AI PRO</button>
+  <button class="tab"     id="t-vid"  onclick="showTab('vid')">📹 Video</button>
   <button class="tab"     id="t-hist" onclick="showTab('hist')">📊 Historial</button>
 </div>
 
@@ -467,6 +510,46 @@ body{
   </div>
 </div>
 
+<!-- ══════════ TAB: VIDEO ══════════ -->
+<div id="v-vid" style="display:none">
+  <!-- Control bar -->
+  <div class="vid-bar">
+    <select id="vid-court" onchange="updateVideoStream()">
+      <option value="">-- Selecciona cancha --</option>
+    </select>
+    <div class="vid-url" id="vid-url-txt">Sin stream activo</div>
+    <span class="vid-status" id="vid-status"><span class="dot dot-off" style="display:inline-block;margin-right:4px"></span>Sin señal</span>
+  </div>
+
+  <!-- Video -->
+  <div class="vid-wrap" id="vidWrap">
+    <img id="vidImg" src="" alt="" style="display:none" onerror="onVidError()" onload="onVidLoad()">
+    <div class="vid-overlay" id="vidOverlay">
+      <div>
+        <div style="font-size:40px;margin-bottom:12px">📹</div>
+        <div>Selecciona una cancha con AI PRO activo</div>
+        <div style="font-size:11px;color:var(--muted2);margin-top:6px">El stream MJPEG se abre directo en la PC del club</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tips -->
+  <div class="vid-tips">
+    <div class="vid-tip">
+      <strong>🔴 Video en tiempo real</strong>
+      <span>El video anotado se genera en la PC del club. Para verlo aquí, el navegador debe estar en la misma red local.</span>
+    </div>
+    <div class="vid-tip">
+      <strong>🧠 Qué ves</strong>
+      <span>Bounding boxes de jugadores (A/B/C/D), tipo de último golpe, mini mapa de posiciones y estadísticas del rally.</span>
+    </div>
+    <div class="vid-tip">
+      <strong>🌐 Acceso remoto</strong>
+      <span>Para ver el stream desde fuera de la red, configura un proxy en el servidor o usa una VPN hacia la PC del club.</span>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ TAB: HISTORIAL ══════════ -->
 <div id="v-hist" style="display:none">
   <div class="hist-list" id="histList">
@@ -494,19 +577,82 @@ let lastData = null, failN = 0, activeTab = 'res';
 let heatmaps = {A:[],B:[],C:[],D:[]};  // acumula posiciones por jugador
 let rallyShots = [], rallyStart = null, totalRallies = 0;
 let matchSeconds = 0, matchTimer = null;
+let proStreams = {};   // { cancha_num: stream_url }
 
 // ─── Tabs ─────────────────────────────────────────────────────────
 function showTab(t) {
   activeTab = t;
-  ['res','pro','hist'].forEach(v=>{
+  ['res','pro','vid','hist'].forEach(v=>{
     document.getElementById('v-'+v).style.display = v===t?'':'none';
     document.getElementById('t-'+v).classList.toggle('on',v===t);
   });
+  if(t==='vid') updateVideoStream();
   if(lastData) renderAll(lastData);
   else if(t==='pro'){
     document.getElementById('proEmpty').style.display='';
     document.getElementById('proContent').style.display='none';
   }
+}
+
+// ─── Video stream ─────────────────────────────────────────────────
+function updateVideoCourtOptions(pro){
+  const sel = document.getElementById('vid-court');
+  const prev = sel.value;
+  // Borrar opciones viejas excepto la placeholder
+  while(sel.options.length > 1) sel.remove(1);
+  proStreams = {};
+  Object.entries(pro||{}).forEach(([cn, pd])=>{
+    if(pd && pd.stream_url){
+      proStreams[cn] = pd.stream_url;
+      const opt = document.createElement('option');
+      opt.value = cn;
+      opt.textContent = `Cancha ${cn} — ${pd.n_players||0} jugadores`;
+      sel.appendChild(opt);
+    }
+  });
+  // Restaurar selección anterior si sigue disponible
+  if(prev && proStreams[prev]) sel.value = prev;
+  else if(Object.keys(proStreams).length === 1){
+    sel.value = Object.keys(proStreams)[0];  // auto-seleccionar si solo hay una
+  }
+  if(activeTab === 'vid') updateVideoStream();
+}
+
+function updateVideoStream(){
+  const sel = document.getElementById('vid-court');
+  const cn  = sel.value;
+  const url = cn ? proStreams[cn] : null;
+  const img  = document.getElementById('vidImg');
+  const ovl  = document.getElementById('vidOverlay');
+  const urlTxt = document.getElementById('vid-url-txt');
+  const status = document.getElementById('vid-status');
+
+  if(url){
+    // Agrega timestamp para forzar recarga si la URL es la misma
+    const streamUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+    img.src = streamUrl;
+    img.style.display = '';
+    urlTxt.textContent = url;
+    status.innerHTML = '<span class="dot dot-y" style="display:inline-block;margin-right:4px;animation:blink 1s infinite"></span>Conectando…';
+  } else {
+    img.src = '';
+    img.style.display = 'none';
+    ovl.classList.remove('hidden');
+    urlTxt.textContent = 'Sin stream activo';
+    status.innerHTML = '<span class="dot dot-off" style="display:inline-block;margin-right:4px"></span>Sin señal';
+  }
+}
+
+function onVidLoad(){
+  document.getElementById('vidOverlay').classList.add('hidden');
+  document.getElementById('vid-status').innerHTML =
+    '<span class="dot dot-g" style="display:inline-block;margin-right:4px;animation:blink 2s infinite"></span><span style="color:var(--green)">En vivo</span>';
+}
+
+function onVidError(){
+  document.getElementById('vidOverlay').classList.remove('hidden');
+  document.getElementById('vid-status').innerHTML =
+    '<span class="dot dot-r" style="display:inline-block;margin-right:4px"></span><span style="color:var(--red)">Error de conexión</span>';
 }
 
 // ─── Fetch ────────────────────────────────────────────────────────
@@ -541,8 +687,10 @@ function renderAll(d){
   aiDot.className = aiN>0 ? 'dot dot-y' : 'dot dot-off';
   document.getElementById('aiTxt').textContent = aiN>0 ? `IA: ${aiN} canchas` : 'IA: inactivo';
 
+  updateVideoCourtOptions(pro);
   if(activeTab==='res')  renderOverview(courts,pro);
   if(activeTab==='pro')  renderPro(pro,courts);
+  if(activeTab==='vid')  {}  // ya actualizado por updateVideoCourtOptions
   if(activeTab==='hist') renderHist(pro);
 }
 
