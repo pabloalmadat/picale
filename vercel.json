@@ -10,6 +10,18 @@
     {
       "src": "/dashboard",
       "dest": "/app/dashboard.html"
+    },
+    {
+      "src": "/futbol/?",
+      "dest": "/futbol/futbol.html"
+    },
+    {
+      "src": "/futbol/admin/?",
+      "dest": "/futbol/futbol-admin.html"
+    },
+    {
+      "src": "/api/futbol/(.*)",
+      "dest": "https://api.picalereplay.com/api/futbol/$1"
     }
   ],
   "headers": [
