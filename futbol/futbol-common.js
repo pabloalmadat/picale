@@ -120,7 +120,73 @@ const T=id=>S.teams.find(t=>t.id===id);
 const LG=id=>S.leagues.find(l=>l.id===id);
 const tname=id=>T(id)?.name||'Por definir';
 function ink(hex){const h=(hex||'#777').replace('#','');const r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);return(r*299+g*587+b*114)/1000>150?'#111':'#fff'}
-function crest(id,size=''){const t=T(id);if(!t)return`<span class="crest tbd ${size}">?</span>`;return`<span class="crest ${size}" style="background:${t.color};color:${ink(t.color)}" aria-hidden="true">${esc(t.short)}</span>`}
+/* ---------- Escudos generados por nombre ---------- */
+function hashStr(s){let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function lum(hex){const h=(hex||'#777').replace('#','');return(parseInt(h.substr(0,2),16)*299+parseInt(h.substr(2,2),16)*587+parseInt(h.substr(4,2),16)*114)/1000}
+function starPts(R,r){let p=[];for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,k=i%2?r:R;p.push((Math.cos(a)*k).toFixed(1)+','+(Math.sin(a)*k).toFixed(1))}return p.join(' ')}
+const LOGO_ICONS={
+  ball:c=>`<circle r="17" fill="none" stroke="${c}" stroke-width="3.5"/><polygon points="${starPts(8,8).split(' ').filter((_,i)=>i%2===0).join(' ')}" fill="${c}"/><path d="M0-8V-17M7.6-2.5L16-5.3M4.7 6.5L10 13.8M-4.7 6.5L-10 13.8M-7.6-2.5L-16-5.3" stroke="${c}" stroke-width="2.5"/>`,
+  crown:c=>`<path d="M-19 11V-9L-9.5 1L0-15L9.5 1L19-9V11Z" fill="${c}"/><rect x="-19" y="13" width="38" height="5" fill="${c}"/>`,
+  star:c=>`<polygon points="${starPts(19,8)}" fill="${c}"/>`,
+  flame:c=>`<path d="M0-20C10-8 16 0 12 10C9 18-9 18-12 10C-15 2-8-4-4-12C-3-4 2-2 4-6C5-10 3-15 0-20Z" fill="${c}"/>`,
+  horns:c=>`<path d="M-21-14C-17 1-8 4 0 4C8 4 17 1 21-14C14-5 8-3 0-3C-8-3-14-5-21-14Z" fill="${c}"/><path d="M-9 4H9L6 17H-6Z" fill="${c}"/>`,
+  wing:c=>`<path d="M-20 10C-10-16 10-20 21-16C12-12 14-8 6-6C12-4 10 0 2 0C8 2 4 6-4 6C0 10-10 12-20 10Z" fill="${c}"/>`,
+  paw:c=>`<ellipse cy="7" rx="10" ry="8.5" fill="${c}"/><circle cx="-12" cy="-4" r="4.5" fill="${c}"/><circle cx="12" cy="-4" r="4.5" fill="${c}"/><circle cx="-5" cy="-12" r="4.5" fill="${c}"/><circle cx="5" cy="-12" r="4.5" fill="${c}"/>`,
+  bolt:c=>`<path d="M5-20L-12 4H-2L-6 20L12-6H2Z" fill="${c}"/>`,
+  mountain:c=>`<path d="M-22 14L-10-10L-4 0L2-6L10-15L22 14Z" fill="${c}"/>`,
+};
+const LOGO_WORDS=[[/fenix|fénix|fuego|llama/i,'flame'],[/le[oó]n|real|rey|reyes|corona|imperio/i,'crown'],[/halc[oó]n|[aá]guila|guila|cuervo|gavil/i,'wing'],[/toro|buf|bisonte|carnero/i,'horns'],[/cachorro|lobo|tigre|puma|jaguar|oso|coyote|perro/i,'paw'],[/rayo|rel[aá]mpago|trueno|tormenta|electr/i,'bolt'],[/silla|cerro|cumbre|sierra|mitras|monta|volc/i,'mountain'],[/estrella|uni[oó]n|juventud|nova|astro/i,'star']];
+const LOGO_SHAPES=['M18 10H102V62C102 92 60 113 60 113C60 113 18 92 18 62Z','M60 8A52 52 0 1 1 59.9 8Z','M60 6L104 31V89L60 114L16 89V31Z'];
+const LOGO_PATTERNS=[
+  ()=> '',
+  c=>[24,48,72,96].map(x=>`<rect x="${x-6}" y="0" width="12" height="120" fill="${c}"/>`).join(''),
+  c=>`<rect x="60" y="0" width="60" height="120" fill="${c}"/>`,
+  c=>`<path d="M-10 22L22-10L130 98L98 130Z" fill="${c}"/>`,
+  c=>`<rect x="0" y="22" width="120" height="12" fill="${c}"/><rect x="0" y="70" width="120" height="12" fill="${c}"/>`,
+  c=>`<path d="M0 30L60 64L120 30V48L60 82L0 48Z" fill="${c}"/>`,
+];
+let _logoN=0;
+function logoParts(t){
+  const h=hashStr((t.name||'')+'|'+(t.logoV||0));
+  const p=t.color||'#2F6FB0';const lp=lum(p);
+  const cands=['#F4F1EA','#14181A','#E9C46A','#C9CED1','#B3262E'];
+  const rot=(h>>>6)%cands.length;let sec=cands[rot];
+  for(let i=0;i<cands.length;i++){const c=cands[(rot+i)%cands.length];if(Math.abs(lum(c)-lp)>95){sec=c;break}}
+  const kw=LOGO_WORDS.find(([re])=>re.test(t.name||''));
+  const gen=['ball','star','bolt','crown','ball'];
+  return{p,sec,shape:h%3,pattern:(h>>>3)%LOGO_PATTERNS.length,icon:kw?kw[1]:gen[(h>>>9)%gen.length]};
+}
+function logoSVG(t,standalone=false){
+  const L=logoParts(t),id='lgc'+(++_logoN),sh=LOGO_SHAPES[L.shape];
+  const code=esc((t.short||'').toUpperCase().slice(0,4));
+  return`<svg ${standalone?'xmlns="http://www.w3.org/2000/svg" width="240" height="240" ':''}viewBox="0 0 120 120" role="img" aria-label="${esc(t.name||'')}"><defs><clipPath id="${id}"><path d="${sh}"/></clipPath></defs>`+
+    `<path d="${sh}" fill="${L.p}"/><g clip-path="url(#${id})">${LOGO_PATTERNS[L.pattern](L.sec)}<rect x="0" y="82" width="120" height="17" fill="${L.sec}"/></g>`+
+    `<circle cx="60" cy="50" r="25" fill="${L.p}" stroke="${L.sec}" stroke-width="3.5"/><g transform="translate(60 50) scale(.92)">${LOGO_ICONS[L.icon](L.sec)}</g>`+
+    `<text x="60" y="95.5" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="13.5" letter-spacing="1" fill="${L.p}">${code}</text>`+
+    `<path d="${sh}" fill="none" stroke="${L.sec}" stroke-width="4"/></svg>`;
+}
+const logoURL=t=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(logoSVG(t,true));
+function crest(id,size=''){const t=T(id);if(!t)return`<span class="crest tbd ${size}">?</span>`;return`<span class="crest lg-on ${size}" aria-hidden="true">${logoSVG(t)}</span>`}
+
+/* ---------- Jugadores y equipos ---------- */
+const POS=['POR','DEF','MED','DEL'];
+const POSN={POR:'Portero',DEF:'Defensa',MED:'Medio',DEL:'Delantero'};
+function posOf(p){if(p.pos)return p.pos;const n=+p.n;if(!n)return'DEL';if(n===1||n===12||n===13)return'POR';if(n>=2&&n<=5)return'DEF';if([6,8,10,14,15,16].includes(n))return'MED';return'DEL'}
+const teamURL=(lid,tid)=>`/futbol?liga=${encodeURIComponent(lid)}&equipo=${encodeURIComponent(tid)}`;
+const leagueURL=lid=>`/futbol?liga=${encodeURIComponent(lid)}`;
+function playerStats(L,tid){
+  const t=T(tid);const map={};
+  (t?.players||[]).forEach(p=>map[p.name]={n:p.n,name:p.name,pos:posOf(p),g:0,y:0,r:0,mg:0});
+  all(L).forEach(m=>{
+    if(m.status!=='final'||(m.h!==tid&&m.a!==tid))return;const side=m.h===tid?'h':'a';const scored=new Set();
+    m.ev.forEach(e=>{if(e.side!==side||!e.p)return;const x=map[e.p]||(map[e.p]={n:'',name:e.p,pos:'—',g:0,y:0,r:0,mg:0});
+      if(e.t==='g'){x.g++;scored.add(e.p)}else x[e.t]++});
+    scored.forEach(n=>map[n].mg++);
+  });
+  return Object.values(map);
+}
+function teamMatches(L,tid){return all(L).filter(m=>!m.bye&&(m.h===tid||m.a===tid)).sort((a,b)=>new Date(a.date)-new Date(b.date))}
+
 function sc(m){let h=0,a=0;(m.ev||[]).forEach(e=>{if(e.t==='g')e.side==='h'?h++:a++});return[h,a]}
 const all=L=>L.rounds.flatMap((r,ri)=>r.matches.map(m=>({...m,ri,_m:m})));
 const fmtD=d=>{const s=new Date(d).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'}).replace(/\./g,'');return s.charAt(0).toUpperCase()+s.slice(1)};
