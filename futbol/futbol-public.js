@@ -8,7 +8,7 @@ function viewHome(){
     const f=featured(L);const live=all(L).some(m=>m.status==='vivo');
     const ci=curRound(L);
     return`<a class="comp" href="${leagueURL(L.id)}">
-      <div class="row">${live?'<span class="pill live"><span class="dot"></span>En vivo</span>':''}<span class="pill acc">${L.kind==='liga'?'Liga':'Torneo eliminatorio'}</span><span class="pill">${esc(L.season)}</span></div>
+      <div class="row">${live?'<span class="pill live"><span class="dot"></span>En vivo</span>':''}<span class="pill acc">${kindLabel(L)}</span><span class="pill">${esc(L.season)}</span></div>
       <h3>${esc(L.name)}</h3>
       <div class="crests">${L.teams.slice(0,8).map(id=>crest(id,'sm')).join('')}</div>
       <div class="note">${L.teams.length} equipos · ${esc(rname(L,ci)||'Sin calendario')}${f?` · ${f.kind==='vivo'?'Jugando':f.kind==='prox'?'Próximo':'Último'}: ${esc(T(f.m.h)?.short||'?')} vs ${esc(T(f.m.a)?.short||'?')}`:''}</div>
@@ -27,7 +27,7 @@ function matchCard(L,f,label){
   const mid=f.kind==='prox'?`<div><div class="feat-cd" data-cd="${m.date}">--:--:--</div><div class="note">${fmtD(m.date)} · ${fmtT(m.date)}</div></div>`
     :`<div class="feat-sc">${h}–${a}<small>${f.kind==='vivo'?'Marcador en vivo':'Final'}</small></div>`;
   const btn=`<button class="btn ${f.kind==='vivo'?'live':f.kind==='fin'?'':'pri'}" data-act="watch" data-m="${m.id}">${f.kind==='vivo'?'Ver transmisión':f.kind==='fin'?'Ver repetición':'Sala de transmisión'}</button>`;
-  return`<div class="feat"><div class="feat-h">${lbl}<span class="note">${esc(rname(L,m.ri))} · ${esc(m.venue)}</span></div>
+  return`<div class="feat"><div class="feat-h">${lbl}<span class="note">${esc(rname(L,m.ri))}${m.g?' · '+esc(groupName(L,m.g)):''}${m.venue?' · '+esc(m.venue):''}</span></div>
     <div class="feat-m"><div class="tm">${crest(m.h,'lg')}${tlink(L,m.h)}</div>${mid}<div class="tm">${crest(m.a,'lg')}${tlink(L,m.a)}</div></div>
     <div class="feat-f">${btn}<button class="btn ghost" data-act="tab" data-tab="jornadas" data-round="${m.ri}">Ver ${L.kind==='liga'?'jornada':'ronda'}</button></div></div>`;
 }
@@ -38,10 +38,11 @@ function viewLeague(L){
   const doneR=L.rounds.filter(r=>r.matches.length&&r.matches.every(m=>m.status==='final'||m.bye)).length;
   const pct=L.rounds.length?Math.round(doneR/L.rounds.length*100):0;
   const live=all(L).some(m=>m.status==='vivo');
-  const tabs=[['jornadas',L.kind==='liga'?'Jornadas':'Partidos'],[L.kind==='liga'?'tabla':'cuadro',L.kind==='liga'?'Tabla':'Cuadro'],['equipos','Equipos'],['estadisticas','Estadísticas'],['transmision','Transmisión']];
-  const body={jornadas:pubRounds,tabla:pubTable,cuadro:pubBracket,equipos:pubTeams,estadisticas:pubStats,transmision:pubWatch}[PT.tab]||pubRounds;
+  const tabs=L.kind==='grupos'?[['jornadas','Jornadas'],['grupos','Grupos'],['cuadro','Fase final'],['equipos','Equipos'],['estadisticas','Estadísticas'],['transmision','Transmisión']]
+    :[['jornadas',L.kind==='liga'?'Jornadas':'Partidos'],[L.kind==='liga'?'tabla':'cuadro',L.kind==='liga'?'Tabla':'Cuadro'],['equipos','Equipos'],['estadisticas','Estadísticas'],['transmision','Transmisión']];
+  const body={jornadas:pubRounds,tabla:pubTable,grupos:pubGroups,cuadro:pubBracket,equipos:pubTeams,estadisticas:pubStats,transmision:pubWatch}[PT.tab]||pubRounds;
   return`<section class="hero">${PITCH}<div class="wrap hero-in">
-    <div><div class="eyebrow">${L.kind==='liga'?'Liga · todos contra todos':'Torneo eliminatorio'} · ${esc(L.season)} · ${L.teams.length} equipos</div>
+    <div><div class="eyebrow">${L.kind==='liga'?'Liga · todos contra todos':kindLabel(L)} · ${esc(L.season)} · ${L.teams.length} equipos</div>
       <h1>${esc(L.name)}</h1>
       <div class="prog"><div class="lbl"><span><b>${esc(rname(L,ci)||'—')}</b> de ${L.rounds.length}</span><span>${pct}% jugado</span></div><div class="bar"><i style="width:${pct}%"></i></div>
       <div class="note">Sede principal: ${esc(L.venue||'Por definir')}</div></div></div>
@@ -57,7 +58,7 @@ function fixture(L,m){
   const evs=side=>m.ev.filter(e=>e.side===side).map(e=>`<div class="ev">${side==='h'?`<span>${esc(e.p||'Sin asignar')}</span><span class="ic ${e.t}"></span><span class="mn">${e.m?e.m+"'":''}</span>`:`<span class="mn">${e.m?e.m+"'":''}</span><span class="ic ${e.t}"></span><span>${esc(e.p||'Sin asignar')}</span>`}</div>`).join('');
   const pen=m.pen&&h===a&&m.status==='final'?`<div class="none">Avanza ${esc(tname(m.pen==='h'?m.h:m.a))} en penales</div>`:'';
   return`<details class="fx"><summary>
-    <div class="fx-meta"><b>${fmtD(m.date)}</b>${played?fmtT(m.date)+' · ':''}${esc(m.venue)}</div>
+    <div class="fx-meta"><b>${fmtD(m.date)}</b>${played?fmtT(m.date)+' · ':''}${m.g?`<span class="gtag">${esc(groupName(L,m.g))}</span> · `:''}${esc(m.venue)}</div>
     <div class="fx-t h">${tlink(L,m.h)}${crest(m.h)}</div>${scoreH}
     <div class="fx-t a">${crest(m.a)}${tlink(L,m.a)}</div>
     <div class="fx-a">${statusPill(m)}${act}</div></summary>
@@ -67,7 +68,7 @@ function pubRounds(L){
   if(!L.rounds.length)return'<div class="empty">El calendario aún no se ha publicado.</div>';
   const i=Math.min(PT.round,L.rounds.length-1);const r=L.rounds[i];
   const sel=L.rounds.map((x,k)=>{const done=x.matches.every(m=>m.status==='final'||m.bye);const lv=x.matches.some(m=>m.status==='vivo');
-    return`<button data-act="round" data-i="${k}" class="${k===i?'on':''} ${done?'done':''} ${lv?'lv':''}" aria-label="${esc(rname(L,k))}">${L.kind==='liga'?k+1:esc(x.name.split(' ')[0])}</button>`}).join('');
+    return`<button data-act="round" data-i="${k}" class="${k===i?'on':''} ${done?'done':''} ${lv?'lv':''}" aria-label="${esc(rname(L,k))}">${L.kind==='liga'||(L.kind==='grupos'&&!x.ko)?k+1:esc(({'Semifinales':'Semis','Cuartos de final':'Cuartos','Octavos de final':'Octavos'})[x.name]||x.name.split(' ')[0])}</button>`}).join('');
   const ms=r.matches.filter(m=>!m.bye);
   return`<div class="sec-h"><div><div class="eyebrow">${fmtD(r.date+'T12:00')}</div><h2>${esc(rname(L,i))}</h2></div></div>
     <div class="rsel">${sel}</div>
@@ -81,19 +82,29 @@ function pubTable(L){
   ${rows.map((r,i)=>`<tr class="${i<4?'q':''}"><td class="pos">${i+1}</td><td class="tn l"><div>${crest(r.id,'sm')}${tlink(L,r.id)}</div></td><td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td><td>${r.gf-r.gc>0?'+':''}${r.gf-r.gc}</td><td class="pts">${r.pts}</td><td><div class="form">${r.form.slice(-5).map(f=>`<i class="${f}">${f}</i>`).join('')}</div></td></tr>`).join('')}
   </tbody></table></div>`;
 }
+function pubGroups(L){
+  const q=+L.qual||2;
+  const cards=(L.groups||[]).map(g=>{const rows=groupTable(L,g);
+    return`<div class="panel gpanel"><div class="sec-h" style="margin-bottom:10px"><h3>${esc(g.name)}</h3><span class="note">${g.teams.length} equipos</span></div>
+    <div class="tw"><table class="st gt"><thead><tr><th>#</th><th class="l">Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr class="${i<q?'q':''}"><td class="pos">${i+1}</td><td class="tn l"><div>${crest(r.id,'sm')}${tlink(L,r.id)}</div></td><td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf-r.gc>0?'+':''}${r.gf-r.gc}</td><td class="pts">${r.pts}</td></tr>`).join('')||'<tr><td colspan="8" class="note">Sin equipos</td></tr>'}
+    </tbody></table></div></div>`}).join('');
+  return`<div class="sec-h"><h2>Grupos</h2><div class="legend"><span><i></i>Clasifican a la fase final (top ${q})</span><span>3 pts victoria · 1 empate</span></div></div><div class="ggrid pub">${cards}</div>`;
+}
 function pubBracket(L){
-  if(!L.rounds.length)return'<div class="empty">El cuadro aún no se ha sorteado.</div>';
-  const cols=L.rounds.map((r,ri)=>`<div class="bk-col"><h4>${esc(r.name)}</h4>${r.matches.map(m=>{
+  const RS=L.kind==='grupos'?koRounds(L):L.rounds;
+  if(!RS.length)return`<div class="empty">${L.kind==='grupos'?'La fase final se arma al terminar los grupos.':'El cuadro aún no se ha sorteado.'}</div>`;
+  const cols=RS.map((r,ri)=>`<div class="bk-col"><h4>${esc(r.name)}</h4>${r.matches.map(m=>{
     const w=winner(m);const[h,a]=sc(m);const showS=m.status!=='programado'&&!m.bye;
-    const row=(id,s)=>`<div class="bk-r ${w&&w!==id?'lo':''}">${crest(id,'xs')}${id?tlink(L,id):`<span>${m.bye&&ri===0?'Pase directo':'Por definir'}</span>`}${showS?`<b>${s}</b>`:''}</div>`;
-    return`<div class="bk-m ${ri===L.rounds.length-1?'fin-m':''}">${row(m.h,h)}${row(m.a,a)}<div class="bk-f"><span>${fmtD(m.date)} · ${fmtT(m.date)}</span><span>${m.status==='vivo'?'EN VIVO':m.pen&&h===a&&m.status==='final'?'Penales':m.status==='final'?'Final':''}</span></div></div>`}).join('')}</div>`).join('');
-  const champ=winner(L.rounds.at(-1).matches[0]);
-  return`<div class="sec-h"><h2>Cuadro</h2>${champ?`<span class="pill acc">Campeón: ${esc(tname(champ))}</span>`:''}</div><div class="bk"><div class="bk-in">${cols}</div></div>`;
+    const row=(id,s,side)=>`<div class="bk-r ${w&&w!==id?'lo':''}">${crest(id,'xs')}${id?tlink(L,id):`<span class="tbd-l">${ri===0&&m.src?esc(srcLabel(L,m.src[side])):m.bye&&ri===0?'Pase directo':'Por definir'}</span>`}${showS?`<b>${s}</b>`:''}</div>`;
+    return`<div class="bk-m ${ri===RS.length-1?'fin-m':''}">${row(m.h,h,'h')}${row(m.a,a,'a')}<div class="bk-f"><span>${fmtD(m.date)} · ${fmtT(m.date)}</span><span>${m.status==='vivo'?'EN VIVO':m.pen&&h===a&&m.status==='final'?'Penales':m.status==='final'?'Final':''}</span></div></div>`}).join('')}</div>`).join('');
+  const champ=winner(RS.at(-1).matches[0]);
+  return`<div class="sec-h"><h2>${L.kind==='grupos'?'Fase final':'Cuadro'}</h2>${L.kind==='grupos'&&!groupsDone(L)?'<span class="note">Los cruces se llenan solos al terminar la fase de grupos</span>':''}${champ?`<span class="pill acc">Campeón: ${esc(tname(champ))}</span>`:''}</div><div class="bk"><div class="bk-in">${cols}</div></div>`;
 }
 function pubTeams(L){
   const rows=table(L);const pos=Object.fromEntries(rows.map((r,i)=>[r.id,{...r,i}]));
   const cards=L.teams.map(id=>{const r=pos[id];const n=(T(id)?.players||[]).length;
-    return`<a class="tcard2" href="${teamURL(L.id,id)}">${crest(id,'xl')}<div><b>${esc(tname(id))}</b><small>${L.kind==='liga'&&r?`${r.i+1}° lugar · ${r.pts} pts · `:''}${n} jugadores</small>${r?`<div class="form">${r.form.slice(-5).map(f=>`<i class="${f}">${f}</i>`).join('')}</div>`:''}</div></a>`}).join('');
+    return`<a class="tcard2" href="${teamURL(L.id,id)}">${crest(id,'xl')}<div><b>${esc(tname(id))}</b><small>${L.kind==='liga'&&r?`${r.i+1}° lugar · ${r.pts} pts · `:''}${L.kind==='grupos'?(()=>{const g=groupOf(L,id);if(!g)return'';const p=groupTable(L,g).findIndex(x=>x.id===id);return`${p+1}° ${esc(g.name)} · `})():''}${n} jugadores</small>${r?`<div class="form">${r.form.slice(-5).map(f=>`<i class="${f}">${f}</i>`).join('')}</div>`:''}</div></a>`}).join('');
   return`<div class="sec-h"><h2>Equipos</h2><span class="note">Toca un equipo para ver su plantilla y estadísticas</span></div><div class="tgrid">${cards||'<div class="empty">Sin equipos inscritos.</div>'}</div>`;
 }
 function lbRows(L,arr,valFn,subFn,max){
@@ -196,7 +207,7 @@ function viewTeam(L,tid){
   return`<section class="hero">${PITCH}<div class="wrap hero-in">
     <div><a class="back" href="${leagueURL(L.id)}">← ${esc(L.name)}</a>
       <div class="t-hero">${crest(tid,'hg')}<div><div class="eyebrow">${esc(L.season)} · ${(t?.players||[]).length} jugadores</div><h1 style="margin:6px 0 12px">${esc(t?.name||'Equipo')}</h1>
-      <div class="row">${L.kind==='liga'&&ri>=0?`<span class="pill acc">${ri+1}° lugar</span><span class="pill fin">${r.pts} pts</span>`:''}<div class="form">${r.form.slice(-5).map(x=>`<i class="${x}">${x}</i>`).join('')}</div></div></div></div></div>
+      <div class="row">${L.kind==='liga'&&ri>=0?`<span class="pill acc">${ri+1}° lugar</span><span class="pill fin">${r.pts} pts</span>`:''}${L.kind==='grupos'&&groupOf(L,tid)?(()=>{const g=groupOf(L,tid);const gr=groupTable(L,g);const p=gr.findIndex(x=>x.id===tid);return`<span class="pill acc">${p+1}° ${esc(g.name)}</span><span class="pill fin">${gr[p]?.pts||0} pts</span>`})():''}<div class="form">${r.form.slice(-5).map(x=>`<i class="${x}">${x}</i>`).join('')}</div></div></div></div></div>
     ${matchCard(L,f,'Próximo partido')}</div></section>
     <div class="wrap sec">
       <div class="kpis k6"><div class="kpi"><span class="eyebrow">Jugados</span><b class="num">${r.pj}</b></div><div class="kpi"><span class="eyebrow">G · E · P</span><b class="num">${r.g}-${r.e}-${r.p}</b></div><div class="kpi"><span class="eyebrow">Goles a favor</span><b class="num">${r.gf}</b></div><div class="kpi"><span class="eyebrow">Goles en contra</span><b class="num">${r.gc}</b></div><div class="kpi"><span class="eyebrow">Porterías en cero</span><b class="num">${st.cs}</b></div><div class="kpi"><span class="eyebrow">Promedio de gol</span><b class="num">${r.pj?(r.gf/r.pj).toFixed(1):'0'}</b></div></div>
@@ -204,7 +215,7 @@ function viewTeam(L,tid){
       <div class="grid2">
         <div class="panel"><h3>Goleadores del equipo</h3>${(()=>{const g=ps.filter(p=>p.g).sort((a,b)=>b.g-a.g).slice(0,5);return g.length?`<div class="lb">${g.map((p,i)=>`<div class="lb-r"><span class="rk">${i+1}</span>${crest(tid,'sm')}<div class="nm"><b>${esc(p.name)}</b><small>${POSN[p.pos]||'Jugador'} · #${esc(p.n||'—')}</small></div><span class="v">${p.g}</span><div class="lb-bar"><i style="width:${Math.round(p.g/Math.max(leagueTop,1)*100)}%"></i></div></div>`).join('')}</div><p class="note" style="margin:12px 0 0">La barra compara contra el líder de goleo de la liga (${leagueTop}).</p>`:'<div class="empty">Sin goles todavía.</div>'})()}</div>
         <div class="panel"><h3>Resumen</h3><div class="facts">
-          <div><span>Posición</span><b>${L.kind==='liga'&&ri>=0?`${ri+1}° de ${rows.length}`:'—'}</b></div>
+          <div><span>Posición</span><b>${L.kind==='liga'&&ri>=0?`${ri+1}° de ${rows.length}`:L.kind==='grupos'&&groupOf(L,tid)?(()=>{const g=groupOf(L,tid);const gr=groupTable(L,g);return`${gr.findIndex(x=>x.id===tid)+1}° de ${gr.length} en ${esc(g.name)}`})():'—'}</b></div>
           <div><span>Diferencia de gol</span><b>${r.gf-r.gc>0?'+':''}${r.gf-r.gc}</b></div>
           <div><span>Mayor goleada</span><b>${big?`${big.s} vs ${esc(T(big.rv)?.short||'')}`:'—'}</b></div>
           <div><span>Racha actual</span><b>${r.form.length?(()=>{const lastF=r.form.at(-1);let n=0;for(let i=r.form.length-1;i>=0&&r.form[i]===lastF;i--)n++;return`${n} ${lastF==='G'?'victoria':lastF==='E'?'empate':'derrota'}${n>1?'s':''}`})():'—'}</b></div>

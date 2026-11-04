@@ -51,7 +51,33 @@ function seed(){
   C.rounds[1].matches[1].date='2026-11-07T18:00';
   propagate(C);
   S.leagues.push(C);
+  // Grupos + eliminación directa
+  const gt=teams.slice(0,8).map(t=>t.id);
+  const G={id:'copa-monterrey',name:'Copa Monterrey de Grupos',kind:'grupos',season:'Invierno 2026',venue:'Complejo Cumbres',vueltas:1,qual:2,teams:gt,blocks:[],groups:mkGroups(2),rounds:[]};
+  G.groups[0].teams=[gt[0],gt[2],gt[4],gt[6]];G.groups[1].teams=[gt[1],gt[3],gt[5],gt[7]];
+  genGroupCal(G,'2026-10-21',1);
+  G.rounds.forEach((r,ri)=>r.matches.forEach(m=>{if(ri<2){m.status='final';fill(m,goals(),goals());m.vod='https://picalereplay.com'}}));
+  buildKO(G,'2026-11-11');propagate(G);
+  S.leagues.push(G);
+  migrate(S);
   return S;
+}
+
+/* Cada competencia tiene sus propios equipos. Los datos viejos con equipos compartidos
+   se separan: el equipo se copia para cada competencia (id fijo, igual en todas las páginas). */
+function migrate(D){
+  let ch=false;const find=id=>D.teams.find(t=>t.id===id);
+  D.leagues.forEach(L=>{L.teams=L.teams.map(id=>{
+    const t=find(id);if(!t)return id;
+    if(!t.lid){t.lid=L.id;ch=true;return id}
+    if(t.lid===L.id)return id;
+    const nid=`${id}_${L.id}`;if(!find(nid)){D.teams.push({...JSON.parse(JSON.stringify(t)),id:nid,lid:L.id})}ch=true;
+    L.rounds.forEach(r=>r.matches.forEach(m=>{if(m.h===id)m.h=nid;if(m.a===id)m.a=nid}));
+    (L.blocks||[]).forEach(b=>{if(b[0]===id)b[0]=nid;if(b[1]===id)b[1]=nid});
+    (L.groups||[]).forEach(g=>g.teams=g.teams.map(x=>x===id?nid:x));
+    return nid;
+  })});
+  return ch;
 }
 function roundRobin(ids,vueltas){
   let arr=[...ids];if(arr.length%2)arr.push(null);
@@ -83,14 +109,54 @@ function genBracket(L,dates){
     L.rounds.push(round);
   }
 }
+
+/* ---------- Grupos + eliminación directa ---------- */
+const GL='ABCDEFGH';
+const koRounds=L=>L.rounds.filter(r=>r.ko);
+const groupRoundsOf=L=>L.rounds.filter(r=>!r.ko);
+const groupOf=(L,tid)=>(L.groups||[]).find(g=>g.teams.includes(tid));
+const groupName=(L,gid)=>(L.groups||[]).find(g=>g.id===gid)?.name||'';
+const groupTable=(L,g)=>table(L,g.teams,m=>m.g===g.id);
+const mkGroups=n=>Array.from({length:n},(_,i)=>({id:'g'+GL[i],name:'Grupo '+GL[i],teams:[]}));
+const srcLabel=(L,x)=>x?`${x.p}° ${groupName(L,x.g)}`:'Pase directo';
+function genGroupCal(L,start,vu){
+  const per=L.groups.map(g=>roundRobin(g.teams,vu));const n=Math.max(0,...per.map(x=>x.length));const base=new Date(start+'T12:00');const out=[];
+  for(let k=0;k<n;k++){const d=isoD(new Date(base.getTime()+k*7*864e5));let slot=0;const ms=[];
+    per.forEach((rr,gi)=>(rr[k]||[]).forEach(([h,a])=>ms.push({id:uid('m'),h,a,g:L.groups[gi].id,date:`${d}T${p2(Math.min(9+slot++,22))}:00`,venue:L.venue||'',status:'programado',ev:[],stream:'',vod:''})));
+    out.push({id:uid('r'),date:d,matches:ms})}
+  L.rounds=out.concat(koRounds(L));
+}
+// Cruces de la primera ronda: 1° de un grupo contra 2° de otro, y los del mismo grupo en mitades opuestas.
+function koSlots(L){
+  const G=(L.groups||[]).filter(g=>g.teams.length);const q=Math.max(1,+L.qual||2);
+  if(q===2&&[2,4,8].includes(G.length)){const top=[],bot=[];for(let k=0;k<G.length;k+=2){top.push([{g:G[k].id,p:1},{g:G[k+1].id,p:2}]);bot.push([{g:G[k+1].id,p:1},{g:G[k].id,p:2}])}return top.concat(bot)}
+  const seeds=[];for(let p=1;p<=q;p++)G.forEach(g=>seeds.push({g:g.id,p}));if(seeds.length<2)return[];
+  let size=2;while(size<seeds.length)size*=2;const pairs=[];for(let i=0;i<size/2;i++)pairs.push([seeds[i]||null,seeds[size-1-i]||null]);return pairs;
+}
+function buildKO(L,start){
+  const pairs=koSlots(L);if(!pairs.length){L.rounds=groupRoundsOf(L);return}
+  const base=new Date(start+'T12:00');const rounds=[];let cnt=pairs.length,r=0;
+  while(true){const d=isoD(new Date(base.getTime()+r*7*864e5));const R={id:uid('r'),ko:true,name:RNAMES[cnt*2]||`Ronda ${r+1}`,date:d,matches:[]};
+    for(let i=0;i<cnt;i++){const m={id:uid('m'),h:null,a:null,date:`${d}T${p2(Math.min(10+i*2,22))}:00`,venue:L.venue||'',status:'programado',ev:[],stream:'',vod:''};
+      if(r===0){m.src={h:pairs[i][0],a:pairs[i][1]};if(!pairs[i][0]||!pairs[i][1])m.bye=true}R.matches.push(m)}
+    rounds.push(R);if(cnt===1)break;cnt/=2;r++}
+  L.rounds=groupRoundsOf(L).concat(rounds);
+}
+function groupsDone(L){const ms=groupRoundsOf(L).flatMap(r=>r.matches);return ms.length>0&&ms.every(m=>m.status==='final')}
+function fillKO(L,force){
+  const R0=koRounds(L)[0];if(!R0||(!force&&!groupsDone(L)))return;
+  const pos={};(L.groups||[]).forEach(g=>pos[g.id]=groupTable(L,g).map(r=>r.id));
+  R0.matches.forEach(m=>{if(!m.src||m.status!=='programado'||(m.ev||[]).length)return;['h','a'].forEach(s=>{const x=m.src[s];m[s]=x?(pos[x.g]?.[x.p-1]||null):null})});
+}
 function winner(m){
   if(!m)return null;if(m.bye)return m.h||m.a;if(m.status!=='final'||!m.h||!m.a)return null;
   const[h,a]=sc(m);if(h>a)return m.h;if(a>h)return m.a;return m.pen==='h'?m.h:m.pen==='a'?m.a:null;
 }
 function propagate(L){
-  if(L.kind!=='torneo')return;
-  for(let r=1;r<L.rounds.length;r++)L.rounds[r].matches.forEach((m,i)=>{const p=L.rounds[r-1].matches;m.h=winner(p[2*i]);m.a=winner(p[2*i+1])});
+  let R;if(L.kind==='torneo')R=L.rounds;else if(L.kind==='grupos'){fillKO(L);R=koRounds(L)}else return;
+  for(let r=1;r<R.length;r++)R[r].matches.forEach((m,i)=>{const p=R[r-1].matches;m.h=winner(p[2*i]);m.a=winner(p[2*i+1])});
 }
+
 
 let S;
 function localData(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}return null}
@@ -98,9 +164,11 @@ async function fetchServer(){
   const r=await fetch(API,{cache:'no-store'});if(!r.ok)throw new Error('api');
   const j=await r.json();MODE='server';return j&&j.leagues?j:null;
 }
+let MIGRATED=false;
 async function loadData(){
-  try{return (await fetchServer())||seed()}catch(e){MODE='local'}
-  return localData()||seed();
+  let d=null;
+  try{d=(await fetchServer())||seed()}catch(e){MODE='local';d=localData()||seed()}
+  MIGRATED=migrate(d);return d;
 }
 const getPin=()=>{try{return sessionStorage.getItem('picale-futbol-pin')||''}catch(e){return getPin._||''}};
 let _saveT;
@@ -191,10 +259,11 @@ function sc(m){let h=0,a=0;(m.ev||[]).forEach(e=>{if(e.t==='g')e.side==='h'?h++:
 const all=L=>L.rounds.flatMap((r,ri)=>r.matches.map(m=>({...m,ri,_m:m})));
 const fmtD=d=>{const s=new Date(d).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'}).replace(/\./g,'');return s.charAt(0).toUpperCase()+s.slice(1)};
 const fmtT=d=>{const x=new Date(d);return p2(x.getHours())+':'+p2(x.getMinutes())};
-const rname=(L,i)=>L.kind==='torneo'?L.rounds[i]?.name:`Jornada ${i+1}`;
+const rname=(L,i)=>L.kind==='torneo'||L.rounds[i]?.ko?L.rounds[i]?.name:`Jornada ${i+1}`;
+const kindLabel=L=>L.kind==='liga'?'Liga':L.kind==='grupos'?'Grupos + eliminación directa':'Torneo eliminatorio';
 function curRound(L){const i=L.rounds.findIndex(r=>r.matches.some(m=>m.status!=='final'&&!m.bye));return i<0?Math.max(0,L.rounds.length-1):i}
 function featured(L){
-  const ms=all(L).filter(m=>!m.bye);
+  const ms=all(L).filter(m=>!m.bye&&m.h&&m.a);
   const live=ms.find(m=>m.status==='vivo');if(live)return{m:live,kind:'vivo'};
   const now=Date.now();const nx=ms.filter(m=>m.status==='programado'&&new Date(m.date).getTime()>=now-36e5).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
   if(nx)return{m:nx,kind:'prox'};
@@ -210,10 +279,10 @@ function statusPill(m){
   return'<span class="pill">Programado</span>';
 }
 
-function table(L){
-  const R={};L.teams.forEach(id=>R[id]={id,pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0,form:[]});
+function table(L,teams=L.teams,filt=null){
+  const R={};teams.forEach(id=>R[id]={id,pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0,form:[]});
   L.rounds.forEach(r=>r.matches.forEach(m=>{
-    if(m.status!=='final'||!R[m.h]||!R[m.a])return;const[h,a]=sc(m);
+    if(m.status!=='final'||!R[m.h]||!R[m.a]||(filt&&!filt(m)))return;const[h,a]=sc(m);
     const H=R[m.h],A=R[m.a];H.pj++;A.pj++;H.gf+=h;H.gc+=a;A.gf+=a;A.gc+=h;
     if(h>a){H.g++;H.pts+=3;A.p++;H.form.push('G');A.form.push('P')}
     else if(a>h){A.g++;A.pts+=3;H.p++;A.form.push('G');H.form.push('P')}

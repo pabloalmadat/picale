@@ -457,3 +457,12 @@ button.vid{font:inherit;color:inherit;text-align:left;cursor:pointer;padding:0}
 .rgrip.off{cursor:default;opacity:.6}
 .rnd-f{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .watch{scroll-margin-top:130px}
+/* grupos */
+.ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.ggrid.pub{grid-template-columns:repeat(auto-fill,minmax(min(100%,460px),1fr));gap:16px}
+.gpanel{padding:16px}
+.gpanel .tw{border:0;border-radius:0;background:none}
+table.st.gt{min-width:420px}
+.gtag{font-weight:800;color:var(--accent)}
+.tbd-l{color:var(--muted);font-style:italic}
+.bk-r .crest{flex:0 0 var(--s)}
