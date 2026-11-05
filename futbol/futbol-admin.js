@@ -3,25 +3,136 @@ let AV={view:'league',id:null};
 let B={round:null,h:null,a:null};
 const OPEN=new Set();
 let MM=null; // match en edición {lid,mid}
-const authed=()=>!!getPin();
+const authed=()=>!!ME;
 const curL=()=>LG(AV.id);
 function findM(L,mid){for(const r of L.rounds)for(const m of r.matches)if(m.id===mid)return{m,r};return{}}
 
+/* ===================== Cuenta del dueño de liga ===================== */
+let GATE='login',PREPLAN=null,OWN=null;
+const myLeagues=()=>ME?.role==='admin'?S.leagues:S.leagues.filter(L=>L.owner===ME?.id);
+const isOwner=()=>ME?.role==='owner';
+const subActive=()=>!isOwner()||ME.status==='activo';
+const myCams=()=>isOwner()?(ME.cams||[]):[{id:'demo',code:'DEMO',name:'Cámara demo PÍCALE',cancha:''}];
+function planCards(cta){
+  return`<div class="plans">${PLANS.map(p=>{const cur=isOwner()&&ME.plan===p.id&&ME.status==='activo';
+    return`<div class="plan ${p.best?'best':''} ${PREPLAN===p.id?'pre':''}"><div class="plan-h"><span class="eyebrow">${esc(p.tag)}</span><h3>${esc(p.name)}</h3>
+      <div class="price"><b class="num">${money(p.price)}</b><span>al mes</span></div>
+      <div class="cams-n">${p.cams?`<span class="cam-ic"></span>${p.cams} cámara${p.cams>1?'s':''} All-in-One incluida${p.cams>1?'s':''}`:'Sin cámara · solo software'}</div></div>
+      <ul>${p.feats.map(f=>`<li>${esc(f)}</li>`).join('')}</ul>${cur?'<span class="btn ghost" aria-disabled="true">Tu plan actual</span>':cta(p)}</div>`}).join('')}</div>`;
+}
+function viewGate(){
+  const local=MODE!=='server';if(local)GATE='pin';
+  const tab=(k,t)=>`<button type="button" class="${GATE===k?'on':''}" data-act="gate-tab" data-k="${k}">${t}</button>`;
+  const f={
+    login:`<label class="fld" for="g-email">Correo<input id="g-email" class="inp" type="email" autocomplete="email" required></label>
+      <label class="fld" for="g-pass">Contraseña<input id="g-pass" class="inp" type="password" autocomplete="current-password" required></label>
+      <button class="btn pri" type="submit">Entrar</button>`,
+    signup:`${PREPLAN?`<div class="pill acc" style="align-self:flex-start">Plan elegido: ${esc(planOf(PREPLAN)?.name||'')}</div>`:''}
+      <label class="fld" for="g-name">Tu nombre<input id="g-name" class="inp" autocomplete="name" required></label>
+      <label class="fld" for="g-league">Nombre de tu liga u organización<input id="g-league" class="inp" placeholder="Ej. Liga Nocturna Cumbres"></label>
+      <label class="fld" for="g-email">Correo<input id="g-email" class="inp" type="email" autocomplete="email" required></label>
+      <label class="fld" for="g-pass">Contraseña (mínimo 6 caracteres)<input id="g-pass" class="inp" type="password" autocomplete="new-password" minlength="6" required></label>
+      <button class="btn pri" type="submit">Crear cuenta</button>`,
+    pin:`<label class="fld" for="pin">PIN de PÍCALE<input id="pin" class="inp" type="password" inputmode="numeric" autocomplete="off"></label>
+      <button class="btn pri" type="submit">Entrar como PÍCALE</button>${local?'<p class="note">Modo demo local · PIN: 2026. Las cuentas de dueños necesitan el servidor.</p>':''}`,
+  }[GATE];
+  return`<div class="wrap"><div class="gate2">
+    <div class="gate-pitch"><div class="eyebrow">PÍCALE Fútbol · para dueños de liga</div><h1>Tu liga, transmitida como profesional</h1>
+      <ul class="ticks"><li>Calendario, tabla, grupos y eliminatoria sin hojas de cálculo</li><li>Tus jugadores con su cuenta, su foto y sus estadísticas</li><li>Cámara All-in-One: cada partido en vivo y grabado</li><li>Página pública e imagen del rol para tus grupos de WhatsApp</li></ul>
+      <a class="btn ghost" href="/futbol" target="_blank" rel="noopener">Ver ligas en vivo</a></div>
+    <form class="gate box" id="gate">${local?'':`<div class="seg">${tab('login','Entrar')}${tab('signup','Crear cuenta')}</div>`}${f}
+      ${local?'':GATE==='pin'?'<button type="button" class="linkb" data-act="gate-tab" data-k="login">Soy dueño de liga</button>':'<button type="button" class="linkb" data-act="gate-tab" data-k="pin">Acceso PÍCALE</button>'}</form>
+  </div></div>`;
+}
+function viewPlans(){
+  const first=isOwner()&&ME.status!=='activo';
+  return`<div class="box"><div class="box-h"><div><div class="eyebrow">${first?`Hola, ${esc(ME.name.split(' ')[0])}`:'Suscripción'}</div><h2 style="margin-top:6px">${first?'Elige tu plan para empezar':'Cambiar de plan'}</h2>
+    <p>Los planes con cámara incluyen el equipo All-in-One de PÍCALE: llega a tu cancha, lo conectas y cada partido se transmite y se graba solo.</p></div></div>
+    ${planCards(p=>`<button class="btn ${p.best?'pri':''}" data-act="choose-plan" data-plan="${p.id}">Elegir ${esc(p.name)}</button>`)}
+    <p class="note" style="margin:14px 0 0">Demostración: al confirmar se activa la cuenta sin hacer ningún cargo.</p></div>`;
+}
+function openCheckout(pid){
+  const p=planOf(pid);
+  $('#dlg').innerHTML=`<div class="dlg"><div class="dlg-h"><div><div class="eyebrow">Confirmar suscripción</div><h3 style="margin-top:4px">${esc(p.name)}</h3></div><button class="btn sm ghost" data-act="dlg-close">Cerrar</button></div>
+    <div class="co">
+      <div class="co-r"><span>Plan ${esc(p.name)} · mensual</span><b class="num">${money(p.price)}</b></div>
+      ${p.cams?`<div class="co-r"><span>${p.cams} cámara${p.cams>1?'s':''} All-in-One (comodato) + instalación</span><b>Incluido</b></div>`:''}
+      <div class="co-r tot"><span>Total al mes</span><b class="num">${money(p.price)}</b></div>
+    </div>
+    <div class="demo-pay"><b>Pago de demostración</b><span>No se realiza ningún cargo. En la versión final aquí se paga con tarjeta, transferencia u OXXO y se renueva cada mes.</span></div>
+    <button class="btn pri" data-act="pay" data-plan="${p.id}">Activar suscripción</button></div>`;
+  const d=$('#dlg');if(!d.open)d.showModal();
+}
+function viewSub(){
+  const p=planOf(ME.plan);const act=ME.status==='activo';
+  return`<div class="box"><div class="box-h"><div><div class="eyebrow">Mi suscripción</div><h2 style="margin-top:6px">${p?esc(p.name):'Sin plan'}</h2></div>
+    <span class="pill ${act?'fin':'live'}">${act?'Activa':ME.status==='cancelado'?'Cancelada':'Sin plan'}${ME.demo?' · demo':''}</span></div>
+    <div class="facts">
+      <div><span>Mensualidad</span><b class="num">${p?money(p.price):'—'}</b></div>
+      <div><span>Cámaras All-in-One</span><b>${(ME.cams||[]).length} de ${p?.cams||0} conectadas</b></div>
+      <div><span>Activa desde</span><b>${esc(ME.since||'—')}</b></div>
+      <div><span>${act?'Próxima renovación':'Termina'}</span><b>${esc(ME.renews||'—')}</b></div>
+      <div><span>Competencias</span><b>${myLeagues().length}</b></div>
+    </div>
+    <div class="toolbar" style="margin-top:16px"><button class="btn pri" data-act="go-plans">${act?'Cambiar de plan':'Reactivar'}</button>${act?'<button class="btn danger" data-act="cancel-sub" data-confirm="1">Cancelar suscripción</button>':''}</div></div>`;
+}
+function viewCams(){
+  const n=(ME.cams||[]).length,max=10;
+  const venues=[...new Set(myLeagues().flatMap(L=>[L.venue,...L.rounds.flatMap(r=>r.matches.map(m=>m.venue))]).filter(Boolean))];
+  const list=(ME.cams||[]).map(c=>`<div class="camc"><div class="cam-big"></div><div class="camc-b">
+      <div class="camc-h"><b>${esc(c.name)}</b>${c.code==='DEMO'?'<span class="pill fin"><span class="dot" style="color:var(--win)"></span>En línea · demo</span>':'<span class="pill">Esperando señal</span>'}</div>
+      <small class="num">${esc(c.code)} · activada ${esc(c.added||'')}</small>
+      <div class="toolbar"><label class="fld" for="cc-${c.id}" style="flex:1">Cancha que cubre<input id="cc-${c.id}" class="inp" list="venues" value="${esc(c.cancha)}" data-chg="cam-cancha" data-c="${c.id}" placeholder="Ej. Cancha 1"></label>
+      <button class="btn sm ghost danger" data-act="cam-del" data-c="${c.id}" data-confirm="1">Quitar</button></div></div></div>`).join('');
+  return`<div class="box"><div class="box-h"><div><div class="eyebrow">Cámaras All-in-One · ${n} conectada${n===1?'':'s'}</div><h2 style="margin-top:6px">Tus cámaras</h2>
+    <p>Cada cámara cubre una cancha. Al poner un partido de esa cancha <b>En vivo</b>, la transmisión se activa sola; al marcarlo <b>Final</b>, el partido completo queda grabado en la página pública.</p></div></div>
+    <div class="cams">${list}</div>
+    ${max>n?`<form class="addcam" id="camF"><h3>Activar cámara</h3><p class="note" style="margin:0">El código viene en la etiqueta de tu cámara (por ejemplo PCL-7F3K). ¿Aún no te llega? Escribe <b>DEMO</b> para probar con la cámara de demostración.</p>
+      <div class="toolbar"><label class="fld" for="cam-code">Código<input id="cam-code" class="inp num" required placeholder="PCL-7F3K" style="text-transform:uppercase"></label>
+      <label class="fld" for="cam-name">Nombre<input id="cam-name" class="inp" placeholder="Cámara ${n+1}"></label>
+      <label class="fld" for="cam-cancha" style="flex:1">Cancha<input id="cam-cancha" class="inp" list="venues" placeholder="Ej. Cancha 1"></label>
+      <button class="btn pri" type="submit">Activar</button></div></form>`:''}
+    <datalist id="venues">${venues.map(v=>`<option value="${esc(v)}">`).join('')}</datalist></div>
+    <div class="box"><h3 style="margin-bottom:12px">Cómo funciona</h3><ol class="steps">
+      <li><b>Llega tu cámara All-in-One.</b> Se monta en la cancha, se conecta a la corriente y a internet, y aquí la activas con su código.</li>
+      <li><b>Capturas el partido como siempre.</b> Al ponerlo En vivo, la página pública empieza a transmitir desde la cámara de esa cancha.</li>
+      <li><b>Al terminar queda grabado.</b> Jugadores y familias lo ven completo en la pestaña Transmisión de tu liga.</li></ol></div>`;
+}
+async function loadOwners(){try{OWN=await api('/owners')}catch(e){OWN=[];toast(e.message,'warn')}render()}
+function viewOwners(){
+  if(!OWN){loadOwners();return'<div class="box"><div class="empty">Cargando cuentas…</div></div>'}
+  const own=OWN.filter(o=>o.role!=='player'),pl=OWN.filter(o=>o.role==='player');
+  const linked=id=>S.teams.filter(t=>(t.players||[]).some(p=>p.uid===id));
+  return`<div class="kpis"><div class="kpi"><span class="eyebrow">Dueños de liga</span><b class="num">${own.length}</b></div><div class="kpi"><span class="eyebrow">Jugadores con cuenta</span><b class="num">${pl.length}</b></div><div class="kpi"><span class="eyebrow">Cámaras conectadas</span><b class="num">${own.reduce((s,o)=>s+(o.cams||[]).length,0)}</b></div><div class="kpi"><span class="eyebrow">Competencias</span><b class="num">${S.leagues.length}</b></div></div>
+  <div class="box"><div class="box-h"><div><h2>Dueños de liga</h2><p>Cada dueño solo ve y edita sus competencias.</p></div><button class="btn sm" data-act="owners-reload">Actualizar</button></div>
+  ${own.length?`<div class="tw"><table class="st"><thead><tr><th class="l">Dueño</th><th class="l">Liga</th><th class="l">Correo</th><th>Cámaras</th><th>Competencias</th><th>Alta</th></tr></thead><tbody>
+  ${own.map(o=>`<tr><td class="tn l">${esc(o.name)}</td><td class="l" style="font-family:var(--f-body)">${esc(o.league||'—')}</td><td class="l">${esc(o.email)}</td><td>${(o.cams||[]).length}</td><td>${S.leagues.filter(L=>L.owner===o.id).length}</td><td>${esc(o.created||'')}</td></tr>`).join('')}
+  </tbody></table></div>`:'<div class="empty">Aún no hay dueños registrados.</div>'}</div>
+  <div class="box"><div class="box-h"><div><h2>Jugadores</h2><p>Se registran con el link de invitación de su equipo.</p></div></div>
+  ${pl.length?`<div class="tw"><table class="st"><thead><tr><th class="l">Jugador</th><th class="l">Correo</th><th class="l">Equipos</th><th>Alta</th></tr></thead><tbody>
+  ${pl.map(o=>`<tr><td class="tn l"><div>${avatar(o,'sm')}${esc(o.name)}</div></td><td class="l">${esc(o.email)}</td><td class="l" style="font-family:var(--f-body)">${linked(o.id).map(t=>esc(t.name)).join(', ')||'—'}</td><td>${esc(o.created||'')}</td></tr>`).join('')}
+  </tbody></table></div>`:'<div class="empty">Aún no hay jugadores con cuenta.</div>'}</div>`;
+}
+function camAuto(m){if(!m||!m.cam)return;if(m.status==='vivo'&&!m.stream)m.stream=CAM_URL.stream(m.cam);if(m.status==='final'&&!m.vod)m.vod=CAM_URL.vod(m.cam,m.id)}
+
 function viewAdmin(){
-  if(!authed())return`<div class="wrap"><form class="gate box" id="gate"><div class="eyebrow">Acceso de administrador</div><h2>Gestiona tus competencias</h2>
-    <p>Crea ligas y torneos, inscribe equipos, arma jornadas y captura resultados en vivo.</p>
-    <label class="fld" for="pin">PIN<input id="pin" class="inp" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN de 4 dígitos"></label>
-    <button class="btn pri" type="submit">Entrar</button>${MODE==='server'?'<p class="note">Usa el PIN que configuraste en el servidor.</p>':'<p class="note">Modo demo local · PIN: 2026</p>'}</form></div>`;
-  if(AV.view==='league'&&!curL())AV={view:'league',id:S.leagues[0]?.id||null};
-  if(AV.view==='league'&&!AV.id)AV.view='new';
-  const side=`<aside class="adm-side"><div class="side-h">Competencias</div>
-    ${S.leagues.map(L=>`<button class="side-b ${AV.view==='league'&&AV.id===L.id?'on':''}" data-act="adm-sel" data-id="${L.id}">${esc(L.name)}<small>${L.kind}</small></button>`).join('')}
+  if(!ME)return viewGate();
+  if(ME.role==='player')return`<div class="wrap"><div class="gate box" style="margin:60px auto"><div class="eyebrow">Cuenta de jugador</div><h2>Hola, ${esc(ME.name.split(' ')[0])}</h2>
+    <p>Este panel es para quienes organizan ligas. Tus torneos, tu foto y tus estadísticas están en tu cuenta de jugador.</p>
+    <a class="btn pri" href="/futbol?cuenta">Ir a Mis torneos</a><button class="btn ghost" data-act="logout">Salir</button></div></div>`;
+  const owner=isOwner();const mine=myLeagues();
+  if(AV.view==='league'&&!(curL()&&mine.includes(curL())))AV={view:'league',id:mine[0]?.id||null};
+  if(AV.view==='league'&&!AV.id)AV={view:'new'};
+  const side=`<aside class="adm-side"><div class="acct"><b>${esc(ME.name)}</b><small>${owner?esc(ME.league||'Dueño de liga'):'Administrador PÍCALE'}</small></div>
+    <div class="side-h">Mis competencias</div>
+    ${mine.map(L=>`<button class="side-b ${AV.view==='league'&&AV.id===L.id?'on':''}" data-act="adm-sel" data-id="${L.id}">${esc(L.name)}<small>${L.kind}</small></button>`).join('')}
     <button class="side-b ${AV.view==='new'?'on':''}" data-act="adm-new">+ Nueva competencia</button>
-    <div class="side-h">Ajustes</div>
-    <button class="side-b" data-act="reset" data-confirm="1">Restaurar datos de ejemplo</button>
+    <div class="side-h">${owner?'Mi cuenta':'PÍCALE'}</div>
+    ${owner?`<button class="side-b ${AV.view==='cams'?'on':''}" data-act="go-cams">Cámaras All-in-One<small>${(ME.cams||[]).length}</small></button>`
+    :`<button class="side-b ${AV.view==='owners'?'on':''}" data-act="go-owners">Cuentas registradas</button>
+    <button class="side-b" data-act="reset" data-confirm="1">Restaurar datos de ejemplo</button>`}
     <button class="side-b" data-act="logout">Salir</button></aside>`;
-  let main='';
-  if(AV.view==='new')main=admNew();else main=admLeague(curL());
+  const main={new:admNew,cams:viewCams,owners:viewOwners}[AV.view]?.()??admLeague(curL());
   return`<div class="wrap adm">${side}<main class="adm-main">${main}</main></div>`;
 }
 function admNew(){
@@ -56,7 +167,7 @@ function admLeague(L){
   const head=`<div class="box"><div class="box-h"><div><div class="eyebrow">${kindLabel(L)}${L.kind!=='torneo'?` · ${L.vueltas==2?'ida y vuelta':'una vuelta'}`:''} · ${esc(L.season)}</div><h2 style="margin-top:6px">${esc(L.name)}</h2></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn pri" href="/futbol?liga=${L.id}" target="_blank" rel="noopener">Ver página pública</a><button class="btn" data-act="copy-link" data-id="${L.id}">Copiar liga</button><button class="btn danger" data-act="del-league" data-confirm="1">Eliminar</button></div></div>
     <div class="note">Página pública: <span class="num">${esc(pubURL(L.id))}</span> · ${L.teams.length} equipos · ${L.rounds.length} ${L.kind==='torneo'?'rondas':'jornadas y rondas'} · ${all(L).filter(m=>m.status==='final').length} partidos jugados</div></div>`;
-  const others=S.leagues.filter(x=>x.id!==L.id&&x.teams.length);
+  const others=myLeagues().filter(x=>x.id!==L.id&&x.teams.length);
   const tcards=L.teams.map(id=>{const t=T(id);if(!t)return'';const used=L.rounds.some(r=>r.matches.some(m=>m.h===id||m.a===id));
     return`<div class="tcard">${crest(id)}<div><b>${esc(t.name)}</b><small>${t.players.length} jugadores${used?' · en calendario':''}</small></div><button class="btn sm" data-act="team-edit" data-id="${id}">Editar y jugadores</button></div>`}).join('');
   const enr=`<div class="box"><div class="box-h"><div><h3>Equipos de la competencia <span class="note">${L.teams.length}</span></h3><p>Cada competencia tiene sus propios equipos, logos y plantillas. Lo que cambies aquí no afecta a otras competencias.</p></div><button class="btn pri" data-act="team-new">+ Nuevo equipo</button></div>
@@ -144,7 +255,10 @@ function admKO(L){
 }
 
 /* --- modal de partido --- */
-function openMatch(lid,mid){MM={lid,mid};drawMatch();const d=$('#dlg');if(!d.open)d.showModal()}
+function openMatch(lid,mid){MM={lid,mid};
+  // Si hay una cámara asignada a la cancha del partido, se liga sola.
+  const m=findM(LG(lid),mid).m;if(m&&!m.cam){const c=myCams().find(c=>c.cancha&&c.cancha.trim().toLowerCase()===(m.venue||'').trim().toLowerCase());if(c){m.cam=c.code;camAuto(m);save()}}
+  drawMatch();const d=$('#dlg');if(!d.open)d.showModal()}
 function drawMatch(){
   const L=LG(MM.lid);const{m}=findM(L,MM.mid);if(!m)return;const[h,a]=sc(m);
   const roster=id=>(T(id)?.players||[]);
@@ -161,14 +275,17 @@ function drawMatch(){
       <label class="fld" for="mf-date">Fecha y hora<input id="mf-date" type="datetime-local" value="${m.date}" data-chg="m-f" data-k="date"></label>
       <label class="fld" for="mf-venue">Cancha / sede<input id="mf-venue" value="${esc(m.venue)}" data-chg="m-f" data-k="venue"></label>
       ${L.kind==='torneo'?`<label class="fld" for="mf-pen">Si empatan, avanza por penales<select id="mf-pen" data-chg="m-f" data-k="pen"><option value="">—</option><option value="h" ${m.pen==='h'?'selected':''}>${esc(tname(m.h))}</option><option value="a" ${m.pen==='a'?'selected':''}>${esc(tname(m.a))}</option></select></label>`:'<span></span>'}
-      <label class="fld" for="mf-stream">Liga de transmisión en vivo (.m3u8 se reproduce dentro de la página)<input id="mf-stream" type="url" placeholder="https://…" value="${esc(m.stream)}" data-chg="m-f" data-k="stream"></label>
-      <label class="fld" for="mf-vod">Liga de la grabación (.mp4 se reproduce dentro de la página)<input id="mf-vod" type="url" placeholder="https://…" value="${esc(m.vod)}" data-chg="m-f" data-k="vod"></label>
+      <label class="fld full" for="mf-cam">Cámara All-in-One<select id="mf-cam" data-chg="m-cam"><option value="">Sin cámara</option>${myCams().map(c=>`<option value="${esc(c.code)}" ${m.cam===c.code?'selected':''}>${esc(c.name)}${c.cancha?' · '+esc(c.cancha):''}</option>`).join('')}</select></label>
     </div>
+    ${m.cam?`<div class="camline ${m.status}"><span class="cam-ic"></span><div><span>${m.status==='vivo'?'<b>Transmitiendo en vivo</b> en la página pública':m.status==='final'?'<b>Grabación guardada:</b> el partido completo está en la página pública':'<b>Listo para transmitir.</b> Al ponerlo En vivo, la transmisión arranca sola'}</span><small>${esc(myCams().find(c=>c.code===m.cam)?.name||m.cam)}</small></div></div>`:(myCams().length?'':`<p class="note" style="margin:0">Con una cámara All-in-One, este partido se transmite y se graba solo. ${isOwner()?'Actívala en “Cámaras All-in-One”.':''}</p>`)}
+    <details class="paste"><summary>Ligas manuales de transmisión y grabación (opcional)</summary><div class="formg" style="margin-top:10px">
+      <label class="fld" for="mf-stream">Transmisión en vivo (.m3u8)<input id="mf-stream" type="url" placeholder="https://…" value="${esc(m.stream)}" data-chg="m-f" data-k="stream"></label>
+      <label class="fld" for="mf-vod">Grabación (.mp4 o .m3u8)<input id="mf-vod" type="url" placeholder="https://…" value="${esc(m.vod)}" data-chg="m-f" data-k="vod"></label></div></details>
     <div><div class="box-h" style="margin-bottom:8px"><h3>Incidencias</h3><button class="btn sm" data-act="ev-add">+ Tarjeta u otro evento</button></div>
     <div style="display:flex;flex-direction:column;gap:8px">${evRows||'<span class="note">Usa “+ Gol” para sumar al marcador; luego elige al anotador y el minuto.</span>'}</div></div>
     <p class="note" style="margin:0">El marcador se calcula con los goles capturados. Los cambios se guardan al instante.</p></div>`;
 }
-function touchMatch(){const L=LG(MM.lid);propagate(L);save();drawMatch()}
+function touchMatch(){const L=LG(MM.lid);camAuto(findM(L,MM.mid).m);propagate(L);save();drawMatch()}
 
 /* --- Reprogramar: mover partidos entre jornadas e intercambiar equipos --- */
 let SW=null; // equipo elegido para intercambiar (modo tocar) {m,side}
@@ -343,43 +460,60 @@ async function openImage(rid,mode){
 let TE=null,TW=null,LOGOB=0;
 function autoShort(n){const w=(n||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,'').split(/\s+/).filter(x=>x&&!['DE','DEL','LA','LAS','LOS','EL','Y','FC','CLUB'].includes(x));
   return w.length>=3?w.slice(0,3).map(x=>x[0]).join(''):w.length===2?(w[0][0]+w[1].slice(0,2)):(w[0]||'EQU').slice(0,3)}
+function newCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';const r=crypto.getRandomValues(new Uint8Array(6));r.forEach(x=>s+=a[x%a.length]);return s}
+const inviteURL=(tid,code)=>`${location.origin}/futbol?unirse=${encodeURIComponent(tid)}.${code}`;
 function openTeam(id){
   TE=id;const t=id?T(id):null;
-  TW=t?{name:t.name,short:t.short,color:t.color,logoV:t.logoV||0,players:(t.players||[]).map(p=>({n:p.n,name:p.name,pos:posOf(p),_old:p.name}))}:{name:'',short:'',color:'#2F6FB0',logoV:0,players:[]};
+  if(t&&!t.code){t.code=newCode();save()}
+  TW=t?{name:t.name,short:t.short,color:t.color,logoV:t.logoV||0,logoImg:t.logoImg||null,code:t.code,removedUids:[...(t.removedUids||[])],
+        players:(t.players||[]).map(p=>({n:p.n,name:p.name,pos:posOf(p),photo:p.photo||null,photoAt:p.photoAt||0,uid:p.uid||null,email:p.email||'',_old:p.name}))}
+      :{name:'',short:'',color:'#2F6FB0',logoV:0,logoImg:null,code:newCode(),removedUids:[],players:[]};
   LOGOB=Math.floor((TW.logoV||0)/6)*6;drawTeam();const d=$('#dlg');if(!d.open)d.showModal();
 }
 const twPrev=()=>({...TW,short:(TW.short||autoShort(TW.name)).toUpperCase(),name:TW.name||'Equipo'});
-function logoOpts(){const p=twPrev();return[0,1,2,3,4,5].map(k=>LOGOB+k).map(v=>`<button type="button" class="lo ${v===(TW.logoV||0)?'on':''}" data-act="logo-pick" data-v="${v}" aria-label="Logo opción ${v+1}">${logoSVG({...p,logoV:v})}</button>`).join('')}
-function refreshLogos(){const a=$('#dlg .te-logo'),b=$('#dlg .logo-opts');if(a)a.innerHTML=logoSVG(twPrev());if(b)b.innerHTML=logoOpts();const s=$('#tf-short');if(s)s.placeholder=autoShort(TW.name)}
+function logoOpts(){const p={...twPrev(),logoImg:null};return[0,1,2,3,4,5].map(k=>LOGOB+k).map(v=>`<button type="button" class="lo ${!TW.logoImg&&v===(TW.logoV||0)?'on':''}" data-act="logo-pick" data-v="${v}" aria-label="Logo opción ${v+1}">${logoSVG({...p,logoV:v})}</button>`).join('')}
+function refreshLogos(){const a=$('#dlg .te-logo'),b=$('#dlg .logo-opts');if(a)a.innerHTML=logoHTML(twPrev());if(b)b.innerHTML=logoOpts();const s=$('#tf-short');if(s)s.placeholder=autoShort(TW.name)}
 function drawTeam(){
+  const url=TE?inviteURL(TE,TW.code):'';
   $('#dlg').innerHTML=`<form class="dlg" id="teamF"><div class="dlg-h"><h3>${TE?'Editar equipo':'Nuevo equipo'}</h3><button type="button" class="btn sm ghost" data-act="dlg-close">Cerrar</button></div>
-    <div class="te-top"><div class="te-logo">${logoSVG(twPrev())}</div><div class="formg">
+    <div class="te-top"><div class="te-logo">${logoHTML(twPrev())}</div><div class="formg">
       <label class="fld full" for="tf-name">Nombre<input id="tf-name" required value="${esc(TW.name)}" data-tw="name" placeholder="Ej. Halcones de Cumbres" autocomplete="off"></label>
       <label class="fld" for="tf-short">Abreviatura<input id="tf-short" maxlength="4" value="${esc(TW.short)}" data-tw="short" placeholder="${esc(autoShort(TW.name))}" style="text-transform:uppercase" autocomplete="off"></label>
       <label class="fld" for="tf-color">Color principal<input id="tf-color" type="color" value="${TW.color}" data-tw="color" style="height:42px;padding:4px"></label></div></div>
-    <div><div class="box-h" style="margin-bottom:8px"><div><h3>Logo</h3><p>Se genera con el nombre y el color del equipo. Elige el que más te guste.</p></div><button type="button" class="btn sm" data-act="logo-more">Más opciones</button></div>
-      <div class="logo-opts">${logoOpts()}</div></div>
-    <div><div class="box-h" style="margin-bottom:8px"><div><h3>Jugadores <span class="note">${TW.players.length} registrados</span></h3></div><button type="button" class="btn sm" data-act="pl-add">+ Agregar jugador</button></div>
-      <div class="pl-list">${TW.players.map((p,i)=>`<div class="plr"><input class="inp num" type="number" min="0" max="99" value="${esc(p.n)}" placeholder="#" data-pl="${i}" data-k="n" aria-label="Número del jugador ${i+1}"><input class="inp" value="${esc(p.name)}" placeholder="Nombre y apellido" data-pl="${i}" data-k="name" aria-label="Nombre del jugador ${i+1}" autocomplete="off"><select class="inp" data-pl="${i}" data-k="pos" aria-label="Posición del jugador ${i+1}">${POS.map(x=>`<option value="${x}" ${p.pos===x?'selected':''}>${POSN[x]}</option>`).join('')}</select><button type="button" class="btn sm ghost danger" data-act="pl-del" data-i="${i}" aria-label="Quitar jugador ${i+1}">✕</button></div>`).join('')||'<span class="note">Sin jugadores. Agrégalos uno por uno o pega una lista.</span>'}</div>
+    <div><div class="box-h" style="margin-bottom:8px"><div><h3>Logo</h3><p>${TW.logoImg?'Estás usando el logo que subiste.':'Sube el logo del equipo o elige uno generado con su nombre y color.'}</p></div>
+      <div class="toolbar"><button type="button" class="btn sm pri" data-act="logo-up">${TW.logoImg?'Cambiar logo':'Subir logo'}</button>${TW.logoImg?'<button type="button" class="btn sm" data-act="logo-clear">Usar uno generado</button>':'<button type="button" class="btn sm" data-act="logo-more">Más opciones</button>'}</div></div>
+      <div class="logo-opts ${TW.logoImg?'dim':''}">${logoOpts()}</div></div>
+    <div class="invite"><div><h3>Invitar jugadores</h3><p class="note" style="margin:4px 0 0">${TE?'Comparte este link en el grupo del equipo. Cada jugador crea su cuenta de PÍCALE, pone su número y su foto, y queda en la plantilla. Al entrar ve sus torneos en “Mi cuenta”.':'Guarda el equipo para obtener su link de invitación.'}</p></div>
+      ${TE?`<div class="inv-link"><input class="inp num" readonly value="${esc(url)}" aria-label="Link de invitación" id="inv-url"><button type="button" class="btn sm" data-act="inv-copy">Copiar link</button><button type="button" class="btn sm" data-act="inv-wa">Copiar mensaje</button><button type="button" class="btn sm ghost" data-act="inv-new" data-confirm="1">Cambiar link</button></div>`:''}</div>
+    <div><div class="box-h" style="margin-bottom:8px"><div><h3>Jugadores <span class="note">${TW.players.length} registrados · ${TW.players.filter(p=>p.uid).length} con cuenta</span></h3><p>Toca la foto de cada jugador para subirla. Si escribes su correo, al registrarse su cuenta queda ligada sola.</p></div><button type="button" class="btn sm" data-act="pl-add">+ Agregar jugador</button></div>
+      <div class="pl-list">${TW.players.map((p,i)=>`<div class="plr2">
+        <button type="button" class="ava-btn" data-act="pl-photo" data-i="${i}" aria-label="Subir foto de ${esc(p.name||'jugador '+(i+1))}" title="Subir foto">${avatar(p)}<span class="cam-mini"></span></button>
+        <input class="inp num" type="number" min="0" max="99" value="${esc(p.n)}" placeholder="#" data-pl="${i}" data-k="n" aria-label="Número del jugador ${i+1}">
+        <input class="inp" value="${esc(p.name)}" placeholder="Nombre y apellido" data-pl="${i}" data-k="name" aria-label="Nombre del jugador ${i+1}" autocomplete="off">
+        <select class="inp" data-pl="${i}" data-k="pos" aria-label="Posición del jugador ${i+1}">${POS.map(x=>`<option value="${x}" ${p.pos===x?'selected':''}>${POSN[x]}</option>`).join('')}</select>
+        <button type="button" class="btn sm ghost danger" data-act="pl-del" data-i="${i}" aria-label="Quitar jugador ${i+1}">✕</button>
+        <div class="plr-sub">${p.uid?'<span class="pill fin">Cuenta PÍCALE ligada</span>':`<input class="inp" type="email" value="${esc(p.email||'')}" placeholder="Correo del jugador (opcional)" data-pl="${i}" data-k="email" aria-label="Correo del jugador ${i+1}" autocomplete="off">`}</div></div>`).join('')||'<span class="note">Sin jugadores. Agrégalos uno por uno, pega una lista o comparte el link de invitación.</span>'}</div>
       <details class="paste"><summary>Pegar una lista de jugadores</summary><textarea id="tf-paste" class="inp" placeholder="10 Juan Pérez&#10;1 Luis Garza POR&#10;9 Mario Leal DEL"></textarea><button type="button" class="btn sm" data-act="pl-import">Agregar a la plantilla</button></details></div>
     <div style="display:flex;gap:8px;justify-content:space-between">${TE?'<button type="button" class="btn danger" data-act="team-del" data-confirm="1">Eliminar equipo</button>':'<span></span>'}<button class="btn pri" type="submit">Guardar equipo</button></div></form>`;
 }
 function saveTeam(){
   const name=TW.name.trim();if(!name){toast('Escribe el nombre del equipo','warn');$('#tf-name')?.focus();return}
   const short=(TW.short||autoShort(name)).trim().toUpperCase().slice(0,4);
-  const players=TW.players.filter(p=>p.name.trim()).map(p=>({n:p.n===''?'':+p.n,name:p.name.trim(),pos:p.pos}));
+  const players=TW.players.filter(p=>p.name.trim()).map(p=>{const o={n:p.n===''?'':+p.n,name:p.name.trim(),pos:p.pos};
+    if(p.photo){o.photo=p.photo;o.photoAt=p.photoAt||0}if(p.uid)o.uid=p.uid;else if((p.email||'').trim())o.email=p.email.trim().toLowerCase();return o});
+  const base={name,short,color:TW.color,logoV:TW.logoV||0,logoImg:TW.logoImg||null,code:TW.code,removedUids:TW.removedUids,players};
   if(TE){
     // Si renombraste a un jugador, sus goles y tarjetas lo siguen.
     TW.players.forEach(p=>{const nn=p.name.trim();if(p._old&&nn&&p._old!==nn)S.leagues.forEach(L=>L.rounds.forEach(r=>r.matches.forEach(m=>{const side=m.h===TE?'h':m.a===TE?'a':null;if(side)m.ev.forEach(e=>{if(e.side===side&&e.p===p._old)e.p=nn})})))});
-    Object.assign(T(TE),{name,short,color:TW.color,logoV:TW.logoV||0,players});
-  }else{const id=uid('t');S.teams.push({id,lid:AV.id,name,short,color:TW.color,logoV:TW.logoV||0,players});curL().teams.push(id)}
+    Object.assign(T(TE),base);
+  }else{const id=uid('t');S.teams.push({id,lid:AV.id,...base});curL().teams.push(id)}
   save();$('#dlg').close();toast('Equipo guardado');
 }
 
 /* ===================== Arranque (administración) ===================== */
 const pubURL=id=>location.origin+'/futbol?liga='+encodeURIComponent(id);
 function render(){
-  $('#mode').innerHTML=MODE==='server'?'<span class="mode srv">● Publicando en servidor</span>':'<span class="mode">Modo demo · solo este navegador</span>';
+  $('#mode').innerHTML=MODE==='server'?`<span class="mode srv">● En línea${ME?' · '+esc(ME.name):''}</span>`:'<span class="mode">Modo demo · solo este navegador</span>';
   $('#app').innerHTML=viewAdmin();
 }
 function place(rid,side,tid){
@@ -402,7 +536,20 @@ const ACT={
   'adm-new'(){AV={view:'new'};render()},
   'adm-teams'(){AV={view:'teams'};render()},
   reset(){S=seed();save();AV={view:'league',id:null};B={round:null,h:null,a:null};toast('Datos de ejemplo restaurados');render()},
-  logout(){try{sessionStorage.removeItem('picale-futbol-pin')}catch(e){}getPin._='';render()},
+  logout(){setTok('');ME=null;OWN=null;AV={view:'league',id:null};render()},
+  'gate-tab'(el){GATE=el.dataset.k;render();setTimeout(()=>document.querySelector('#gate input')?.focus(),0)},
+  'go-plans'(){AV={view:'plans'};render()},
+  'go-sub'(){AV={view:subActive()?'sub':'plans'};render()},
+  'go-cams'(){AV={view:'cams'};render()},
+  'go-owners'(){AV={view:'owners'};OWN=null;render()},
+  'owners-reload'(){OWN=null;render()},
+  'choose-plan'(el){openCheckout(el.dataset.plan)},
+  async pay(el){el.disabled=true;el.textContent='Activando…';
+    try{ME={...await api('/subscribe',{method:'POST',body:JSON.stringify({plan:el.dataset.plan})}),role:'owner'};$('#dlg').close();
+      const p=planOf(ME.plan);toast(`Suscripción ${p.name} activa`);AV={view:p.cams?'cams':(myLeagues().length?'league':'new'),id:myLeagues()[0]?.id};render()}
+    catch(e){toast(e.message,'warn');el.disabled=false;el.textContent='Activar suscripción'}},
+  async 'cancel-sub'(){try{ME={...await api('/cancel',{method:'POST'}),role:'owner'};toast('Suscripción cancelada');render()}catch(e){toast(e.message,'warn')}},
+  async 'cam-del'(el){try{ME={...await api('/cams/'+el.dataset.c,{method:'POST',body:JSON.stringify({remove:true})}),role:'owner'};toast('Cámara quitada');render()}catch(e){toast(e.message,'warn')}},
   'copy-link'(el){const u=pubURL(el.dataset.id);navigator.clipboard?.writeText(u).then(()=>toast('Liga copiada')).catch(()=>toast(u))},
   enroll(el){enroll(el.dataset.team,true)},
   unenroll(el){enroll(el.dataset.team,false)},
@@ -441,9 +588,15 @@ const ACT={
   async 'img-share'(){try{await navigator.share({files:[new File([IMG.blob],IMG.fname,{type:'image/png'})],title:IMG.title,text:IMG.title})}catch(e){}},
   'img-text'(){navigator.clipboard?.writeText(IMG.txt).then(()=>toast('Texto copiado: pégalo en el grupo')).catch(()=>toast('No se pudo copiar','warn'))},
   'logo-more'(){LOGOB+=6;refreshLogos()},
-  'logo-pick'(el){TW.logoV=+el.dataset.v;refreshLogos()},
+  'logo-pick'(el){TW.logoV=+el.dataset.v;if(TW.logoImg){TW.logoImg=null;drawTeam()}else refreshLogos()},
+  async 'logo-up'(){const f=await pickFile();if(!f)return;toast('Subiendo logo…');try{TW.logoImg=await uploadImage(f,'logo');drawTeam();toast('Logo listo. Guarda el equipo para aplicarlo.')}catch(e){toast(e.message,'warn')}},
+  'logo-clear'(){TW.logoImg=null;drawTeam()},
+  async 'pl-photo'(el){const i=+el.dataset.i;const f=await pickFile();if(!f)return;toast('Subiendo foto…');try{const u=await uploadImage(f,'photo');TW.players[i].photo=u;TW.players[i].photoAt=Date.now();drawTeam();toast('Foto lista. Guarda el equipo para aplicarla.')}catch(e){toast(e.message,'warn')}},
+  'inv-copy'(){const u=$('#inv-url').value;navigator.clipboard?.writeText(u).then(()=>toast('Link copiado')).catch(()=>{$('#inv-url').select();toast('Selecciona y copia el link')})},
+  'inv-wa'(){const t=`Únete a ${TW.name} en PÍCALE Fútbol: crea tu cuenta, pon tu número y tu foto, y sigue nuestros partidos en vivo.\n${$('#inv-url').value}`;navigator.clipboard?.writeText(t).then(()=>toast('Mensaje copiado: pégalo en el grupo del equipo')).catch(()=>toast('No se pudo copiar','warn'))},
+  'inv-new'(){TW.code=newCode();if(TE){T(TE).code=TW.code;save()}drawTeam();toast('Link nuevo listo; el anterior ya no funciona')},
   'pl-add'(){TW.players.push({n:'',name:'',pos:'DEL'});drawTeam();const ins=document.querySelectorAll('#dlg [data-k="name"]');ins[ins.length-1]?.focus()},
-  'pl-del'(el){TW.players.splice(+el.dataset.i,1);drawTeam()},
+  'pl-del'(el){const p=TW.players[+el.dataset.i];if(p?.uid)TW.removedUids.push(p.uid);TW.players.splice(+el.dataset.i,1);drawTeam()},
   'pl-import'(){const t=$('#tf-paste').value;t.split('\n').map(l=>l.trim()).filter(Boolean).forEach(l=>{const m=l.match(/^(\d+)?[\s.-]*(.+?)(?:\s+(POR|DEF|MED|DEL))?$/i);if(!m)return;TW.players.push({n:m[1]?+m[1]:'',name:m[2].trim(),pos:(m[3]||'').toUpperCase()||posOf({n:m[1]})})});drawTeam();toast('Jugadores agregados')},
   'team-edit'(el){openTeam(el.dataset.id)},
   'team-del'(){const L=curL();if(L.rounds.some(r=>r.matches.some(m=>m.h===TE||m.a===TE))){toast('Este equipo ya tiene partidos en el calendario; elimínalos antes de borrarlo','warn');return}
@@ -467,6 +620,10 @@ document.addEventListener('change',e=>{
   if(k==='g-qual'){curL().qual=+el.value;save();toast('Si ya generaste la fase final, rehazla para aplicar el cambio');render();return}
   if(k==='rswap'){if(el.value)doSwapRounds(el.dataset.r,el.value);return}
   if(k==='mv'){if(el.value)doMove(el.dataset.m,el.value);return}
+  if(k==='m-cam'){const L=LG(MM.lid);const{m}=findM(L,MM.mid);const old=m.cam;
+    if(old){if(m.stream===CAM_URL.stream(old))m.stream='';if(m.vod===CAM_URL.vod(old,m.id))m.vod=''}
+    m.cam=el.value||null;touchMatch();return}
+  if(k==='cam-cancha'){api('/cams/'+el.dataset.c,{method:'POST',body:JSON.stringify({cancha:el.value})}).then(me=>{ME={...me,role:'owner'};toast('Cancha guardada')}).catch(e=>toast(e.message,'warn'));return}
   if(k==='m-f'){const L=LG(MM.lid);const{m}=findM(L,MM.mid);m[el.dataset.k]=el.value||(el.dataset.k==='pen'?null:'');touchMatch()}
   if(k==='ev'){const L=LG(MM.lid);const{m}=findM(L,MM.mid);const ev=m.ev[+el.dataset.i];const kk=el.dataset.k;ev[kk]=kk==='m'?(+el.value||''):el.value;if(kk==='side')ev.p='';if(kk==='m')m.ev.sort((a,b)=>(a.m||999)-(b.m||999));touchMatch()}
 });
@@ -480,18 +637,31 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&SW&&!$('#dlg').open
 document.addEventListener('toggle',e=>{const d=e.target;if(d.dataset?.rid){d.open?OPEN.add(d.dataset.rid):OPEN.delete(d.dataset.rid)}},true);
 document.addEventListener('submit',async e=>{
   e.preventDefault();const f=e.target;
-  if(f.id==='gate'){const pin=$('#pin').value.trim();let ok=false;
-    if(MODE==='server'){try{const r=await fetch(FUTBOL_API+'/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin})});ok=r.ok}catch(err){toast('No hay conexión con el servidor','warn');return}}
-    else ok=pin===DEMO_PIN;
-    if(!ok){toast('PIN incorrecto','warn');return}
-    try{sessionStorage.setItem('picale-futbol-pin',pin)}catch(err){getPin._=pin}
-    // Primera vez en servidor vacío: publica los datos de ejemplo para que la página pública tenga contenido.
-    if(MODE==='server'){try{const j=await fetchServer();if(!j||MIGRATED)save()}catch(err){}}
-    render()}
+  if(f.id==='gate'){
+    const btn=f.querySelector('button[type=submit]');btn.disabled=true;
+    try{
+      if(MODE!=='server'){if($('#pin').value.trim()!==DEMO_PIN)throw new Error('PIN incorrecto');setTok('local');ME={id:'admin',role:'admin',name:'PÍCALE (demo local)'}}
+      else{
+        let res;
+        if(GATE==='pin')res=await api('/login',{method:'POST',body:JSON.stringify({pin:$('#pin').value.trim()})});
+        else if(GATE==='signup')res=await api('/signup',{method:'POST',body:JSON.stringify({name:$('#g-name').value,league:$('#g-league').value,email:$('#g-email').value,password:$('#g-pass').value})});
+        else res=await api('/login',{method:'POST',body:JSON.stringify({email:$('#g-email').value,password:$('#g-pass').value})});
+        setTok(res.token);ME=res.me;
+      }
+      AV={view:'league',id:null};
+      // Primera vez en servidor vacío o con datos viejos: PÍCALE publica los datos.
+      if(ME.role==='admin'&&MODE==='server'){try{const j=await fetchServer();if(!j||MIGRATED)save()}catch(err){}}
+      render();
+    }catch(e){toast(e.message,'warn');btn.disabled=false}
+  }
+  if(f.id==='camF'){
+    try{ME={...await api('/cams',{method:'POST',body:JSON.stringify({code:$('#cam-code').value,name:$('#cam-name').value,cancha:$('#cam-cancha').value})}),role:'owner'};toast('Cámara activada');render()}
+    catch(e){toast(e.message,'warn')}
+  }
   if(f.id==='newL'){const name=$('#nl-name').value.trim();if(!name)return;
     let id=name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||uid('l');
     while(LG(id))id+='-'+Math.random().toString(36).slice(2,4);
-    const kind=$('#nl-kind').value;const nl={id,name,kind,vueltas:+$('#nl-vu').value,season:$('#nl-season').value.trim()||'Temporada',venue:$('#nl-venue').value.trim(),teams:[],blocks:[],rounds:[]};
+    const kind=$('#nl-kind').value;const nl={id,name,kind,...(isOwner()?{owner:ME.id}:{}),vueltas:+$('#nl-vu').value,season:$('#nl-season').value.trim()||'Temporada',venue:$('#nl-venue').value.trim(),teams:[],blocks:[],rounds:[]};
     if(kind==='grupos'){nl.groups=mkGroups(+$('#nl-ng').value);nl.qual=+$('#nl-q').value}
     S.leagues.push(nl);
     AV={view:'league',id};save();toast('Competencia creada');render()}
@@ -505,4 +675,12 @@ document.addEventListener('dragover',e=>{const z=e.target.closest?.('[data-drop]
   if(z.classList.contains('cant')){e.dataTransfer.dropEffect='none';return}
   e.preventDefault();document.querySelectorAll('.over').forEach(x=>x!==z&&x.classList.remove('over'));z.classList.add('over')});
 document.addEventListener('drop',e=>{const z=e.target.closest?.('[data-drop]');if(!z)return;e.preventDefault();z.classList.remove('over');const pl=e.dataTransfer.getData('text/plain')||DRAG;clearMarks();if(pl)handleDrop(z,pl)});
-(async()=>{S=await loadData();if(MIGRATED&&authed())save();render()})();
+(async()=>{
+  const h=location.hash.slice(1);if(h.startsWith('crear')){GATE='signup';}
+  S=await loadData();
+  const t=getTok();
+  if(t==='local'&&MODE!=='server')ME={id:'admin',role:'admin',name:'PÍCALE (demo local)'};
+  else if(t&&MODE==='server'){try{const me=await api('/me');ME=me.role?me:{...me,role:'owner'}}catch(e){setTok('')}}
+  if(ME?.role==='admin'&&MIGRATED)save();
+  render();
+})();

@@ -170,18 +170,48 @@ async function loadData(){
   try{d=(await fetchServer())||seed()}catch(e){MODE='local';d=localData()||seed()}
   MIGRATED=migrate(d);return d;
 }
-const getPin=()=>{try{return sessionStorage.getItem('picale-futbol-pin')||''}catch(e){return getPin._||''}};
+/* ---------- Sesión (dueño de liga o PÍCALE) ---------- */
+const AUTH_KEY='picale-futbol-token';
+const getTok=()=>{try{return localStorage.getItem(AUTH_KEY)||''}catch(e){return getTok._||''}};
+const setTok=t=>{getTok._=t||'';try{t?localStorage.setItem(AUTH_KEY,t):localStorage.removeItem(AUTH_KEY)}catch(e){}};
+const authH=()=>{const t=getTok();return t&&t!=='local'?{'Authorization':'Bearer '+t}:{}};
+let ME=null; // {id, role:'owner'|'admin', name, plan, status, cams...}
+async function api(path,opts={}){
+  const r=await fetch(FUTBOL_API+path,{...opts,headers:{'Content-Type':'application/json',...authH(),...(opts.headers||{})}});
+  let j=null;try{j=await r.json()}catch(e){}
+  if(!r.ok){const err=new Error(j?.detail||'No se pudo completar. Revisa tu conexión.');err.status=r.status;throw err}
+  return j;
+}
 let _saveT;
 function save(){
   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
   if(MODE!=='server')return;
   clearTimeout(_saveT);
   _saveT=setTimeout(async()=>{
-    try{const r=await fetch(API,{method:'PUT',headers:{'Content-Type':'application/json','X-Admin-Pin':getPin()},body:JSON.stringify(S)});
-      if(r.status===401)toast('Tu sesión expiró. Vuelve a entrar con el PIN.','warn');else if(!r.ok)throw 0;}
-    catch(e){toast('No se pudo guardar en el servidor. Revisa la conexión.','warn')}
+    try{await api('/data',{method:'PUT',body:JSON.stringify(S)})}
+    catch(e){toast(e.status===401?'Tu sesión expiró. Vuelve a entrar.':e.status===402?'Activa tu suscripción para guardar cambios.':'No se pudo guardar en el servidor. Revisa la conexión.','warn')}
   },350);
 }
+
+/* ---------- Planes para dueños de liga ----------
+   Precios de ejemplo para la demo: cámbialos aquí y se actualizan en todas las páginas. */
+const PLANS=[
+  {id:'liga',name:'Liga',price:990,cams:0,tag:'Para empezar',
+   feats:['Competencias ilimitadas: liga, grupos y eliminatoria','Página pública con tabla, estadísticas y página por equipo','Imagen del rol semanal para WhatsApp','Captura de resultados desde el celular']},
+  {id:'pro',name:'Liga PRO',price:2490,cams:1,tag:'El más elegido',best:true,
+   feats:['Todo lo del plan Liga','1 cámara All-in-One PÍCALE incluida','Transmisión en vivo de cada partido','Grabación automática del partido completo','Instalación y soporte de PÍCALE']},
+  {id:'complejo',name:'Complejo',price:5990,cams:3,tag:'Varias canchas',
+   feats:['Todo lo de Liga PRO','3 cámaras All-in-One (una por cancha)','Transmisiones simultáneas','Soporte prioritario']},
+];
+const planOf=id=>PLANS.find(p=>p.id===id);
+const money=n=>'$'+n.toLocaleString('es-MX')+' MXN';
+/* Cámaras All-in-One: de dónde sale la señal en vivo y la grabación de cada partido.
+   DEMO usa un video público de prueba para enseñar el reproductor funcionando. */
+const DEMO_VIDEO='https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+const CAM_URL={
+  stream:code=>code==='DEMO'?DEMO_VIDEO:`https://api.picalereplay.com/hls/${code}.m3u8`,
+  vod:(code,mid)=>code==='DEMO'?DEMO_VIDEO:`https://api.picalereplay.com/grabaciones/${code}/${mid}.mp4`,
+};
 
 /* ===================== Utilidades ===================== */
 const T=id=>S.teams.find(t=>t.id===id);
@@ -233,8 +263,33 @@ function logoSVG(t,standalone=false){
     `<text x="60" y="95.5" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="13.5" letter-spacing="1" fill="${L.p}">${code}</text>`+
     `<path d="${sh}" fill="none" stroke="${L.sec}" stroke-width="4"/></svg>`;
 }
-const logoURL=t=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(logoSVG(t,true));
-function crest(id,size=''){const t=T(id);if(!t)return`<span class="crest tbd ${size}">?</span>`;return`<span class="crest lg-on ${size}" aria-hidden="true">${logoSVG(t)}</span>`}
+const logoURL=t=>t.logoImg||'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(logoSVG(t,true));
+const logoHTML=t=>t.logoImg?`<img src="${esc(t.logoImg)}" alt="" loading="lazy">`:logoSVG(t);
+function crest(id,size=''){const t=T(id);if(!t)return`<span class="crest tbd ${size}">?</span>`;return`<span class="crest lg-on ${t.logoImg?'img':''} ${size}" aria-hidden="true">${logoHTML(t)}</span>`}
+
+/* ---------- Fotos de jugadores ---------- */
+const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+function avatar(p,size=''){
+  if(p&&p.photo)return`<span class="ava ${size}"><img src="${esc(p.photo)}" alt="" loading="lazy"></span>`;
+  const h=hashStr(p?.name||'');return`<span class="ava ${size}" style="--h:${h%360}">${esc(initials(p?.name))}</span>`;
+}
+const findPlayer=(tid,name)=>(T(tid)?.players||[]).find(p=>p.name===name);
+/* Reduce la imagen en el navegador antes de subirla (logos en PNG para conservar la transparencia). */
+function shrinkImage(file,max,type){
+  return new Promise((res,rej)=>{
+    if(!file||!/^image\//.test(file.type)){rej(new Error('Elige una imagen JPG, PNG o WEBP'));return}
+    const url=URL.createObjectURL(file);const im=new Image();
+    im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+      const x=c.getContext('2d');if(type==='image/jpeg'){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)}x.drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);res(c.toDataURL(type,.86))};
+    im.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('No se pudo leer la imagen'))};im.src=url;
+  });
+}
+async function uploadImage(file,kind){
+  if(MODE!=='server')throw new Error('Subir imágenes necesita el servidor (no funciona en modo demo local)');
+  const data=await shrinkImage(file,kind==='logo'?320:480,kind==='logo'?'image/png':'image/jpeg');
+  return(await api('/upload',{method:'POST',body:JSON.stringify({data})})).url;
+}
+function pickFile(){return new Promise(res=>{const i=document.createElement('input');i.type='file';i.accept='image/png,image/jpeg,image/webp';i.onchange=()=>res(i.files[0]||null);i.click()})}
 
 /* ---------- Jugadores y equipos ---------- */
 const POS=['POR','DEF','MED','DEL'];
@@ -244,7 +299,7 @@ const teamURL=(lid,tid)=>`/futbol?liga=${encodeURIComponent(lid)}&equipo=${encod
 const leagueURL=lid=>`/futbol?liga=${encodeURIComponent(lid)}`;
 function playerStats(L,tid){
   const t=T(tid);const map={};
-  (t?.players||[]).forEach(p=>map[p.name]={n:p.n,name:p.name,pos:posOf(p),g:0,y:0,r:0,mg:0});
+  (t?.players||[]).forEach(p=>map[p.name]={n:p.n,name:p.name,pos:posOf(p),photo:p.photo,uid:p.uid,g:0,y:0,r:0,mg:0});
   all(L).forEach(m=>{
     if(m.status!=='final'||(m.h!==tid&&m.a!==tid))return;const side=m.h===tid?'h':'a';const scored=new Set();
     m.ev.forEach(e=>{if(e.side!==side||!e.p)return;const x=map[e.p]||(map[e.p]={n:'',name:e.p,pos:'—',g:0,y:0,r:0,mg:0});

@@ -17,7 +17,8 @@ function viewHome(){
     <div><div class="eyebrow">Ligas y torneos amateur · Monterrey</div><h1>Cada partido, <em>en vivo</em> y grabado</h1>
     <p style="color:var(--muted);max-width:56ch;margin:0">Calendario, resultados, tabla y estadísticas de cada competencia, con la transmisión de PÍCALE desde la cancha.</p></div></div></section>
     <div class="wrap sec"><div class="sec-h"><h2>Competencias</h2></div>
-    <div class="cards">${cards||'<div class="empty">Aún no hay competencias. Vuelve pronto.</div>'}</div></div>`;
+    <div class="cards">${cards||'<div class="empty">Aún no hay competencias. Vuelve pronto.</div>'}</div>
+    <div class="ownband"><div><div class="eyebrow">¿Juegas en una liga?</div><h3 style="margin-top:6px">Crea tu cuenta y ve tus torneos, tus partidos y tus goles</h3></div><a class="btn pri" href="/futbol?cuenta">Mi cuenta</a></div></div>`;
 }
 
 function matchCard(L,f,label){
@@ -108,7 +109,7 @@ function pubTeams(L){
   return`<div class="sec-h"><h2>Equipos</h2><span class="note">Toca un equipo para ver su plantilla y estadísticas</span></div><div class="tgrid">${cards||'<div class="empty">Sin equipos inscritos.</div>'}</div>`;
 }
 function lbRows(L,arr,valFn,subFn,max){
-  return arr.length?`<div class="lb">${arr.map((x,i)=>{const tid=x.t||x.id;return`<a class="lb-r" href="${teamURL(L.id,tid)}"><span class="rk">${i+1}</span>${crest(tid,'sm')}<div class="nm"><b>${esc(x.p||tname(tid))}</b><small>${subFn(x)}</small></div><span class="v">${valFn(x)}</span><div class="lb-bar"><i style="width:${max?Math.round(x._v/max*100):0}%"></i></div></a>`}).join('')}</div>`:'<div class="empty">Sin datos todavía.</div>';
+  return arr.length?`<div class="lb">${arr.map((x,i)=>{const tid=x.t||x.id;return`<a class="lb-r" href="${teamURL(L.id,tid)}"><span class="rk">${i+1}</span>${x.p&&findPlayer(tid,x.p)?.photo?avatar(findPlayer(tid,x.p)):crest(tid,'sm')}<div class="nm"><b>${esc(x.p||tname(tid))}</b><small>${subFn(x)}</small></div><span class="v">${valFn(x)}</span><div class="lb-bar"><i style="width:${max?Math.round(x._v/max*100):0}%"></i></div></a>`}).join('')}</div>`:'<div class="empty">Sin datos todavía.</div>';
 }
 function pubStats(L){
   const s=stats(L);
@@ -183,10 +184,89 @@ function pubWatch(L){
     ${sect('Partidos grabados',vods,'Las grabaciones aparecerán al terminar cada partido.')}`;
 }
 function loadHls(){return new Promise((res,rej)=>{if(window.Hls)return res(window.Hls);const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js';s.onload=()=>res(window.Hls);s.onerror=rej;document.head.appendChild(s)})}
+function noSignal(v){
+  const box=v.closest('.player');if(!box||box.dataset.nosig)return;box.dataset.nosig='1';v.remove();
+  const live=box.querySelector('.pl-badge.live');
+  box.insertAdjacentHTML('afterbegin',`<div class="pl-bg">${PITCH}</div><div class="pl-center"><div class="pl-spin"></div><h3>${live?'La cámara aún no envía señal':'La grabación se está procesando'}</h3><p>${live?'En cuanto la cámara de la cancha se conecte, el partido aparece aquí.':'Vuelve en unos minutos para ver el partido completo.'}</p></div>`);
+}
 async function mountPlayer(){
   const v=$('#pv');if(!v||v.dataset.ready)return;v.dataset.ready='1';const u=v.dataset.src;
-  if(/\.m3u8/i.test(u)&&!v.canPlayType('application/vnd.apple.mpegurl')){try{const H=await loadHls();if(H&&H.isSupported()){const h=new H();h.loadSource(u);h.attachMedia(v);return}}catch(e){}}
+  v.addEventListener('error',()=>noSignal(v));
+  if(/\.m3u8/i.test(u)&&!v.canPlayType('application/vnd.apple.mpegurl')){try{const H=await loadHls();if(H&&H.isSupported()){const h=new H();h.on(H.Events.ERROR,(e,d)=>{if(d.fatal){h.destroy();noSignal(v)}});h.loadSource(u);h.attachMedia(v);return}}catch(e){}}
   v.src=u;
+}
+
+/* ---------- Planes para dueños de liga ---------- */
+function viewPlans(){
+  const steps=[['Elige tu plan','Te das de alta en minutos y empiezas a armar tu liga, tus grupos o tu torneo.'],['Llega tu cámara All-in-One','PÍCALE la instala en tu cancha. La activas con su código desde tu panel.'],['Cada partido, en vivo y grabado','Al poner el partido En vivo se transmite solo, y al terminar queda grabado en la página de tu liga.']];
+  return`<section class="hero">${PITCH}<div class="wrap hero-in" style="grid-template-columns:1fr">
+    <div><div class="eyebrow">Para dueños de liga</div><h1>Tu liga, <em>transmitida</em> como profesional</h1>
+    <p style="color:var(--muted);max-width:60ch;margin:0 0 20px">Calendario, tabla, grupos, eliminatoria y estadísticas de cada jugador, con la cámara All-in-One de PÍCALE transmitiendo y grabando cada partido.</p>
+    <div class="row" style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn pri" href="/futbol/admin#crear-pro">Crear mi cuenta</a><a class="btn" href="/futbol">Ver ligas en vivo</a></div></div></div></section>
+    <div class="wrap sec">
+      <div class="sec-h"><h2>Cómo funciona</h2></div>
+      <ol class="hsteps">${steps.map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
+      <div class="sec-h"><h2>Planes</h2><span class="note">Precios mensuales en pesos mexicanos</span></div>
+      <div class="plans">${PLANS.map(p=>`<div class="plan ${p.best?'best':''}"><div class="plan-h"><span class="eyebrow">${esc(p.tag)}</span><h3>${esc(p.name)}</h3>
+        <div class="price"><b class="num">${money(p.price)}</b><span>al mes</span></div>
+        <div class="cams-n">${p.cams?`<span class="cam-ic"></span>${p.cams} cámara${p.cams>1?'s':''} All-in-One incluida${p.cams>1?'s':''}`:'Sin cámara · solo software'}</div></div>
+        <ul>${p.feats.map(f=>`<li>${esc(f)}</li>`).join('')}</ul><a class="btn ${p.best?'pri':''}" href="/futbol/admin#crear-${p.id}">Empezar con ${esc(p.name)}</a></div>`).join('')}</div>
+      <div class="ownband"><div><h3>¿Ya tienes cuenta?</h3><p class="note" style="margin:4px 0 0">Entra a tu panel para capturar partidos y manejar tus cámaras.</p></div><a class="btn" href="/futbol/admin">Entrar a mi panel</a></div>
+    </div>`;
+}
+
+/* ---------- Mi cuenta (jugadores) ---------- */
+let ACC='signup',JOIN=null; // JOIN: {tid,code}
+function myTeams(){return ME?S.teams.filter(t=>(t.players||[]).some(p=>p.uid===ME.id)):[]}
+function accForm(ctx){
+  const tab=(k,t)=>`<button type="button" class="${ACC===k?'on':''}" data-act="acc-tab" data-k="${k}">${t}</button>`;
+  return`<form class="gate box" id="accF" style="margin:0">${ctx||''}<div class="seg">${tab('signup','Crear cuenta')}${tab('login','Ya tengo cuenta')}</div>
+    ${ACC==='signup'?`<label class="fld" for="a-name">Nombre y apellido<input id="a-name" class="inp" autocomplete="name" required></label>`:''}
+    <label class="fld" for="a-email">Correo<input id="a-email" class="inp" type="email" autocomplete="email" required></label>
+    <label class="fld" for="a-pass">Contraseña${ACC==='signup'?' (mínimo 6 caracteres)':''}<input id="a-pass" class="inp" type="password" autocomplete="${ACC==='signup'?'new-password':'current-password'}" minlength="6" required></label>
+    <button class="btn pri" type="submit">${ACC==='signup'?'Crear mi cuenta':'Entrar'}</button>
+    <p class="note" style="margin:0">Tu cuenta de PÍCALE sirve para todos tus equipos y torneos.</p></form>`;
+}
+function viewAccount(){
+  if(MODE!=='server')return`<div class="wrap sec"><div class="empty">Las cuentas de jugador funcionan cuando la página está conectada al servidor.</div></div>`;
+  if(!ME)return`<div class="wrap"><div class="gate2">
+    <div class="gate-pitch"><div class="eyebrow">Para jugadores</div><h1>Tu equipo, tus partidos, tus goles</h1>
+      <ul class="ticks"><li>Todos tus torneos en un solo lugar</li><li>Tu próximo partido y la transmisión en vivo</li><li>Tus goles y tarjetas en cada torneo</li></ul>
+      <p class="note">¿Tu equipo te mandó un link de invitación? Ábrelo para unirte directo a la plantilla.</p></div>
+    ${accForm()}</div></div>`;
+  if(ME.role!=='player')return`<div class="wrap"><div class="gate box" style="margin:60px auto"><div class="eyebrow">${ME.role==='admin'?'PÍCALE':'Dueño de liga'}</div><h2>Hola, ${esc(ME.name.split(' ')[0])}</h2>
+    <p>Tu cuenta es de organizador. Administra tus competencias desde tu panel.</p><a class="btn pri" href="/futbol/admin">Ir a mi panel</a><button class="btn ghost" data-act="acc-logout">Salir</button></div></div>`;
+  const teams=myTeams();
+  const cards=teams.map(t=>{const L=LG(t.lid);if(!L)return'';const me=t.players.find(p=>p.uid===ME.id);
+    const ps=playerStats(L,t.id).find(x=>x.uid===ME.id||x.name===me.name)||{g:0,mg:0,y:0,r:0};
+    const ms=teamMatches(L,t.id);const nx=ms.find(m=>m.status==='vivo')||ms.find(m=>m.status==='programado');
+    let pos='';if(L.kind==='liga'){const rows=table(L);const i=rows.findIndex(r=>r.id===t.id);if(i>=0)pos=`${i+1}° de ${rows.length} · ${rows[i].pts} pts`}
+    else if(L.kind==='grupos'){const g=groupOf(L,t.id);if(g){const gr=groupTable(L,g);const i=gr.findIndex(r=>r.id===t.id);pos=`${i+1}° del ${g.name} · ${gr[i]?.pts||0} pts`}}
+    else pos='Torneo eliminatorio';
+    const rival=nx?(nx.h===t.id?nx.a:nx.h):null;
+    return`<div class="myt"><div class="myt-h">${crest(t.id,'lg')}<div><small>${esc(L.name)}</small><b>${esc(t.name)}</b><small>${me.n!==''&&me.n!=null?'#'+esc(me.n)+' · ':''}${POSN[posOf(me)]||'Jugador'}${pos?' · '+esc(pos):''}</small></div></div>
+      <div class="mystats"><div><b class="num">${ps.g}</b><span>Goles</span></div><div><b class="num">${ps.mg}</b><span>Partidos con gol</span></div><div><b class="num">${ps.y}</b><span>Amarillas</span></div><div><b class="num">${ps.r}</b><span>Rojas</span></div></div>
+      ${nx?`<div class="mynext"><div><div class="eyebrow">${nx.status==='vivo'?'Jugando ahora':'Próximo partido'}</div><b>vs ${esc(tname(rival))}</b> <span class="note">· ${fmtD(nx.date)} ${fmtT(nx.date)}${nx.venue?' · '+esc(nx.venue):''}</span></div>${nx.status==='vivo'?'<span class="pill live"><span class="dot"></span>En vivo</span>':`<span class="num" data-cd="${nx.date}">--:--:--</span>`}</div>`:'<div class="mynext"><span class="note">Sin partidos programados por ahora.</span></div>'}
+      <div class="toolbar"><a class="btn pri" href="${teamURL(L.id,t.id)}">Ver mi equipo</a><a class="btn" href="${leagueURL(L.id)}">Ver ${L.kind==='liga'?'la liga':'el torneo'}</a></div></div>`}).join('');
+  return`<section class="hero">${PITCH}<div class="wrap hero-in" style="grid-template-columns:1fr"><div class="me-hero">
+      <button class="me-ava" data-act="me-photo" aria-label="Cambiar mi foto" title="Cambiar mi foto">${avatar(ME,'xl')}<span class="cam-mini"></span></button>
+      <div><div class="eyebrow">Mi cuenta · jugador</div><h1 style="margin:6px 0 8px;font-size:clamp(36px,6vw,64px)">${esc(ME.name)}</h1>
+      <div class="note">${esc(ME.email)} · ${teams.length} equipo${teams.length===1?'':'s'} · <button class="linkb" data-act="acc-logout">Salir</button></div></div></div></div></section>
+    <div class="wrap sec"><div class="sec-h"><h2>Mis torneos</h2>${ME.photo?'':'<span class="note">Toca tu círculo para subir tu foto; sale en la plantilla de tu equipo.</span>'}</div>
+    ${cards?`<div class="mytgrid">${cards}</div>`:`<div class="empty">Aún no estás en ningún equipo.<br>Pídele al organizador de tu liga el <b>link de invitación</b> de tu equipo, o que registre tu correo (${esc(ME.email)}) en la plantilla.</div>`}</div>`;
+}
+function viewJoin(){
+  const t=T(JOIN.tid);const L=t&&LG(t.lid);
+  if(!t||!L)return`<div class="wrap sec"><div class="empty">Este link de invitación ya no es válido. Pídele uno nuevo a tu equipo.</div></div>`;
+  const head=`<div style="text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center">${crest(t.id,'xl')}<div class="eyebrow">${esc(L.name)}</div><h2>Únete a ${esc(t.name)}</h2></div>`;
+  if(!ME)return`<div class="wrap"><div class="joincard">${accForm(head+'<p class="note" style="margin:0;text-align:center">Crea tu cuenta de PÍCALE o entra con la que ya tienes para unirte a la plantilla.</p>')}</div></div>`;
+  if(ME.role!=='player')return`<div class="wrap"><div class="joincard box">${head}<p>Para unirte como jugador entra con una cuenta de jugador. Ahorita tienes abierta una cuenta de organizador.</p><button class="btn" data-act="acc-logout">Salir y entrar como jugador</button></div></div>`;
+  if((t.players||[]).some(p=>p.uid===ME.id))return`<div class="wrap"><div class="joincard box">${head}<p style="text-align:center">Ya estás en la plantilla de ${esc(t.name)}.</p><a class="btn pri" href="/futbol?cuenta">Ver mis torneos</a></div></div>`;
+  return`<div class="wrap"><form class="joincard box" id="joinF">${head}
+    <p class="note" style="margin:0;text-align:center">Entras como <b>${esc(ME.name)}</b>.</p>
+    <div class="formg"><label class="fld" for="j-n">Número de playera<input id="j-n" class="inp num" type="number" min="0" max="99" placeholder="10"></label>
+    <label class="fld" for="j-pos">Posición<select id="j-pos" class="inp">${POS.map(x=>`<option value="${x}" ${x==='MED'?'selected':''}>${POSN[x]}</option>`).join('')}</select></label></div>
+    <button class="btn pri" type="submit">Unirme al equipo</button></form></div>`;
 }
 
 /* ---------- Página de equipo ---------- */
@@ -202,7 +282,7 @@ function viewTeam(L,tid){
   const res=ms.filter(m=>m.status!=='programado').reverse();const up=ms.filter(m=>m.status==='programado');
   let big=null;res.forEach(m=>{if(m.status!=='final')return;const[h,a]=sc(m);const d=(m.h===tid?h-a:a-h);if(d>0&&(!big||d>big.d))big={m,d,s:m.h===tid?`${h}-${a}`:`${a}-${h}`,rv:m.h===tid?m.a:m.h}});
   const squad=ps.length?`<div class="tw"><table class="st sq"><thead><tr><th>#</th><th class="l">Jugador</th><th>Pos</th><th>Goles</th><th>Partidos con gol</th><th>Amarillas</th><th>Rojas</th></tr></thead><tbody>
-    ${ps.map(p=>`<tr class="${top&&top.g&&p.name===top.name?'q':''}"><td class="pos">${esc(p.n||'—')}</td><td class="tn l">${esc(p.name)}${top&&top.g&&p.name===top.name?' <span class="pill acc">Goleador</span>':''}</td><td><span class="pos-c ${p.pos}">${p.pos}</span></td><td class="pts">${p.g}</td><td>${p.mg}</td><td>${p.y?`${p.y}<span class="cy">▮</span>`:'0'}</td><td>${p.r?`${p.r}<span class="cr">▮</span>`:'0'}</td></tr>`).join('')}
+    ${ps.map(p=>`<tr class="${top&&top.g&&p.name===top.name?'q':''}"><td class="pos">${esc(p.n||'—')}</td><td class="tn l"><div>${avatar(p,'sm')}<span>${esc(p.name)}${p.uid?'<span class="acc-dot" title="Tiene cuenta PÍCALE"></span>':''}</span>${top&&top.g&&p.name===top.name?'<span class="pill acc">Goleador</span>':''}</div></td><td><span class="pos-c ${p.pos}">${p.pos}</span></td><td class="pts">${p.g}</td><td>${p.mg}</td><td>${p.y?`${p.y}<span class="cy">▮</span>`:'0'}</td><td>${p.r?`${p.r}<span class="cr">▮</span>`:'0'}</td></tr>`).join('')}
     </tbody></table></div>`:'<div class="empty">Este equipo aún no registra jugadores.</div>';
   return`<section class="hero">${PITCH}<div class="wrap hero-in">
     <div><a class="back" href="${leagueURL(L.id)}">← ${esc(L.name)}</a>
@@ -213,7 +293,7 @@ function viewTeam(L,tid){
       <div class="kpis k6"><div class="kpi"><span class="eyebrow">Jugados</span><b class="num">${r.pj}</b></div><div class="kpi"><span class="eyebrow">G · E · P</span><b class="num">${r.g}-${r.e}-${r.p}</b></div><div class="kpi"><span class="eyebrow">Goles a favor</span><b class="num">${r.gf}</b></div><div class="kpi"><span class="eyebrow">Goles en contra</span><b class="num">${r.gc}</b></div><div class="kpi"><span class="eyebrow">Porterías en cero</span><b class="num">${st.cs}</b></div><div class="kpi"><span class="eyebrow">Promedio de gol</span><b class="num">${r.pj?(r.gf/r.pj).toFixed(1):'0'}</b></div></div>
       <div class="sec-h"><h2>Plantilla y estadísticas</h2><span class="note">Solo partidos finalizados</span></div>${squad}
       <div class="grid2">
-        <div class="panel"><h3>Goleadores del equipo</h3>${(()=>{const g=ps.filter(p=>p.g).sort((a,b)=>b.g-a.g).slice(0,5);return g.length?`<div class="lb">${g.map((p,i)=>`<div class="lb-r"><span class="rk">${i+1}</span>${crest(tid,'sm')}<div class="nm"><b>${esc(p.name)}</b><small>${POSN[p.pos]||'Jugador'} · #${esc(p.n||'—')}</small></div><span class="v">${p.g}</span><div class="lb-bar"><i style="width:${Math.round(p.g/Math.max(leagueTop,1)*100)}%"></i></div></div>`).join('')}</div><p class="note" style="margin:12px 0 0">La barra compara contra el líder de goleo de la liga (${leagueTop}).</p>`:'<div class="empty">Sin goles todavía.</div>'})()}</div>
+        <div class="panel"><h3>Goleadores del equipo</h3>${(()=>{const g=ps.filter(p=>p.g).sort((a,b)=>b.g-a.g).slice(0,5);return g.length?`<div class="lb">${g.map((p,i)=>`<div class="lb-r"><span class="rk">${i+1}</span>${avatar(p)}<div class="nm"><b>${esc(p.name)}</b><small>${POSN[p.pos]||'Jugador'} · #${esc(p.n||'—')}</small></div><span class="v">${p.g}</span><div class="lb-bar"><i style="width:${Math.round(p.g/Math.max(leagueTop,1)*100)}%"></i></div></div>`).join('')}</div><p class="note" style="margin:12px 0 0">La barra compara contra el líder de goleo de la liga (${leagueTop}).</p>`:'<div class="empty">Sin goles todavía.</div>'})()}</div>
         <div class="panel"><h3>Resumen</h3><div class="facts">
           <div><span>Posición</span><b>${L.kind==='liga'&&ri>=0?`${ri+1}° de ${rows.length}`:L.kind==='grupos'&&groupOf(L,tid)?(()=>{const g=groupOf(L,tid);const gr=groupTable(L,g);return`${gr.findIndex(x=>x.id===tid)+1}° de ${gr.length} en ${esc(g.name)}`})():'—'}</b></div>
           <div><span>Diferencia de gol</span><b>${r.gf-r.gc>0?'+':''}${r.gf-r.gc}</b></div>
@@ -231,6 +311,9 @@ function viewTeam(L,tid){
 function render(){
   const q=new URLSearchParams(location.search);const id=q.get('liga'),tid=q.get('equipo');
   const L=id&&LG(id);
+  const nav=document.querySelector('.top nav');if(nav)nav.innerHTML=`<a href="/futbol" class="${!q.has('cuenta')&&!q.has('unirse')?'on':''}">Competencias</a><a href="/futbol?cuenta" class="${q.has('cuenta')?'on':''}">${ME?.role==='player'?esc(ME.name.split(' ')[0]):'Mi cuenta'}</a>`;
+  if(q.has('unirse')){const[tid,code]=(q.get('unirse')||'').split('.');JOIN={tid,code};document.title='Unirme a mi equipo · PÍCALE Fútbol';$('#app').innerHTML=viewJoin();return}
+  if(q.has('cuenta')){document.title='Mi cuenta · PÍCALE Fútbol';$('#app').innerHTML=viewAccount();tick();return}
   if(L&&tid&&T(tid)){document.title=`${tname(tid)} · ${L.name}`;$('#app').innerHTML=viewTeam(L,tid)}
   else{document.title=L?`${L.name} · PÍCALE Fútbol`:'PÍCALE Fútbol';$('#app').innerHTML=L?viewLeague(L):viewHome()}
   tick();mountPlayer();
@@ -242,6 +325,10 @@ const ACT={
     if(q.get('equipo')){history.pushState(null,'',leagueURL(q.get('liga')))}
     PT.tab=el.dataset.tab;if(el.dataset.round)PT.round=+el.dataset.round;render();document.querySelector('.tabs')?.scrollIntoView({block:'start'})},
   round(el){PT.round=+el.dataset.i;render()},
+  'acc-tab'(el){ACC=el.dataset.k;render()},
+  'acc-logout'(){setTok('');ME=null;render()},
+  async 'me-photo'(){const f=await pickFile();if(!f)return;toast('Subiendo foto…');
+    try{const url=await uploadImage(f,'photo');ME={...ME,...await api('/profile',{method:'POST',body:JSON.stringify({photo:url})})};S=(await fetchServer())||S;render();toast('Foto actualizada en todos tus equipos')}catch(e){toast(e.message,'warn')}},
   watch(el){
     const q=new URLSearchParams(location.search);
     if(q.get('equipo')){history.pushState(null,'',leagueURL(q.get('liga')))}
@@ -249,12 +336,31 @@ const ACT={
     (document.getElementById('watch')||document.querySelector('.tabs'))?.scrollIntoView({block:'start',behavior:'smooth'})},
 };
 document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;if(el.closest('summary'))e.preventDefault();ACT[el.dataset.act]?.(el,e)});
+document.addEventListener('submit',async e=>{
+  e.preventDefault();const f=e.target;const btn=f.querySelector('button[type=submit]');if(btn)btn.disabled=true;
+  try{
+    if(f.id==='accF'){
+      const body={email:$('#a-email').value,password:$('#a-pass').value};
+      const res=ACC==='signup'?await api('/signup',{method:'POST',body:JSON.stringify({...body,name:$('#a-name').value,role:'player'})}):await api('/login',{method:'POST',body:JSON.stringify(body)});
+      setTok(res.token);ME=res.me;S=(await fetchServer())||S;
+      toast(ACC==='signup'?'Cuenta creada':'Bienvenido');render();
+    }
+    if(f.id==='joinF'){
+      await api('/join',{method:'POST',body:JSON.stringify({team:JOIN.tid,code:JOIN.code,n:$('#j-n').value,pos:$('#j-pos').value})});
+      S=(await fetchServer())||S;history.replaceState(null,'','/futbol?cuenta');toast(`Ya estás en ${tname(JOIN.tid)}`);render();
+    }
+  }catch(err){toast(err.message,'warn');if(btn)btn.disabled=false}
+});
 window.addEventListener('popstate',render);
 // Actualización automática: servidor cada 15 s; en modo demo, cuando el admin guarda en este mismo navegador.
 function playing(){const v=$('#pv');return v&&!v.paused}
 async function refresh(){
-  if(MODE!=='server'||playing())return;
+  if(MODE!=='server'||playing()||document.activeElement?.matches?.('input,select,textarea'))return;
   try{const j=await fetchServer();if(j&&JSON.stringify(j)!==JSON.stringify(S)){S=j;render()}}catch(e){}
 }
 window.addEventListener('storage',e=>{if(e.key===KEY&&MODE==='local'&&!playing()){const d=localData();if(d){S=d;render()}}});
-(async()=>{S=await loadData();render();setInterval(tick,1000);setInterval(refresh,15000)})();
+(async()=>{
+  S=await loadData();
+  if(MODE==='server'&&getTok()&&getTok()!=='local'){try{ME=await api('/me')}catch(e){if(e.status===401)setTok('')}}
+  render();setInterval(tick,1000);setInterval(refresh,15000);
+})();
