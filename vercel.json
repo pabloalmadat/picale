@@ -4,6 +4,25 @@
   "outputDirectory": ".",
   "routes": [
     {
+      "src": "/ai",
+      "status": 308,
+      "headers": {
+        "Location": "/ai/"
+      }
+    },
+    {
+      "src": "/ai/",
+      "dest": "/mobile/www/index.html"
+    },
+    {
+      "src": "/ai/(.+)",
+      "dest": "/mobile/www/$1"
+    },
+    {
+      "src": "/c/(.*)",
+      "dest": "/c.html"
+    },
+    {
       "src": "/app",
       "dest": "/app/dashboard.html"
     },
@@ -28,8 +47,14 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        }
       ]
     }
   ]

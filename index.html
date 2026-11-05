@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>PÍCALE · Replay en vivo para clubes de pádel</title>
-<meta name="description" content="Replay en vivo, clips y ligas para clubes de pádel en México. Sigue The Legends MTY Fall Season 2026 en vivo. Instala Pícale en tu club.">
+<meta name="description" content="Replay en vivo, clips instantáneos y análisis de partidos con inteligencia artificial para clubes de pádel en México. Instala Pícale en tu club.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <script src="picale.js" defer></script>
@@ -109,6 +109,26 @@ nav{
 }
 .club-av:first-child{margin-left:0;}
 
+/* ── PÍCALE AI ── */
+.ai-section{padding:24px 24px 72px;}
+.ai-inner{max-width:var(--max);margin:0 auto;display:grid;grid-template-columns:1.15fr 1fr;gap:40px;align-items:center;
+  padding:44px;border-radius:24px;background:linear-gradient(160deg,#0f1411 0%,#0b0c0d 60%);border:1px solid var(--green-border);position:relative;overflow:hidden;}
+.ai-badge{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);
+  padding:7px 12px;border-radius:999px;border:1px solid var(--green-border);background:var(--green-dim);margin-bottom:18px;}
+.ai-badge .d{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.4s infinite;}
+.ai-title{font-family:var(--display);font-weight:400;font-size:clamp(40px,6vw,72px);line-height:.92;letter-spacing:1px;margin-bottom:16px;}
+.ai-title span{color:var(--green);}
+.ai-sub{font-size:16px;line-height:1.6;color:var(--muted);margin-bottom:24px;max-width:520px;}
+.ai-sub b{color:var(--text);font-weight:600;}
+.ai-actions{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}
+.ai-note{font-size:13px;color:var(--muted);}
+.ai-steps{list-style:none;counter-reset:ai;display:flex;flex-direction:column;gap:10px;}
+.ai-steps li{counter-increment:ai;display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--border);font-size:15px;}
+.ai-steps li::before{content:counter(ai);flex-shrink:0;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--display);font-size:18px;color:#000;background:var(--green);}
+.ai-steps li small{display:block;color:var(--muted);font-size:13px;margin-top:2px;}
+@media(max-width:820px){.ai-inner{grid-template-columns:1fr;padding:28px 22px;gap:28px;}}
+
 /* ── SOMOS TORNEO BANNER ── */
 .somos-torneo{
   --somos-y:#d4f000;
@@ -174,6 +194,12 @@ section{padding:80px 24px;}
   padding:24px;transition:border-color .2s;
 }
 .feature-card:hover{border-color:var(--border2);}
+a.feature-card{display:flex;flex-direction:column;text-decoration:none;color:inherit;}
+a.feature-card:hover{transform:translateY(-2px);}
+.feature-card{transition:border-color .2s,transform .2s;}
+.feature-card.ai{border-color:var(--green-border);background:linear-gradient(160deg,#0f1411 0%,var(--bg2) 70%);}
+.feature-link{margin-top:auto;padding-top:16px;font-size:13px;font-weight:700;color:var(--green);}
+.feature-tag.soon{background:rgba(255,255,255,.04);border-color:var(--border2);color:var(--text);}
 .feature-icon{font-size:28px;margin-bottom:16px;}
 .feature-title{font-size:16px;font-weight:700;margin-bottom:8px;}
 .feature-desc{font-size:13px;color:var(--muted);line-height:1.6;}
@@ -312,8 +338,8 @@ footer{
 <nav id="nav">
   <a href="/" class="nav-logo">PÍCALE<span>.</span></a>
   <div class="nav-links">
+    <a href="#picale-ai" style="color:var(--green);font-weight:600;">PÍCALE AI</a>
     <a href="#features">Funciones</a>
-    <a href="legends.html" style="color:#F5F2EC;font-weight:600;">The Legends</a>
     <a href="rivals.html">Rivals</a>
     <a href="clubs.html">Clubes</a>
     <a href="#para-clubes">Para clubes</a>
@@ -348,31 +374,26 @@ footer{
   </div>
 </section>
 
-<!-- THE LEGENDS BANNER -->
-<div class="somos-torneo legends-banner">
-  <div class="somos-torneo-inner">
+<!-- PÍCALE AI -->
+<section class="ai-section" id="picale-ai">
+  <div class="ai-inner">
     <div>
-      <div class="st-live"><span class="d"></span> ARRANCA MAÑANA</div>
-      <div class="st-club">Somos Pádel + Cordillera PC · Monterrey</div>
-      <div class="st-title">THE <span>LEGENDS</span> MTY</div>
-      <div class="st-meta">
-        <b>Fall Season 2026</b> · del 1 de septiembre al 28 de octubre<br>
-        Varonil y femenil · 16 equipos · transmisión en vivo desde Somos Pádel
-      </div>
-      <div class="st-actions">
-        <a href="legends.html" class="st-btn st-btn-y">Ver la liga →</a>
-        <a href="legends.html#/calendar" class="st-btn st-btn-g">Calendario</a>
+      <div class="ai-badge"><span class="d"></span> <span data-ai-tag>PRÓXIMAMENTE</span> · PÍCALE AI</div>
+      <h2 class="ai-title">TU PARTIDO COMPLETO,<br><span>ANALIZADO POR IA</span></h2>
+      <p class="ai-sub">Las cámaras del club graban tu partido completo. La inteligencia artificial de PÍCALE <b>corta tus mejores puntos en clips sin que piques el botón</b>, te deja crear los clips que quieras desde el partido completo y te da las estadísticas de cada jugador: <b>distancia, tiempo en la red, mapa de calor y un resumen tipo coach.</b></p>
+      <div class="ai-actions">
+        <a id="ai-cta" href="auth.html?redirect=%2Fai%2F%23%2Fpartido" class="btn-hero btn-hero-primary">Crea tu cuenta y pruébalo primero →</a>
+        <span id="ai-note" class="ai-note">Muy pronto en tu club. Los clips del botón siguen gratis.</span>
       </div>
     </div>
-    <div class="st-prizes">
-      <div class="pz-lbl">Jornada 1</div>
-      <div class="pz-amt">01 SEP</div>
-      <div class="pz-sub">Somos Pádel · Monterrey</div>
-    </div>
+    <ol class="ai-steps">
+      <li><span>Escanea el QR de tu cancha<small>La app te dice en qué cancha estás.</small></span></li>
+      <li><span>Inicia tu partido<small>1 token por partido de hasta 90 minutos.</small></span></li>
+      <li><span>Al terminar, nombra a los jugadores<small>Tocas a cada uno en una foto de la cancha.</small></span></li>
+      <li><span>Recibe tus clips y tu análisis<small>Tus mejores puntos ya cortados, el partido completo y las estadísticas.</small></span></li>
+    </ol>
   </div>
-</div>
-
-
+</section>
 
 <!-- FEATURES -->
 <section class="features" id="features">
@@ -382,42 +403,48 @@ footer{
     <p class="section-sub">Desde ver tus jugadas en el momento hasta construir tu historial deportivo completo.</p>
 
     <div class="features-grid">
-      <div class="feature-card">
+      <a class="feature-card ai" href="#picale-ai">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">Análisis con IA</div>
+        <div class="feature-desc">Graba tu partido completo: tus mejores puntos salen en clips solos, creas los clips que quieras y recibes las estadísticas de cada jugador.</div>
+        <div><span class="feature-tag" data-ai-tag>PRÓXIMAMENTE</span></div>
+        <div class="feature-link">Conoce PÍCALE AI →</div>
+      </a>
+      <a class="feature-card" href="clubs.html">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Replay instantáneo</div>
+        <div class="feature-desc">Pícale al botón de tu cancha y se guarda el clip de los últimos 30 segundos. Búscalo en tu club y descárgalo o compártelo.</div>
+        <div><span class="feature-tag">GRATIS</span></div>
+        <div class="feature-link">Buscar mi clip →</div>
+      </a>
+      <a class="feature-card" href="perfil.html">
+        <div class="feature-icon">🎾</div>
+        <div class="feature-title">Mis clips</div>
+        <div class="feature-desc">Reclama tus clips, guárdalos en tu perfil y compártelos en WhatsApp, Instagram y TikTok.</div>
+        <div><span class="feature-tag">CON TU CUENTA</span></div>
+        <div class="feature-link">Ver mis clips →</div>
+      </a>
+      <a class="feature-card" href="clubs.html">
         <div class="feature-icon">📺</div>
         <div class="feature-title">Transmisión en vivo</div>
         <div class="feature-desc">Ve tu cancha en tiempo real desde cualquier dispositivo. Perfecta para compartir con familia y amigos.</div>
-        <div class="feature-tag">EN VIVO</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <div class="feature-title">Replay instantáneo</div>
-        <div class="feature-desc">Con un solo botón, genera el clip de los últimos 30 segundos. Ideal para analizar puntos clave al instante.</div>
-        <div class="feature-tag">CLIP EN SEGUNDOS</div>
-      </div>
-      <div class="feature-card">
+        <div><span class="feature-tag">EN VIVO</span></div>
+        <div class="feature-link">Ver canchas en vivo →</div>
+      </a>
+      <a class="feature-card" href="feed.html">
         <div class="feature-icon">🎬</div>
         <div class="feature-title">Feed de momentos</div>
-        <div class="feature-desc">Un feed estilo Reels con los mejores clips de tu club. Da like, comenta y comparte tus mejores jugadas.</div>
-        <div class="feature-tag">SOCIAL</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🎾</div>
-        <div class="feature-title">Perfil de jugador</div>
-        <div class="feature-desc">Reclama tus clips, construye tu historial y comparte tu perfil con otros jugadores.</div>
-        <div class="feature-tag">NUEVO</div>
-      </div>
-      <div class="feature-card">
+        <div class="feature-desc">Los mejores clips de tu club, estilo Reels. Da like, comenta y comparte tus mejores jugadas.</div>
+        <div><span class="feature-tag">SOCIAL</span></div>
+        <div class="feature-link">Ver momentos →</div>
+      </a>
+      <a class="feature-card" href="rivals.html">
         <div class="feature-icon">🏆</div>
         <div class="feature-title">Pícale Rivals</div>
         <div class="feature-desc">Torneos semanales con brackets en vivo, rankings por categoría y resultados en tiempo real.</div>
-        <div class="feature-tag">PRÓXIMAMENTE</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">↓</div>
-        <div class="feature-title">Descarga y comparte</div>
-        <div class="feature-desc">Descarga tus clips directamente a tu celular o compártelos en WhatsApp, Instagram y TikTok.</div>
-        <div class="feature-tag">GRATIS</div>
-      </div>
+        <div><span class="feature-tag soon">PRÓXIMAMENTE</span></div>
+        <div class="feature-link">Ver torneos →</div>
+      </a>
     </div>
   </div>
 </section>
@@ -564,6 +591,25 @@ document.addEventListener('DOMContentLoaded', function() {
     PICALE.renderAuthBtn('auth-btn-container', 'index.html');
   }
 });
+
+// ───── PÍCALE AI ─────
+// Cambia a 'beta' cuando arranque el piloto; todo el anuncio se actualiza solo.
+var AI_STATUS = 'proximamente'; // 'proximamente' | 'beta'
+(function () {
+  var beta = AI_STATUS === 'beta', logged = false;
+  try { logged = !!localStorage.getItem('picale_token'); } catch (e) {}
+  document.querySelectorAll('[data-ai-tag]').forEach(function (el) { el.textContent = beta ? 'BETA' : 'PRÓXIMAMENTE'; });
+  var cta = document.getElementById('ai-cta'), note = document.getElementById('ai-note');
+  if (logged) {
+    cta.href = '/ai/#/partido';
+    cta.textContent = beta ? 'Analizar mi partido →' : 'Conócelo en la app →';
+    note.textContent = (beta ? 'Beta' : 'Muy pronto') + ': 1 token por partido. Los clips del botón siguen gratis.';
+  } else {
+    cta.href = 'auth.html?redirect=%2Fai%2F%23%2Fpartido';
+    cta.textContent = beta ? 'Inicia sesión para probarlo →' : 'Crea tu cuenta y pruébalo primero →';
+    note.textContent = beta ? 'Beta para jugadores con cuenta PÍCALE. Los clips del botón siguen gratis.' : 'Muy pronto en tu club. Los clips del botón siguen gratis.';
+  }
+})();
 
 // Sticky nav shadow
 window.addEventListener('scroll', function() {
