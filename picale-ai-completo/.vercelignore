@@ -1,0 +1,5 @@
+# La web no necesita los proyectos nativos ni el código del servidor
+mobile/ios
+mobile/android
+mobile/node_modules
+server

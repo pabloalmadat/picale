@@ -1,0 +1,61 @@
+{
+  "version": 2,
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "routes": [
+    {
+      "src": "/ai",
+      "status": 308,
+      "headers": {
+        "Location": "/ai/"
+      }
+    },
+    {
+      "src": "/ai/",
+      "dest": "/mobile/www/index.html"
+    },
+    {
+      "src": "/ai/(.+)",
+      "dest": "/mobile/www/$1"
+    },
+    {
+      "src": "/c/(.*)",
+      "dest": "/c.html"
+    },
+    {
+      "src": "/app",
+      "dest": "/app/dashboard.html"
+    },
+    {
+      "src": "/dashboard",
+      "dest": "/app/dashboard.html"
+    },
+    {
+      "src": "/futbol/?",
+      "dest": "/futbol/futbol.html"
+    },
+    {
+      "src": "/futbol/admin/?",
+      "dest": "/futbol/futbol-admin.html"
+    },
+    {
+      "src": "/api/futbol/(.*)",
+      "dest": "https://api.picalereplay.com/api/futbol/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        }
+      ]
+    }
+  ]
+}

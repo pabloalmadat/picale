@@ -1,0 +1,18 @@
+{
+  "api": "https://api.picalereplay.com/ai",
+  "club": "somos",
+  "edge_key": "PEGA-AQUI-LA-LLAVE-DE-SOMOS",
+  "data_dir": "C:\\picale\\sesiones",
+  "ffmpeg": "ffmpeg",
+  "segment_seconds": 300,
+  "courts": {
+    "6bc0621c-f99a-4e1f-8971-d70155ea3383": { "name": "Cancha 1", "rtsp": "rtsp://USUARIO:CLAVE@IP-CAMARA-1:554/Streaming/Channels/101", "calibration": null },
+    "e1dc778e-831f-4fa4-bc86-d6a31a7de1d1": { "name": "Cancha 2", "rtsp": "rtsp://USUARIO:CLAVE@IP-CAMARA-2:554/Streaming/Channels/101", "calibration": null },
+    "fc8bbc6d-e21b-466d-92e6-a2beefe6bd38": { "name": "Cancha 3", "rtsp": "rtsp://USUARIO:CLAVE@IP-CAMARA-3:554/Streaming/Channels/101", "calibration": null },
+    "2d54ad6f-895f-4f6c-b985-95b431fe03b3": { "name": "Cancha 4", "rtsp": "rtsp://USUARIO:CLAVE@IP-CAMARA-4:554/Streaming/Channels/101", "calibration": null },
+    "28b6283d-dacf-428d-a3fb-fc0015d5f6aa": { "name": "Cancha 5", "rtsp": "rtsp://USUARIO:CLAVE@IP-CAMARA-5:554/Streaming/Channels/101", "calibration": null },
+    "519bbd5d-b2f5-4a84-a257-6d327bebf9a8": { "name": "Cancha 6", "rtsp": "rtsp://USUARIO:CLAVE@IP-CAMARA-6:554/Streaming/Channels/101", "calibration": null },
+    "28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512": { "name": "Cancha 7", "rtsp": "rtsp://USUARIO:CLAVE@IP-CAMARA-7:554/Streaming/Channels/101", "calibration": null },
+    "35c16c54-f31e-4397-922b-044722d06524": { "name": "Cancha 8", "rtsp": "rtsp://USUARIO:CLAVE@IP-CAMARA-8:554/Streaming/Channels/101", "calibration": null }
+  }
+}
