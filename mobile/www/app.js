@@ -144,6 +144,7 @@
   var routes = {
     login: viewLogin, clips: viewClips, vivo: viewVivo, partido: viewPartido,
     analisis: viewAnalisis, perfil: viewPerfil, creditos: viewCreditos, admin: viewAdmin,
+    club: viewClub, americana: viewAmericana,
   };
   function route() {
     stopHls();
@@ -155,7 +156,8 @@
     document.getElementById('topbar').classList.toggle('hidden', !chrome);
     document.getElementById('tabbar').classList.toggle('hidden', !chrome);
     $view.classList.toggle('full', !chrome);
-    document.querySelectorAll('.tabbar a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-tab') === name); });
+    var tab = name === 'americana' ? 'partido' : name === 'club' ? 'perfil' : name;
+    document.querySelectorAll('.tabbar a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-tab') === tab); });
     window.scrollTo(0, 0);
     fn(parts.slice(1));
   }
@@ -252,7 +254,7 @@
     m.querySelector('#mshare').onclick = function () { shareUrl(c.url, 'Mi jugada en PÍCALE'); };
     m.querySelector('#msave').onclick = function () { saveVideo(c.url); };
   }
-  function closeModal() { var m = document.getElementById('modal'); m.classList.add('hidden'); m.innerHTML = ''; }
+  function closeModal() { var m = document.getElementById('modal'); m.classList.add('hidden'); m.classList.remove('solid'); m.innerHTML = ''; }
 
   function shareUrl(url, title) {
     if (Plugins.Share) return Plugins.Share.share({ title: title, url: url, dialogTitle: 'Compartir' }).catch(function () {});
@@ -333,6 +335,14 @@
       var m = S.activeMatch;
       if (m && m.status === 'recording') return stepRecording();
       if (m && m.status === 'naming') return stepNaming();
+      if (S.pendingQR && !S.demo && !S.skipEventCheck) {
+        var raw = S.pendingQR;
+        return api('/ai/courts/resolve-qr', { method: 'POST', json: { qr: raw } }).then(function (c) {
+          if (c.event) { S.pendingQR = null; c._raw = raw; return stepEventChoice(c); }
+          stepUseToken();
+        }).catch(function () { stepUseToken(); });
+      }
+      S.skipEventCheck = false;
       stepUseToken();
     });
   }
@@ -366,7 +376,8 @@
         (S.pendingQR ? '<div class="note" style="border-color:var(--green-line);color:var(--text)">✓ QR de la cancha recibido. Al continuar confirmamos cuál es.</div>' : '') +
         '<button class="btn mt" id="use"' + (enough ? '' : ' disabled') + '>USAR ' + cost + ' TOKEN' + (cost > 1 ? 'S' : '') + (S.pendingQR ? ' Y CONFIRMAR CANCHA' : ' Y ESCANEAR CANCHA') + '</button>' +
         (!enough ? '<a class="btn ghost" href="#/creditos">Comprar tokens</a>' : '') +
-        '<p class="free">El token se descuenta hasta que inicias. Los clips del botón y su análisis son gratis.</p>';
+        '<p class="free">El token se descuenta hasta que inicias. Los clips del botón y su análisis son gratis.</p>' +
+        '<a class="item mt" href="#/americana" style="border:1px solid var(--line);border-radius:14px"><span class="tag">🏆</span><div><div class="ttl">¿Jugaste una americana?</div><div class="dsc">Búscate en los partidos de tu club</div></div><span class="chev">›</span></a>';
       box.querySelectorAll('[data-type]').forEach(function (b) { b.onclick = function () { sel.type = b.getAttribute('data-type'); sel.min = sel.type === 'training' ? CFG.TRAINING_MINUTES[0] : CFG.FULL_MATCH_MINUTES; haptic(); draw(); }; });
       box.querySelectorAll('[data-min]').forEach(function (b) { b.onclick = function () { sel.min = +b.getAttribute('data-min'); draw(); }; });
       box.querySelector('#use').onclick = function () {
@@ -459,7 +470,7 @@
     var p = S.demo
       ? Promise.resolve({ court_id: 'fc8bbc6d-e21b-466d-92e6-a2beefe6bd38', club_name: 'Somos Pádel', court_name: 'Cancha 3', sport: 'padel', stream_ok: true, hls_url: courtById('somos_c3').hls })
       : api('/ai/courts/resolve-qr', { method: 'POST', json: { qr: raw } });
-    p.then(function (c) { haptic(); stepConfirm(c); }).catch(function (e) {
+    p.then(function (c) { haptic(); if (c.event && c.event.live) { c._raw = raw; return stepEventChoice(c); } stepConfirm(c); }).catch(function (e) {
       var msg = e && e.status === 404 ? 'Ese QR no es de una cancha PÍCALE.' : notReady(e) ? 'La verificación de cancha llega muy pronto.' : 'No pudimos verificar la cancha. Intenta otra vez.';
       if (err) err.textContent = msg; else toast(msg);
     });
@@ -972,11 +983,16 @@
       '<div class="list mt">' +
         '<a class="item" href="#/creditos"><div><div class="ttl">Mis tokens</div><div class="dsc" id="pc">—</div></div><span class="chev">›</span></a>' +
         '<button class="item" style="width:100%;text-align:left" id="edit"><div><div class="ttl">Editar perfil</div><div class="dsc">Foto, nombre, categoría</div></div><span class="chev">›</span></button>' +
+        '<span id="pclub"></span>' +
         (u.is_admin ? '<a class="item" href="#/admin"><div><div class="ttl">Panel PÍCALE AI</div><div class="dsc">Dar tokens, clubes y sesiones</div></div><span class="chev">›</span></a>' : '') +
         '<button class="item" style="width:100%;text-align:left" id="web"><div><div class="ttl">PÍCALE en la web</div><div class="dsc">picalereplay.com</div></div><span class="chev">›</span></button>' +
       '</div>' +
       '<button class="btn danger mt" id="out">Cerrar sesión</button>';
     loadCredits().then(function (c) { var el = document.getElementById('pc'); if (el) el.textContent = c === null ? 'Muy pronto' : c; });
+    api('/ai/me/roles').then(function (r) {
+      var el = document.getElementById('pclub'); if (!el || !(r.clubs || []).length) return;
+      el.outerHTML = '<a class="item" href="#/club"><div><div class="ttl">Panel del club</div><div class="dsc">' + esc(r.clubs.map(function (c) { return c.club_name; }).join(', ')) + ' · americanas con IA</div></div><span class="chev">›</span></a>';
+    }).catch(function () {});
     document.getElementById('edit').onclick = function () { openExternal(CFG.WEB + '/perfil.html'); };
     document.getElementById('web').onclick = function () { openExternal(CFG.WEB); };
     document.getElementById('out').onclick = function () { if (confirm('¿Cerrar sesión?')) logout(); };
@@ -986,6 +1002,7 @@
   function viewAdmin() {
     $view.innerHTML = '<a href="#/perfil" class="link">‹ Perfil</a><h1 class="mt">Panel PÍCALE AI</h1>' +
       '<h2>Clubes</h2><div id="ad-edges" class="list"><div class="item"><span class="spin" style="color:var(--green)"></span></div></div>' +
+      '<h2>Tokens y administradores de cada club</h2><div id="ad-clubs"></div>' +
       '<h2>Dar tokens</h2><label class="field"><span>Buscar jugador (nombre, usuario o correo)</span><input id="ad-q" autocapitalize="none"></label>' +
       '<div id="ad-users" class="list mt"></div><p class="free">Solo aparecen jugadores que ya abrieron PÍCALE AI al menos una vez.</p>' +
       '<h2>Últimas sesiones</h2><div id="ad-sess" class="list"></div>';
@@ -1020,8 +1037,236 @@
             (x.calibration && x.calibration.score != null ? ' · ' + Math.round(x.calibration.score * 100) + '%' : '') + '</a>' : '') + '</div><span style="margin-left:auto">' + statusChip(x.status) + '</span></div>';
       }).join('') || '<div class="item"><div class="dsc">Todavía no hay sesiones.</div></div>';
     }).catch(function () {});
+    function clubs() {
+      api('/ai/admin/clubs').then(function (d) {
+        var box = document.getElementById('ad-clubs'); if (!box) return;
+        box.innerHTML = (d.clubs || []).map(function (c) {
+          return '<div class="card mt"><div class="spread"><div><b>' + esc(c.club_name) + '</b><div class="sub" style="margin:2px 0 0">' + c.courts + ' canchas · <a class="link" href="#/club/' + esc(c.club_id) + '">abrir panel</a></div></div>' +
+            '<span class="chip">' + c.credits + ' tokens</span></div>' +
+            '<div class="row mt" style="gap:8px"><button class="chip green" data-cl="' + esc(c.club_id) + '" data-n="5">+5</button><button class="chip green" data-cl="' + esc(c.club_id) + '" data-n="20">+20</button><button class="chip" data-cl="' + esc(c.club_id) + '" data-n="-5">−5</button></div>' +
+            '<div class="sub mt" style="margin-bottom:4px">Administradores</div>' +
+            (c.admins.length ? c.admins.map(function (a) {
+              return '<div class="spread" style="padding:4px 0"><span>' + esc(a.name || a.username || a.email) + ' <span class="sub">' + esc(a.email || '') + '</span></span><button class="link" data-rm="' + esc(a.user_id) + '" data-club="' + esc(c.club_id) + '">Quitar</button></div>';
+            }).join('') : '<div class="dsc sub">Nadie todavía</div>') +
+            '<div class="row mt" style="gap:8px"><input class="ad-who" data-club="' + esc(c.club_id) + '" placeholder="correo o @usuario" autocapitalize="none" style="flex:1;min-width:0;background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--text);padding:10px"><button class="chip green" data-add="' + esc(c.club_id) + '">Agregar</button></div></div>';
+        }).join('');
+        box.querySelectorAll('[data-cl]').forEach(function (b) {
+          b.onclick = function () {
+            b.disabled = true;
+            api('/ai/admin/tokens', { method: 'POST', json: { user_id: 'club:' + b.getAttribute('data-cl'), amount: +b.getAttribute('data-n'), note: 'tokens del club' } })
+              .then(function () { haptic(); toast('Tokens del club actualizados'); clubs(); }).catch(function () { b.disabled = false; toast('No se pudo'); });
+          };
+        });
+        box.querySelectorAll('[data-add]').forEach(function (b) {
+          b.onclick = function () {
+            var club = b.getAttribute('data-add'), inp = box.querySelector('.ad-who[data-club="' + club + '"]');
+            if (!inp.value.trim()) return;
+            api('/ai/admin/club-admins', { method: 'POST', json: { club_id: club, who: inp.value.trim() } })
+              .then(function (r) { toast(r.name + ' ahora administra el club'); clubs(); }).catch(function (e) { toast(errDetail(e, 'No se pudo')); });
+          };
+        });
+        box.querySelectorAll('[data-rm]').forEach(function (b) {
+          b.onclick = function () {
+            api('/ai/admin/club-admins?club_id=' + encodeURIComponent(b.getAttribute('data-club')) + '&user_id=' + encodeURIComponent(b.getAttribute('data-rm')), { method: 'DELETE' })
+              .then(function () { clubs(); }).catch(function () { toast('No se pudo'); });
+          };
+        });
+      }).catch(function () {});
+    }
+    clubs();
     var tq; document.getElementById('ad-q').oninput = function (ev) { clearTimeout(tq); tq = setTimeout(function () { users(ev.target.value); }, 300); };
     users('');
+  }
+
+  // ───────────────────────── AMERICANAS
+  // El club graba varias canchas de corrido; la IA separa cada partido y cada jugador se busca.
+  function hhmm(ts) { return ts ? new Date(ts * 1000).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : ''; }
+  function spinner() { return '<div class="empty"><div class="spin" style="margin:auto;color:var(--green)"></div></div>'; }
+  function errDetail(e, fallback) { return (e && e.data && e.data.detail) || fallback; }
+
+  function viewClub(args) {
+    clearInterval(S.timer);
+    $view.innerHTML = '<a href="#/perfil" class="link">‹ Perfil</a><div id="cb" class="mt">' + spinner() + '</div>';
+    api('/ai/me/roles').then(function (r) {
+      var clubs = r.clubs || [], box = document.getElementById('cb'); if (!box) return;
+      if (!clubs.length) { box.innerHTML = '<div class="empty"><div class="ico">🏟️</div>Tu cuenta no administra ningún club.</div>'; return; }
+      if (!args[0] && clubs.length > 1) {
+        box.innerHTML = '<h1>Panel del club</h1><div class="list mt">' + clubs.map(function (c) {
+          return '<a class="item" href="#/club/' + esc(c.club_id) + '"><div class="ttl">' + esc(c.club_name) + '</div><span class="chev">›</span></a>';
+        }).join('') + '</div>';
+        return;
+      }
+      clubPanel(args[0] || clubs[0].club_id);
+    }).catch(function () { var box = document.getElementById('cb'); if (box) box.innerHTML = '<div class="empty">No se pudo cargar el panel.</div>'; });
+  }
+
+  function clubPanel(id) {
+    var sel = { courts: {}, min: 120, title: '' }, P = null;
+    function load() {
+      api('/ai/clubs/' + encodeURIComponent(id) + '/panel').then(function (p) {
+        P = p; if (sel.min && p.durations.indexOf(sel.min) < 0) sel.min = p.durations[0]; draw();
+      }).catch(function (e) {
+        var box = document.getElementById('cb'); if (box) box.innerHTML = '<div class="empty">' + esc(errDetail(e, 'No se pudo cargar el panel.')) + '</div>';
+      });
+    }
+    function draw() {
+      var box = document.getElementById('cb'); if (!box || !P) return clearInterval(S.timer);
+      var ids = Object.keys(sel.courts).filter(function (k) { return sel.courts[k]; });
+      var hours = Math.ceil(sel.min / 60), cost = ids.length * hours * P.tokens_per_court_hour;
+      var live = P.events.filter(function (e) { return e.status === 'live'; });
+      var past = P.events.filter(function (e) { return e.status !== 'live'; });
+      var free = P.courts.filter(function (c) { return !c.busy; });
+      box.innerHTML = '<h1>' + esc(P.club_name) + '</h1><p class="sub">Americanas y retas grabadas con IA</p>' +
+        '<div class="card mt spread"><div><div class="sub" style="margin:0">Tokens del club</div><b style="font-size:28px">' + P.credits + '</b></div>' +
+          (P.edge_online ? '<span class="chip green">● Mini PC en línea</span>' : '<span class="chip red">Mini PC sin conexión</span>') + '</div>' +
+        live.map(function (e) {
+          return '<a class="card mt" href="#/americana/' + e.id + '" style="display:block;border-color:var(--red)"><div class="spread"><div><b>' + esc(e.title) + '</b>' +
+            '<div class="sub" style="margin:2px 0 0">' + e.courts + ' cancha' + (e.courts > 1 ? 's' : '') + ' · termina ' + hhmm(e.ends_at) + '</div></div>' + evChip(e.status) + '</div></a>';
+        }).join('') +
+        '<h2>Nueva americana</h2>' +
+        '<label class="field"><span>Nombre (opcional)</span><input id="ev-t" maxlength="80" placeholder="Americana jueves" value="' + esc(sel.title) + '"></label>' +
+        '<div class="spread mt"><b>Canchas</b>' + (free.length ? '<button class="link" id="ev-all">' + (ids.length === free.length ? 'Ninguna' : 'Todas') + '</button>' : '') + '</div>' +
+        '<div class="courts mt">' + P.courts.map(function (c) {
+          var on = !!sel.courts[c.id];
+          return '<button data-c="' + c.id + '" class="' + (on ? 'on' : '') + '"' + (c.busy ? ' disabled' : '') + '>' + esc(c.court_name.replace(/^Cancha\s*/i, 'C')) +
+            (c.busy ? '<small>grabando</small>' : '') + '</button>';
+        }).join('') + '</div>' +
+        '<b class="mt" style="display:block">Duración</b><div class="seg mt">' + P.durations.map(function (m) {
+          return '<button data-m="' + m + '" class="' + (sel.min === m ? 'on' : '') + '">' + (m % 60 ? (m / 60).toFixed(1).replace('.0', '') : m / 60) + ' h</button>';
+        }).join('') + '</div>' +
+        '<div class="card mt spread"><div class="sub" style="margin:0">' + ids.length + ' cancha' + (ids.length === 1 ? '' : 's') + ' × ' + hours + ' h</div><span class="chip ' + (cost && cost <= P.credits ? 'green' : '') + '">' + cost + ' token' + (cost === 1 ? '' : 's') + '</span></div>' +
+        '<button class="btn rec mt" id="ev-go"' + (ids.length && cost <= P.credits && P.edge_online ? '' : ' disabled') + '>● INICIAR AMERICANA</button>' +
+        (cost > P.credits ? '<div class="note">Al club le faltan ' + (cost - P.credits) + ' tokens. Pídelos a PÍCALE.</div>' : '') +
+        '<p class="free">Las canchas se graban de corrido. La IA separa cada partido sola; los jugadores se buscan escaneando el QR de su cancha.</p>' +
+        (past.length ? '<h2>Anteriores</h2><div class="list">' + past.map(function (e) {
+          return '<a class="item" href="#/americana/' + e.id + '"><div><div class="ttl">' + esc(e.title) + '</div><div class="dsc">' + esc(fmtTime(e.started_at)) + ' · ' + e.courts + ' canchas</div></div><span style="margin-left:auto">' + evChip(e.status) + '</span></a>';
+        }).join('') + '</div>' : '');
+      box.querySelector('#ev-t').oninput = function (ev) { sel.title = ev.target.value; };
+      box.querySelectorAll('[data-c]').forEach(function (b) { b.onclick = function () { var k = b.getAttribute('data-c'); sel.courts[k] = !sel.courts[k]; haptic(); draw(); }; });
+      box.querySelectorAll('[data-m]').forEach(function (b) { b.onclick = function () { sel.min = +b.getAttribute('data-m'); draw(); }; });
+      var all = box.querySelector('#ev-all');
+      if (all) all.onclick = function () { var to = ids.length !== free.length; sel.courts = {}; if (to) free.forEach(function (c) { sel.courts[c.id] = true; }); draw(); };
+      box.querySelector('#ev-go').onclick = function () {
+        var b = this; b.disabled = true; b.innerHTML = '<span class="spin"></span>';
+        api('/ai/clubs/' + encodeURIComponent(id) + '/events', { method: 'POST', json: { court_ids: ids, duration_min: sel.min, title: sel.title } })
+          .then(function (ev) { haptic(); toast('Americana iniciada · grabando ' + ids.length + ' canchas'); location.hash = '#/americana/' + ev.id; })
+          .catch(function (e) { toast(errDetail(e, 'No se pudo iniciar')); load(); });
+      };
+    }
+    load();
+    S.timer = setInterval(function () { if (!document.getElementById('cb')) return clearInterval(S.timer); }, 5000);
+  }
+
+  function evChip(s) {
+    var map = { live: ['red', '● Grabando'], processing: ['amber', 'Analizando'], ready: ['green', 'Listo'], cancelled: ['', 'Cancelada'], failed: ['red', 'Error'] };
+    var v = map[s] || ['', s || ''];
+    return '<span class="chip ' + v[0] + '">' + esc(v[1]) + '</span>';
+  }
+
+  function viewAmericana(args) {
+    clearInterval(S.timer);
+    if (args[0]) return americanaDetail(args[0], args[1]);
+    $view.innerHTML = '<a href="#/partido" class="link">‹ Analizar</a><h1 class="mt">Americanas</h1><p class="sub">Búscate en los partidos de tu club y ve tus stats y mejores puntos.</p><div id="am" class="mt">' + spinner() + '</div>';
+    api('/ai/events').then(function (d) {
+      var box = document.getElementById('am'); if (!box) return;
+      var list = d.events || [];
+      box.innerHTML = list.length ? '<div class="list">' + list.map(function (e) {
+        return '<a class="item" href="#/americana/' + e.id + '"><span class="tag">🏆</span><div><div class="ttl">' + esc(e.title) + ' · ' + esc(e.club_name || '') + '</div><div class="dsc">' + esc(fmtTime(e.started_at)) + '</div></div><span style="margin-left:auto">' + evChip(e.status) + '</span></a>';
+      }).join('') + '</div>' : '<div class="empty"><div class="ico">🏆</div>No hay americanas en los últimos días.</div>';
+    }).catch(function () { var box = document.getElementById('am'); if (box) box.innerHTML = '<div class="empty">No se pudieron cargar.</div>'; });
+  }
+
+  function americanaDetail(id, onlyCourt) {
+    $view.innerHTML = '<a href="#/americana" class="link">‹ Americanas</a><div id="am" class="mt">' + spinner() + '</div>';
+    var E = null;
+    function load() {
+      api('/ai/events/' + id).then(function (e) { E = e; draw(); }).catch(function () {
+        var box = document.getElementById('am'); if (box) box.innerHTML = '<div class="empty">No se encontró la americana.</div>'; clearInterval(S.timer);
+      });
+    }
+    function draw() {
+      var box = document.getElementById('am'); if (!box) return clearInterval(S.timer);
+      var courts = E.courts.filter(function (c) { return !onlyCourt || c.court_id === onlyCourt; });
+      if (!courts.length) courts = E.courts;
+      var total = E.courts.reduce(function (n, c) { return n + c.matches.length; }, 0);
+      box.innerHTML = '<div class="spread"><div><h1 style="margin:0">' + esc(E.title) + '</h1><div class="sub" style="margin:2px 0 0">' + esc((E.club_name || '') + ' · ' + fmtTime(E.started_at)) + '</div></div>' + evChip(E.status) + '</div>' +
+        (E.status === 'live' ? '<div class="note mt">Se está grabando (termina a las ' + hhmm(E.ends_at) + '). Al terminar, la IA separa cada partido (tarda unos minutos) y aquí te buscas. No necesitas token.</div>' +
+          (E.is_club_admin ? '<button class="btn danger mt" id="ev-end">Terminar americana ahora</button>' : '') : '') +
+        (E.status === 'processing' ? '<div class="note mt">La IA está separando los partidos. Esta página se actualiza sola.</div>' : '') +
+        (E.status === 'ready' ? '<p class="sub mt">' + total + ' partido' + (total === 1 ? '' : 's') + ' encontrado' + (total === 1 ? '' : 's') + '. Toca el tuyo y elige cuál eres.</p>' : '') +
+        (onlyCourt && E.courts.length > 1 ? '<a class="link" href="#/americana/' + E.id + '">Ver todas las canchas ›</a>' : '') +
+        courts.map(function (c) {
+          return '<h2>' + esc(c.court_name) + (c.status !== 'ready' ? ' <span style="vertical-align:middle">' + statusChip(c.status) + '</span>' : '') + '</h2>' +
+            (c.status === 'processing' && c.progress ? '<div class="progress"><i style="animation:none;width:' + Math.round(c.progress * 100) + '%"></i></div>' : '') +
+            (c.matches.length ? '<div class="matches">' + c.matches.map(function (m, i) {
+              return '<button class="mcard' + (m.mine ? ' mine' : '') + '" data-s="' + m.session_id + '">' +
+                (m.snapshot_url ? '<img loading="lazy" src="' + esc(m.snapshot_url) + '" alt="">' : '<div class="ph"></div>') +
+                '<div class="mt-row"><b>Partido ' + (i + 1) + '</b><span class="sub" style="margin:0">' + hhmm(m.start) + '–' + hhmm(m.end) + '</span></div>' +
+                '<div class="who-row">' + m.players.map(function (p) {
+                  return '<span class="chip' + (p.is_me ? ' green' : p.claimed ? ' amber' : '') + '">' + p.track_id + (p.is_me ? ' · Tú' : p.claimed ? ' · ' + esc((p.name || '').split(' ')[0]) : '') + '</span>';
+                }).join('') + '</div></button>';
+            }).join('') + '</div>'
+              : (c.status === 'ready' ? '<div class="dsc sub">No se detectaron partidos en esta cancha.</div>' : c.status === 'failed' ? '<div class="dsc sub">' + esc(c.error || 'No se pudo analizar') + ' · token devuelto al club</div>' : ''));
+        }).join('');
+      var end = box.querySelector('#ev-end');
+      if (end) end.onclick = function () {
+        if (!confirm('¿Terminar la americana ahora? Se dejan de grabar todas las canchas.')) return;
+        end.disabled = true;
+        api('/ai/events/' + E.id + '/finish', { method: 'POST' }).then(function (e) { E = e; E.is_club_admin = true; toast('Americana terminada · analizando'); draw(); })
+          .catch(function (e) { end.disabled = false; toast(errDetail(e, 'No se pudo terminar')); });
+      };
+      box.querySelectorAll('[data-s]').forEach(function (b) {
+        b.onclick = function () {
+          var sid = b.getAttribute('data-s'), m = null;
+          E.courts.forEach(function (c) { c.matches.forEach(function (x) { if (x.session_id === sid) m = x; }); });
+          if (m.mine) { location.hash = '#/analisis/' + sid; return; }
+          claimSheet(m);
+        };
+      });
+      clearInterval(S.timer);
+      if (E.status === 'live' || E.status === 'processing') S.timer = setInterval(load, 20000);
+    }
+    function claimSheet(m) {
+      var md = document.getElementById('modal');
+      md.innerHTML = '<div class="bar"><span class="sub" style="margin:0">' + hhmm(m.start) + '–' + hhmm(m.end) + '</span><button class="x" id="mx" aria-label="Cerrar">×</button></div>' +
+        '<div style="padding:0 16px calc(var(--sb) + 18px);overflow:auto">' +
+        (m.snapshot_url ? '<img src="' + esc(m.snapshot_url) + '" style="width:100%;border-radius:14px;display:block" alt="">' : '') +
+        '<h1 class="mt" style="font-size:30px">¿Cuál eres tú?</h1><p class="sub">Busca tu letra sobre cada jugador en la foto.</p>' +
+        '<div class="claim mt">' + m.players.map(function (p) {
+          var taken = p.claimed && !p.is_me;
+          return '<button data-t="' + p.track_id + '"' + (taken ? ' disabled' : '') + '><b>' + p.track_id + '</b><small>' + (taken ? esc(p.name || 'Ocupado') : 'Soy yo') + '</small></button>';
+        }).join('') + '</div>' +
+        (E.claim_cost ? '<p class="free">Ver tu partido cuesta ' + E.claim_cost + ' token' + (E.claim_cost > 1 ? 's' : '') + '.</p>' : '<p class="free">Gratis · lo pagó el club</p>') +
+        '<p class="free">Si alguien eligió tu letra por error, avisa en recepción.</p></div>';
+      md.classList.remove('hidden'); md.classList.add('solid');
+      md.querySelector('#mx').onclick = closeModal;
+      md.querySelectorAll('[data-t]').forEach(function (b) {
+        b.onclick = function () {
+          b.disabled = true;
+          api('/ai/sessions/' + m.session_id + '/claim', { method: 'POST', json: { track_id: b.getAttribute('data-t') } })
+            .then(function () { haptic(); closeModal(); toast('¡Listo! Estos son tus stats'); location.hash = '#/analisis/' + m.session_id; })
+            .catch(function (e) {
+              b.disabled = false;
+              if (e && e.status === 402) { closeModal(); toast('No tienes tokens suficientes'); location.hash = '#/creditos'; return; }
+              toast(errDetail(e, 'No se pudo'));
+            });
+        };
+      });
+    }
+    load();
+  }
+
+  // QR escaneado en una cancha que está (o estuvo hoy) en una americana
+  function stepEventChoice(c) {
+    var box = pt(); if (!box) return;
+    var ev = c.event;
+    box.innerHTML = '<h1>' + esc(c.court_name) + '</h1><p class="sub">' + esc(c.club_name) + '</p>' +
+      '<div class="card mt" style="border-color:var(--green-line)"><div class="spread"><b>🏆 ' + esc(ev.title) + '</b>' + evChip(ev.live ? 'live' : 'ready') + '</div>' +
+        '<div class="sub" style="margin:6px 0 0">' + (ev.live ? 'Esta cancha se está grabando con la americana del club. Tu partido ya queda grabado: no necesitas token.' : 'Esta cancha estuvo en una americana. Búscate en tu partido.') + '</div></div>' +
+      '<a class="btn mt" href="#/americana/' + ev.id + '/' + c.court_id + '">' + (ev.live ? 'VER LA AMERICANA' : 'BUSCAR MI PARTIDO') + '</a>' +
+      (ev.live ? '' : '<button class="btn ghost" id="other">Analizar otro partido con token</button>');
+    var o = box.querySelector('#other');
+    if (o) o.onclick = function () { S.pendingQR = c._raw; S.skipEventCheck = true; stepUseToken(); };
   }
 
   // ───────────────────────── PUSH

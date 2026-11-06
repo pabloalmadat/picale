@@ -46,3 +46,14 @@ PRODUCTS = json.loads(_env("PRODUCTS_JSON", json.dumps([
 RETENTION_DAYS = int(_env("RETENTION_DAYS", "30"))        # el video completo se borra después; los clips se quedan
 AUTO_CLIPS = int(_env("AUTO_CLIPS", "5"))                  # mejores puntos que se cortan solos
 CLIP_MAX_S = int(_env("CLIP_MAX_S", "90"))
+
+# Americanas (varias canchas grabando de corrido; la IA separa cada partido)
+EVENT_DURATIONS = [int(x) for x in _env("EVENT_DURATIONS", "60,90,120,150,180,240").split(",")]
+EVENT_TOKENS_PER_COURT_HOUR = int(_env("EVENT_TOKENS_PER_COURT_HOUR", "1"))   # lo paga el club
+EVENT_CLAIM_COST = int(_env("EVENT_CLAIM_COST", "0"))     # tokens que paga el jugador por ver su partido (0 = gratis)
+EVENT_AUTO_CLIPS = int(_env("EVENT_AUTO_CLIPS", "3"))     # mejores puntos por partido
+EVENT_LOOKBACK_H = int(_env("EVENT_LOOKBACK_H", "48"))    # cuánto tiempo aparece la americana al escanear el QR
+
+# Disco: no arranca una grabación si no cabe (protege el streaming y los clips del VPS)
+DISK_MB_PER_MIN = float(_env("DISK_MB_PER_MIN", "20"))    # ~1.7 GB por 90 min con el canal MAIN
+DISK_RESERVE_GB = float(_env("DISK_RESERVE_GB", "2"))

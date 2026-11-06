@@ -49,3 +49,37 @@ def cut_clip(video: Path, start: float, end: float, out: Path, thumb: Path) -> b
     _run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{min(1.5, (end - start) / 2):.2f}", "-i", str(out),
           "-frames:v", "1", "-q:v", "4", "-vf", "scale=480:-2", str(thumb)], 60)
     return True
+
+
+def keyframe_before(video: Path, t: float) -> float:
+    """Tiempo del cuadro clave (keyframe) en o antes de t: ahí puede empezar un corte sin recodificar."""
+    try:
+        p = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-skip_frame", "nokey",
+                            "-show_entries", "frame=pts_time,best_effort_timestamp_time", "-of", "csv=p=0",
+                            "-read_intervals", f"{max(0.0, t - 20):.2f}%{t + 0.05:.2f}", str(video)],
+                           capture_output=True, text=True, timeout=120)
+        best = 0.0
+        for line in p.stdout.splitlines():
+            for v in line.split(","):
+                try:
+                    x = float(v)
+                except ValueError:
+                    continue
+                if x <= t + 0.01:
+                    best = max(best, x)
+                break
+        return best
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return max(0.0, t)
+
+
+def cut_copy(video: Path, start: float, end: float, out: Path) -> bool:
+    """Saca un pedazo largo sin recodificar (rápido, no carga el VPS). start debe ser un keyframe."""
+    tmp = out.with_suffix(".tmp.mp4")
+    ok = _run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{start:.3f}", "-i", str(video), "-t", f"{end - start:.3f}",
+               "-map", "0:v:0", "-c", "copy", "-avoid_negative_ts", "make_zero", "-movflags", "+faststart", str(tmp)], 900)
+    if ok and tmp.exists() and tmp.stat().st_size > 0:
+        tmp.replace(out)
+        return True
+    tmp.unlink(missing_ok=True)
+    return False

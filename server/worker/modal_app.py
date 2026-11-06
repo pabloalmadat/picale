@@ -24,7 +24,7 @@ image = (
 app = modal.App("picale-ai", image=image)
 
 
-@app.function(gpu="L4", timeout=60 * 60, secrets=[modal.Secret.from_name("picale-ai")])
+@app.function(gpu="L4", timeout=4 * 60 * 60, secrets=[modal.Secret.from_name("picale-ai")])
 def procesar(job: dict):
     os.environ.setdefault("PICALE_AI", job["callback_base"].rsplit("/worker/", 1)[0])
     from analyze import YoloDetector

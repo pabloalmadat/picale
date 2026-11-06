@@ -67,7 +67,7 @@ class YoloDetector:
         r = self.model.predict(frame, classes=[0], conf=0.3, imgsz=self.imgsz, verbose=False, device=self.device)[0]
         out = []
         for (x1, y1, x2, y2), c in zip(r.boxes.xyxy.cpu().numpy(), r.boxes.conf.cpu().numpy()):
-            out.append(((x1 + x2) / 2, y2, float(c)))      # los pies: centro de la base de la caja
+            out.append(((x1 + x2) / 2, y2, float(c), (x1, y1, x2, y2)))   # pies = centro de la base de la caja
         return out
 
 
@@ -109,14 +109,18 @@ def assign(slots, dets, dt):
     return out
 
 
-def analyze(video_path, calibration=None, detector=None, progress=None, sample_fps=SAMPLE_FPS):
+def _open(video_path):
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         raise RuntimeError("No se pudo abrir el video")
     fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
     fw, fh = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    # Sin calibración manual → la cancha se calibra sola con el mismo video
+    return cap, fps, total, fw, fh
+
+
+def _calibrate(video_path, calibration, fw, fh):
+    """Sin calibración manual → la cancha se calibra sola con el mismo video."""
     auto, review, calinfo = None, None, {}
     if not (calibration and calibration.get("corners")) or calibration.get("method") == "auto":
         try:
@@ -126,55 +130,83 @@ def analyze(video_path, calibration=None, detector=None, progress=None, sample_f
         if auto:
             calibration = auto
     H, calibrated = homography(calibration, fw, fh)
-    detector = detector or YoloDetector()
-    step = max(1, round(fps / sample_fps))
+    cal_meta = dict(calinfo, used=(calibration or {}).get("method", "manual") if calibrated else "aproximada")
+    return H, calibrated, auto, review, cal_meta
 
-    seeds = list(QUAD_CENTERS.values())
-    slots = [{"pos": None, "vel": (0.0, 0.0), "miss": 0, "seed": seeds[i], "track": []} for i in range(4)]
-    idx, last_t, last_report = 0, None, -1
+
+def _appearance(frame, box):
+    """Color de la ropa (parte de arriba del cuerpo) → sirve para saber si cambiaron los jugadores."""
+    h, w = frame.shape[:2]
+    x1, y1, x2, y2 = [int(v) for v in box]
+    x1, x2 = max(0, x1), min(w, x2)
+    y1, y2 = max(0, y1), min(h, y1 + int((y2 - y1) * 0.6))
+    if x2 - x1 < 3 or y2 - y1 < 3:
+        return None
+    hsv = cv2.cvtColor(frame[y1:y2, x1:x2], cv2.COLOR_BGR2HSV)
+    hist = cv2.calcHist([hsv], [0, 1], None, [12, 4], [0, 180, 0, 256])
+    cv2.normalize(hist, hist, 1, 0, cv2.NORM_L1)
+    return hist.astype(np.float32)
+
+
+def detect_all(cap, fps, total, H, detector, progress=None, sample_fps=SAMPLE_FPS, appearance=False, p0=0.0, p1=0.98):
+    """Recorre el video una vez: [(t, [pos en metros], [caja px], [color])] solo de gente dentro de la cancha."""
+    step = max(1, round(fps / sample_fps))
+    frames, idx, last_report = [], 0, -1
     while True:
-        ok = cap.grab()
-        if not ok:
+        if not cap.grab():
             break
         if idx % step == 0:
             ok, frame = cap.retrieve()
             if not ok:
                 break
-            t = idx / fps
             feet = detector(frame)
-            pts = to_court(H, [(x, y) for x, y, _ in feet])
-            dets = [tuple(p) for p in pts if -0.5 <= p[0] <= COURT_W + 0.5 and -1.0 <= p[1] <= COURT_L + 1.0]
-            dt = (t - last_t) if last_t is not None else 1 / sample_fps
-            m = assign(slots, dets, dt)
-            for si, s in enumerate(slots):
-                if si in m:
-                    new = dets[m[si]]
-                    if s["pos"] is not None:
-                        gap = dt * (s["miss"] + 1)
-                        vx, vy = (new[0] - s["pos"][0]) / gap, (new[1] - s["pos"][1]) / gap
-                        sp = math.hypot(vx, vy)
-                        if sp > MAX_SPEED_MS:
-                            vx, vy = vx * MAX_SPEED_MS / sp, vy * MAX_SPEED_MS / sp
-                        s["vel"] = (0.5 * s["vel"][0] + 0.5 * vx, 0.5 * s["vel"][1] + 0.5 * vy)
-                    s["pos"] = new
-                    s["miss"] = 0
-                    s["track"].append((t, s["pos"][0], s["pos"][1]))
-                else:
-                    s["miss"] += 1
-                    if s["miss"] > 10:          # 2 s sin verlo: deja de extrapolar
-                        s["vel"] = (0.0, 0.0)
-            last_t = t
+            pts = to_court(H, [(f[0], f[1]) for f in feet])
+            keep = [i for i, p in enumerate(pts) if -0.5 <= p[0] <= COURT_W + 0.5 and -1.0 <= p[1] <= COURT_L + 1.0]
+            boxes = [tuple(float(v) for v in feet[i][3]) if len(feet[i]) > 3 else None for i in keep]
+            hists = [(_appearance(frame, b) if (appearance and b) else None) for b in boxes]
+            frames.append((idx / fps, [tuple(pts[i]) for i in keep], boxes, hists))
             if progress and total:
                 pct = int(100 * idx / total)
                 if pct >= last_report + 2:
                     last_report = pct
-                    progress(min(0.98, idx / total))
+                    progress(p0 + (p1 - p0) * min(1.0, idx / total))
         idx += 1
-    cap.release()
+    return frames, idx
+
+
+def track_window(frames, sample_fps=SAMPLE_FPS, t0=0.0):
+    """Sigue a los 4 jugadores en un tramo. Tiempos de salida relativos a t0.
+    → players {A–D: {stats, heatmap}}, moments, {letra: slot}, asignación por cuadro."""
+    seeds = list(QUAD_CENTERS.values())
+    slots = [{"pos": None, "vel": (0.0, 0.0), "miss": 0, "seed": seeds[i], "track": []} for i in range(4)]
+    last_t, assigns = None, []
+    for t, dets, _, _ in frames:
+        t = t - t0
+        dt = (t - last_t) if last_t is not None else 1 / sample_fps
+        m = assign(slots, dets, dt)
+        assigns.append(m)
+        for si, s in enumerate(slots):
+            if si in m:
+                new = dets[m[si]]
+                if s["pos"] is not None:
+                    gap = dt * (s["miss"] + 1)
+                    vx, vy = (new[0] - s["pos"][0]) / gap, (new[1] - s["pos"][1]) / gap
+                    sp = math.hypot(vx, vy)
+                    if sp > MAX_SPEED_MS:
+                        vx, vy = vx * MAX_SPEED_MS / sp, vy * MAX_SPEED_MS / sp
+                    s["vel"] = (0.5 * s["vel"][0] + 0.5 * vx, 0.5 * s["vel"][1] + 0.5 * vy)
+                s["pos"] = new
+                s["miss"] = 0
+                s["track"].append((t, s["pos"][0], s["pos"][1]))
+            else:
+                s["miss"] += 1
+                if s["miss"] > 10:          # 2 s sin verlo: deja de extrapolar
+                    s["vel"] = (0.0, 0.0)
+        last_t = t
 
     # Letra final = cuadrante donde terminó cada jugador (últimos ~10 s)
     finals = []
-    for si, s in enumerate(slots):
+    for s in slots:
         tail = [p[1:] for p in s["track"][-int(10 * sample_fps):]]
         finals.append(tuple(np.median(np.array(tail), axis=0)) if tail else None)
     labels, taken = {}, set()
@@ -186,18 +218,209 @@ def analyze(video_path, calibration=None, detector=None, progress=None, sample_f
         taken.add(q)
 
     moms = moments([s["track"] for s in slots], sample_fps)
-
-    players = {}
+    players, letter_slot = {}, {}
     for si, q in labels.items():
         tr = slots[si]["track"]
         if len(tr) < sample_fps * 30:       # menos de 30 s visto: no es un jugador
             continue
         players[q] = {"stats": stats(tr, sample_fps), "heatmap_png_b64": heatmap_png(tr)}
-    cal_meta = dict(calinfo, used=(calibration or {}).get("method", "manual") if calibrated else "aproximada")
+        letter_slot[q] = si
+    return players, moms, letter_slot, assigns
+
+
+def analyze(video_path, calibration=None, detector=None, progress=None, sample_fps=SAMPLE_FPS):
+    cap, fps, total, fw, fh = _open(video_path)
+    H, calibrated, auto, review, cal_meta = _calibrate(video_path, calibration, fw, fh)
+    detector = detector or YoloDetector()
+    frames, idx = detect_all(cap, fps, total, H, detector, progress, sample_fps)
+    cap.release()
+    players, moms, _, _ = track_window(frames, sample_fps)
     return {"players": players, "moments": moms,
             "auto_calibration": auto, "calibration_review_jpg_b64": review,
-            "meta": {"calibrated": calibrated, "calibration": cal_meta, "fps": fps, "frames": idx, "minutes": round(idx / fps / 60, 1),
-                     "version": "v1-movimiento"}}
+            "meta": {"calibrated": calibrated, "calibration": cal_meta, "fps": fps, "frames": idx,
+                     "minutes": round(idx / fps / 60, 1), "version": "v1-movimiento"}}
+
+
+# ───────────── americanas: grabación larga con varios partidos
+
+EV_MIN_MATCH_S = 240.0     # un partido dura al menos 4 min
+EV_HOLE_S = 8.0            # huecos más cortos (alguien tapado, sale por una pelota) no cortan el partido
+EV_MERGE_GAP_S = 90.0      # pausa corta con los mismos 4 jugadores = sigue el mismo partido
+EV_SAME_THR = 0.35         # distancia de color de ropa por debajo de esto = mismos jugadores
+EV_SIG_EVERY_S = 20.0
+
+
+def _signature(frames, i0, i1, step=1):
+    """Hasta 5 cuadros con exactamente 4 personas → listas de colores."""
+    out = []
+    for i in range(i0, i1, step):
+        _, dets, _, hists = frames[i]
+        if len(dets) == 4 and all(h is not None for h in hists):
+            out.append(hists)
+            if len(out) >= 5:
+                break
+    return out
+
+
+def _sig_dist(a, b):
+    """Distancia entre dos grupos de 4 (mejor emparejamiento, mediana de varios cuadros)."""
+    import itertools
+    if not a or not b:
+        return None
+    ds = []
+    for ha, hb in zip(a, b):
+        best = min(sum(cv2.compareHist(ha[i], hb[p[i]], cv2.HISTCMP_BHATTACHARYYA) for i in range(4)) / 4
+                   for p in itertools.permutations(range(4)))
+        ds.append(best)
+    return float(np.median(ds))
+
+
+def split_matches(frames, sample_fps=SAMPLE_FPS, min_match_s=None, hole_s=None,
+                  merge_gap_s=None, same_thr=None, sig_every_s=None):
+    """Corta una grabación larga en partidos: tramos con 4 jugadores en la cancha; se separan
+    cuando la cancha se vacía o cuando cambia la gente (color de ropa)."""
+    min_match_s = EV_MIN_MATCH_S if min_match_s is None else min_match_s
+    hole_s = EV_HOLE_S if hole_s is None else hole_s
+    merge_gap_s = EV_MERGE_GAP_S if merge_gap_s is None else merge_gap_s
+    same_thr = EV_SAME_THR if same_thr is None else same_thr
+    sig_every_s = EV_SIG_EVERY_S if sig_every_s is None else sig_every_s
+    n = len(frames)
+    if not n:
+        return []
+    counts = np.array([len(f[1]) for f in frames], dtype=float)
+    w = max(1, int(5 * sample_fps)) | 1
+    pad = np.pad(counts, w // 2, mode="edge")
+    med = np.array([np.median(pad[i:i + w]) for i in range(n)])
+    on = np.abs(med - 4) < 0.6
+    # rellena huecos cortos
+    hole = int(hole_s * sample_fps)
+    i = 0
+    while i < n:
+        if not on[i]:
+            j = i
+            while j < n and not on[j]:
+                j += 1
+            if 0 < i and j < n and j - i <= hole:
+                on[i:j] = True
+            i = j
+        else:
+            i += 1
+    runs, i = [], 0
+    while i < n:
+        if on[i]:
+            j = i
+            while j < n and on[j]:
+                j += 1
+            runs.append([i, j])
+            i = j
+        else:
+            i += 1
+
+    # dentro de un tramo: ¿cambió la gente sin que se vaciara la cancha?
+    sig_n = max(1, int(sig_every_s * sample_fps))
+    split_runs = []
+    for a, b in runs:
+        cuts, prev = [a], None
+        for k in range(a, b, sig_n):
+            s = _signature(frames, k, min(b, k + sig_n))
+            if prev is not None and s:
+                d = _sig_dist(prev, s)
+                if d is not None and d > same_thr:
+                    nxt = _signature(frames, min(b, k + sig_n), min(b, k + 2 * sig_n))
+                    d2 = _sig_dist(prev, nxt) if nxt else d
+                    if d2 is None or d2 > same_thr:     # el cambio se sostiene → otro partido
+                        cuts.append(k)
+                        prev = s
+                        continue
+            if s:
+                prev = s
+        cuts.append(b)
+        split_runs += [[cuts[x], cuts[x + 1]] for x in range(len(cuts) - 1)]
+
+    # une tramos separados por pausas cortas si son los mismos jugadores
+    merged = []
+    for r in split_runs:
+        if merged:
+            pa, pb = merged[-1]
+            gap = (frames[r[0]][0] - frames[pb - 1][0])
+            if gap <= merge_gap_s:
+                d = _sig_dist(_signature(frames, max(pa, pb - int(30 * sample_fps)), pb),
+                              _signature(frames, r[0], min(r[1], r[0] + int(30 * sample_fps))))
+                if d is not None and d <= same_thr:
+                    merged[-1][1] = r[1]
+                    continue
+        merged.append(list(r))
+    out = []
+    for a, b in merged:
+        t0, t1 = frames[a][0], frames[b - 1][0]
+        if t1 - t0 >= min_match_s:
+            out.append((a, b, t0, t1))
+    return out
+
+
+def _snapshot(video_path, frames, a, b, letter_slot, assigns, sample_fps=SAMPLE_FPS):
+    """Foto del partido con la letra de cada jugador encima (para que se reconozcan)."""
+    def clean(k):
+        m, boxes = assigns[k - a], frames[k][2]
+        if len(frames[k][1]) != 4 or not all(si in m for si in letter_slot.values()) or not boxes or boxes[0] is None:
+            return False
+        bs = [boxes[m[si]] for si in letter_slot.values()]
+        for i in range(len(bs)):            # nadie encimado
+            for j in range(i + 1, len(bs)):
+                ix = min(bs[i][2], bs[j][2]) - max(bs[i][0], bs[j][0])
+                iy = min(bs[i][3], bs[j][3]) - max(bs[i][1], bs[j][1])
+                if ix > 0 and iy > 0:
+                    return False
+        return True
+    # de atrás para adelante (las letras son de cómo terminaron), sin los últimos segundos de cambio
+    start = max(a, b - 1 - int(5 * sample_fps))
+    best = next((k for k in range(start, a - 1, -1) if clean(k)), None)
+    if best is None:
+        best = next((k for k in range(b - 1, a - 1, -1) if len(frames[k][1]) == 4), b - 1)
+    cap = cv2.VideoCapture(str(video_path))
+    cap.set(cv2.CAP_PROP_POS_MSEC, frames[best][0] * 1000)
+    ok, img = cap.read()
+    cap.release()
+    if not ok:
+        return None
+    h, w = img.shape[:2]
+    m = assigns[best - a]
+    for letter, si in letter_slot.items():
+        if si not in m or not frames[best][2]:
+            continue
+        box = frames[best][2][m[si]]
+        if not box:
+            continue
+        x1, y1, x2, y2 = [int(v) for v in box]
+        cv2.rectangle(img, (x1, y1), (x2, y2), (94, 232, 122), max(2, w // 500))
+        r = max(14, w // 70)
+        cx, cy = (x1 + x2) // 2, max(r + 2, y1 - r - 4)
+        cv2.circle(img, (cx, cy), r, (94, 232, 122), -1)
+        cv2.putText(img, letter, (cx - int(r * 0.45), cy + int(r * 0.45)), cv2.FONT_HERSHEY_SIMPLEX,
+                    r / 22, (10, 10, 10), max(2, r // 7))
+    ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 85])
+    return base64.b64encode(buf.tobytes()).decode() if ok else None
+
+
+def analyze_event(video_path, calibration=None, detector=None, progress=None, sample_fps=SAMPLE_FPS, **split_kw):
+    """Americana: encuentra cada partido en la grabación y analiza cada uno por separado."""
+    cap, fps, total, fw, fh = _open(video_path)
+    H, calibrated, auto, review, cal_meta = _calibrate(video_path, calibration, fw, fh)
+    detector = detector or YoloDetector()
+    frames, idx = detect_all(cap, fps, total, H, detector, progress, sample_fps, appearance=True, p1=0.9)
+    cap.release()
+    matches = []
+    for a, b, t0, t1 in split_matches(frames, sample_fps, **split_kw):
+        players, moms, letter_slot, assigns = track_window(frames[a:b], sample_fps, t0=t0)
+        if len(players) < 2:
+            continue
+        snap = _snapshot(video_path, frames, a, b, letter_slot, assigns, sample_fps)
+        matches.append({"start": round(t0, 1), "end": round(t1, 1), "players": players, "moments": moms,
+                        "snapshot_jpg_b64": snap})
+    return {"matches": matches,
+            "auto_calibration": auto, "calibration_review_jpg_b64": review,
+            "meta": {"calibrated": calibrated, "calibration": cal_meta, "fps": fps, "frames": idx,
+                     "minutes": round(idx / fps / 60, 1), "version": "v1-americana", "matches": len(matches)}}
 
 
 # ───────────── puntos del partido (para clips automáticos)

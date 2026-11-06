@@ -64,7 +64,15 @@ CREATE TABLE IF NOT EXISTS ai_sessions (
   created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS ai_one_recording_per_court ON ai_sessions (court_id) WHERE status = 'recording';
-CREATE UNIQUE INDEX IF NOT EXISTS ai_one_recording_per_user  ON ai_sessions (user_id)  WHERE status = 'recording';
+-- Americanas: una grabación por cancha (type='event') y un partido detectado por la IA (type='event_match')
+ALTER TABLE ai_sessions ADD COLUMN IF NOT EXISTS event_id  UUID;
+ALTER TABLE ai_sessions ADD COLUMN IF NOT EXISTS parent_id UUID;
+ALTER TABLE ai_sessions ADD COLUMN IF NOT EXISTS offset_s  REAL;     -- segundo de la grabación donde empieza el partido
+ALTER TABLE ai_sessions ADD COLUMN IF NOT EXISTS payer_id  TEXT;     -- quién pagó si no es user_id (ej. 'club:somos')
+DROP INDEX IF EXISTS ai_one_recording_per_user;
+CREATE UNIQUE INDEX IF NOT EXISTS ai_one_recording_per_user_v2 ON ai_sessions (user_id) WHERE status = 'recording' AND event_id IS NULL;
+CREATE INDEX IF NOT EXISTS ai_sessions_event  ON ai_sessions (event_id);
+CREATE INDEX IF NOT EXISTS ai_sessions_parent ON ai_sessions (parent_id);
 CREATE INDEX IF NOT EXISTS ai_sessions_user ON ai_sessions (user_id, started_at DESC);
 
 CREATE TABLE IF NOT EXISTS ai_session_players (
@@ -100,3 +108,23 @@ CREATE TABLE IF NOT EXISTS ai_clips (           -- clips cortados del partido co
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS ai_clips_session ON ai_clips (session_id, start_s);
+
+CREATE TABLE IF NOT EXISTS ai_events (           -- americanas / retas: varias canchas grabando de corrido
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  club_id      TEXT NOT NULL,
+  title        TEXT,
+  created_by   TEXT NOT NULL,
+  started_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ends_at      TIMESTAMPTZ NOT NULL,
+  finished_at  TIMESTAMPTZ,
+  tokens_spent INT NOT NULL DEFAULT 0,
+  cancelled    BOOLEAN NOT NULL DEFAULT false
+);
+CREATE INDEX IF NOT EXISTS ai_events_club ON ai_events (club_id, started_at DESC);
+
+CREATE TABLE IF NOT EXISTS ai_club_admins (      -- quién maneja el panel de cada club
+  user_id     TEXT NOT NULL,
+  club_id     TEXT NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, club_id)
+);

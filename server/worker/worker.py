@@ -14,7 +14,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from analyze import analyze
+from analyze import analyze, analyze_event
 
 API = os.environ.get("PICALE_AI", "https://api.picalereplay.com/ai").rstrip("/")
 KEY = os.environ["WORKER_KEY"]
@@ -46,9 +46,10 @@ def run_job(job, detector=None):
                 pass
 
         try:
-            res = analyze(video, job.get("calibration"), detector=detector, progress=progress)
+            fn = analyze_event if job.get("type") == "event" else analyze     # americana: varios partidos
+            res = fn(video, job.get("calibration"), detector=detector, progress=progress)
             res["meta"]["seconds"] = round(time.time() - t0)
-            call("POST", f"{base}/result", res, timeout=120)
+            call("POST", f"{base}/result", res, timeout=300)
             print(f"✓ {job['session_id'][:8]} listo en {res['meta']['seconds']} s", flush=True)
         except Exception as e:
             call("POST", f"{base}/result", {"error": f"{type(e).__name__}: {e}"}, timeout=60)

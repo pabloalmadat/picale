@@ -135,3 +135,14 @@ En `index.html`, cambia `var AI_STATUS = 'proximamente';` por `'beta'` para que 
 Un partido de 90 min en MAIN pesa ~1.7 GB. El video completo se borra a los `RETENTION_DAYS` (30 por defecto); los clips (~5–15 MB cada uno) se quedan. Con 8 canchas y varios partidos al día el disco del VPS se llena rápido: revisa `df -h` la primera semana y, si hace falta, baja `RETENTION_DAYS` o agrega un volumen de Hetzner montado en `./data`.
 
 Los clips del editor se cortan en el VPS (uno a la vez). Si las cámaras graban el MAIN en H.265, el partido completo puede no verse en Chrome; los clips sí, porque se convierten a H.264. Lo ideal: MAIN en H.264.
+
+---
+
+## Americanas (panel del club)
+
+- **Quién:** el admin general (tu cuenta) o un administrador del club. En la app: *Perfil → Panel PÍCALE AI → Tokens y administradores de cada club* → escribe el correo y **Agregar** (esa persona debe haber entrado a picalereplay.com/ai una vez).
+- **Tokens del club:** en el mismo lugar, **+5 / +20**. Cuesta `EVENT_TOKENS_PER_COURT_HOUR` (1) por cancha por hora. Si una cancha no manda video, ese token se devuelve al club.
+- **Flujo:** *Perfil → Panel del club* → elige canchas y duración → **Iniciar americana**. Cada cancha se graba de corrido; al terminar, la IA separa cada partido (4 jugadores en la cancha; cambia cuando se vacía o cambia la gente) y saca foto con letras, stats y 3 mejores puntos por partido.
+- **Jugadores:** escanean el QR de su cancha (o *Analizar → ¿Jugaste una americana?*), tocan su partido y eligen su letra. Gratis por default (`EVENT_CLAIM_COST=0`).
+- **Disco:** ninguna grabación arranca si no cabe (`DISK_MB_PER_MIN=20`, `DISK_RESERVE_GB=2`). Una americana de 6 canchas × 2 h necesita ~14 GB libres mientras se procesa; después solo quedan los partidos.
+- **Internet del club:** cada cancha sube ~4 Mbps mientras graba. 6 canchas ≈ 25 Mbps de subida.
