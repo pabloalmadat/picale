@@ -27,6 +27,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from . import config as C
 from . import media
+from . import share as sharecard
 from .coach import coach_summary
 
 log = logging.getLogger("picale-ai")
@@ -222,12 +223,14 @@ async def resolve_qr(body: dict, user=Depends(current_user)):
 
 # ───────────────────────────── disco
 
-async def disk_check(c, court_minutes):
+async def disk_check(c, court_minutes, largest_minutes=None):
     """¿Cabe esta grabación? Cuenta lo que ya se está grabando. El VPS también da streaming y clips:
-    si se llena el disco se cae todo, así que mejor no arrancar."""
+    si se llena el disco se cae todo, así que mejor no arrancar.
+    Todo el video + una cancha extra (al unir pedazos / cortar partidos hay 2 copias, pero de una cancha a la vez)."""
     committed = await c.fetchval("""SELECT COALESCE(SUM(GREATEST(0, EXTRACT(EPOCH FROM (ends_at - now())) / 60)), 0)
         FROM ai_sessions WHERE status='recording'""")
-    need_gb = (court_minutes + float(committed)) * C.DISK_MB_PER_MIN * 2 / 1024 + C.DISK_RESERVE_GB
+    largest = largest_minutes if largest_minutes is not None else court_minutes
+    need_gb = (court_minutes + float(committed) + largest) * C.DISK_MB_PER_MIN / 1024 + C.DISK_RESERVE_GB
     free_gb = shutil.disk_usage(C.DATA_DIR).free / 1024 ** 3
     if free_gb < need_gb:
         log.warning("sin espacio: libres %.1f GB, se necesitan %.1f GB", free_gb, need_gb)
@@ -544,6 +547,113 @@ async def clip_file(sid: str, name: str):
     if ext not in ("mp4", "jpg") or not f.exists():
         raise HTTPException(404)
     return FileResponse(f, headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/ai/media/{sid}/share/{name}")
+async def share_file(sid: str, name: str):
+    stem, _, ext = name.rpartition(".")
+    try:
+        uuid.UUID(sid)
+        cid, _, track = stem.rpartition("_")
+        uuid.UUID(cid)
+    except ValueError:
+        raise HTTPException(404)
+    f = C.DATA_DIR / "sessions" / sid / "share" / f"{stem}.{ext}"
+    if ext not in ("mp4", "jpg") or track not in ("A", "B", "C", "D") or not f.exists():
+        raise HTTPException(404)
+    return FileResponse(f, headers={"Cache-Control": "public, max-age=86400"})
+
+
+# ───────────────────────────── compartir en redes (estilo Strava)
+
+_MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"]
+_share_jobs = set()
+
+
+def _share_files(sid, clip_id, track):
+    d = sdir(sid) / "share"
+    stem = f"{clip_id}_{track}"
+    return d / f"{stem}.mp4", d / f"{stem}.jpg", d / f"{stem}.fail"
+
+
+def _share_json(sid, clip_id, track):
+    mp4, jpg, fail = _share_files(sid, clip_id, track)
+    if mp4.exists():
+        base = f"{C.PUBLIC_BASE}/media/{sid}/share/{clip_id}_{track}"
+        return {"status": "ready", "video_url": base + ".mp4", "image_url": base + ".jpg"}
+    if fail.exists():
+        return {"status": "failed"}
+    return {"status": "processing"}
+
+
+async def _share_target(c, sid, clip_id, track_id, user):
+    """Sesión, clip y jugador para la tarjeta. Por default, el jugador que eres tú."""
+    r = await can_see(c, sid, user)
+    try:
+        cid = uuid.UUID(str(clip_id))
+    except ValueError:
+        raise HTTPException(404, "Clip no encontrado")
+    cl = await c.fetchrow("SELECT * FROM ai_clips WHERE id=$1 AND session_id=$2", cid, r["id"])
+    if not cl or cl["status"] != "ready":
+        raise HTTPException(404, "Clip no encontrado")
+    mine = await c.fetchrow("SELECT * FROM ai_session_players WHERE session_id=$1 AND user_id=$2", r["id"], user["id"])
+    if track_id and (not mine or mine["track_id"] != str(track_id).upper()):
+        if r["user_id"] != user["id"]:
+            raise HTTPException(403, "Solo puedes compartir tus propias estadísticas")
+        p = await c.fetchrow("SELECT * FROM ai_session_players WHERE session_id=$1 AND track_id=$2", r["id"], str(track_id).upper())
+    else:
+        p = mine
+    if not p:
+        raise HTTPException(400, "Primero elige cuál jugador eres")
+    return r, cl, p
+
+
+@app.post("/ai/sessions/{sid}/share")
+async def share_create(sid: str, body: dict, user=Depends(current_user)):
+    async with pool.acquire() as c:
+        r, cl, p = await _share_target(c, sid, body.get("clip_id"), body.get("track_id"), user)
+        ct = await c.fetchrow("SELECT * FROM ai_courts WHERE id=$1", r["court_id"])
+        ev = await c.fetchrow("SELECT title FROM ai_events WHERE id=$1", r["event_id"]) if r["event_id"] else None
+    track = p["track_id"]
+    out = _share_json(r["id"], cl["id"], track)
+    if out["status"] == "ready":
+        return out
+    mp4, jpg, fail = _share_files(r["id"], cl["id"], track)
+    fail.unlink(missing_ok=True)
+    key = (str(r["id"]), str(cl["id"]), track)
+    if key not in _share_jobs:
+        _share_jobs.add(key)
+        name = p["display_name"] or user.get("name") or user.get("username") or f"Jugador {track}"
+        if ev:
+            kicker = f"{ev['title']} · {ct['court_name']}"
+        else:
+            kicker = f"{'Entrenamiento' if r['type'] == 'training' else 'Partido'} · {ct['club_name']} · {ct['court_name']}"
+        local = r["started_at"].astimezone(timezone(timedelta(hours=-6)))
+        date_txt = f"{local.day} {_MESES[local.month - 1]} {local.year}"
+        clip_dir = sdir(r["id"]) / "clips"
+
+        async def job():
+            try:
+                async with _cut_lock:
+                    ok = await asyncio.to_thread(sharecard.render, clip_dir / f"{cl['id']}.mp4", clip_dir / f"{cl['id']}.jpg",
+                                                 mp4, jpg, name=name, kicker=kicker, clip_title=cl["title"] or "",
+                                                 date_txt=date_txt, stats=p["stats"] or {})
+                if not ok:
+                    fail.write_text("x")
+            except Exception:
+                log.exception("no se pudo armar la tarjeta para compartir")
+                fail.write_text("x")
+            finally:
+                _share_jobs.discard(key)
+        asyncio.create_task(job())
+    return {"status": "processing"}
+
+
+@app.get("/ai/sessions/{sid}/share/{clip_id}")
+async def share_status(sid: str, clip_id: str, track: str = "", user=Depends(current_user)):
+    async with pool.acquire() as c:
+        r, cl, p = await _share_target(c, sid, clip_id, track or None, user)
+    return _share_json(r["id"], cl["id"], p["track_id"])
 
 
 @app.post("/ai/sessions/{sid}/players/{track_id}/report")
@@ -955,7 +1065,7 @@ async def create_event(club_id: str, body: dict, user=Depends(current_user)):
             raise HTTPException(409, "Ya están grabando: " + ", ".join(b["court_name"] for b in busy))
         if not await edge_online(c, club_id):
             raise HTTPException(412, "La mini PC del club está sin conexión. Revisa que el launcher esté abierto.")
-        await disk_check(c, minutes * len(ids))
+        await disk_check(c, minutes * len(ids), minutes)
     dead = [ct["court_name"] for ct in courts if not await hls_alive(ct["hls_url"])]
     if dead:
         raise HTTPException(412, "Estas cámaras no están transmitiendo: " + ", ".join(dead))

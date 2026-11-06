@@ -226,3 +226,4 @@ h2{font-family:var(--display);font-size:22px;letter-spacing:1.2px;font-weight:40
 .chip{white-space:nowrap}
 .modal.solid{background:var(--bg)}
 .modal .bar{height:auto;background:none;overflow:visible;margin-top:0;border-radius:0}
+.clip.sel{outline:3px solid var(--green);outline-offset:-3px}

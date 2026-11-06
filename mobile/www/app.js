@@ -248,12 +248,80 @@
     m.innerHTML = '<div class="bar"><span class="sub" style="margin:0">' + esc(fmtTime(c.created_at)) + '</span><button class="x" id="mx">×</button></div>' +
       '<video src="' + esc(c.url) + '" controls autoplay playsinline></video>' +
       (ai ? '<div style="padding:12px 16px 0"><span class="chip green">AI</span> <span class="sub">' + esc(ai.summary || ai.shot_type || '') + '</span></div>' : '') +
-      '<div class="acts"><button class="btn ghost" id="msave">Guardar</button><button class="btn" id="mshare">Compartir</button></div>';
+      '<div class="acts"><button class="btn ghost" id="msave">Guardar</button><button class="btn" id="mshare">' + (c.session ? 'Con mis stats' : 'Compartir') + '</button></div>';
     m.classList.remove('hidden');
     m.querySelector('#mx').onclick = closeModal;
+    if (c.session) { m.querySelector('#mshare').onclick = function () { shareSheet(c.session, c.clip_id); }; m.querySelector('#msave').onclick = function () { saveVideo(c.url); }; return; }
     m.querySelector('#mshare').onclick = function () { shareUrl(c.url, 'Mi jugada en PÍCALE'); };
     m.querySelector('#msave').onclick = function () { saveVideo(c.url); };
   }
+  // Compartir en redes, estilo Strava: clip arriba + stats del jugador → video vertical para historias
+  function shareSheet(m, preId, track) {
+    var md = document.getElementById('modal'), pick = preId || null, clips = [], file = null, out = null, poll = null, alive = true;
+    md.innerHTML = '<div class="bar"><span class="sub" style="margin:0">Compartir en redes</span><button class="x" id="mx" aria-label="Cerrar">×</button></div>' +
+      '<div id="shb" style="padding:0 16px calc(var(--sb) + 18px);overflow:auto;flex:1"></div>';
+    md.classList.remove('hidden'); md.classList.add('solid');
+    md.querySelector('#mx').onclick = function () { alive = false; clearTimeout(poll); closeModal(); };
+    var box = md.querySelector('#shb');
+    function choose() {
+      box.innerHTML = '<h1 style="font-size:30px">Elige tu jugada</h1><p class="sub">Armamos un video vertical con el clip y tus estadísticas, listo para historias.</p>' +
+        (clips.length ? '<div class="grid mt">' + clips.map(function (c, i) {
+          return '<button class="clip' + (c.id === pick ? ' sel' : '') + '" data-i="' + i + '"><img src="' + esc(c.thumbnail_url) + '" loading="lazy">' +
+            '<span class="badge' + (c.auto ? ' ai' : '') + '">' + (c.auto ? 'AUTOMÁTICO' : 'TU CLIP') + '</span><div class="meta"><b>' + esc(c.title || 'Clip') + '</b>' + mmss(c.start) + ' · ' + Math.round(c.end - c.start) + ' s</div></button>';
+        }).join('') + '</div><button class="btn mt" id="sh-go"' + (pick ? '' : ' disabled') + '>CREAR VIDEO</button>'
+          : '<div class="note">Todavía no hay clips listos. Crea uno con el editor del partido completo.</div>');
+      box.querySelectorAll('[data-i]').forEach(function (b) { b.onclick = function () { pick = clips[+b.getAttribute('data-i')].id; haptic(); choose(); }; });
+      var go = box.querySelector('#sh-go'); if (go) go.onclick = create;
+    }
+    function create() {
+      box.innerHTML = '<div class="empty" style="padding-top:30%"><div class="spin" style="margin:auto;color:var(--green)"></div><p class="sub mt">Armando tu video…<br>tarda unos segundos</p></div>';
+      api('/ai/sessions/' + m.id + '/share', { method: 'POST', json: { clip_id: pick, track_id: track || undefined } }).then(wait)
+        .catch(function (e) { toast(errDetail(e, 'No se pudo crear')); choose(); });
+    }
+    function wait(r) {
+      if (!alive) return;
+      if (r.status === 'ready') return done(r);
+      if (r.status === 'failed') { toast('No se pudo armar el video, intenta con otro clip'); return choose(); }
+      poll = setTimeout(function () {
+        api('/ai/sessions/' + m.id + '/share/' + pick + (track ? '?track=' + track : '')).then(wait).catch(function () { toast('No se pudo'); choose(); });
+      }, 2000);
+    }
+    function done(r) {
+      out = r; file = null;
+      box.innerHTML = '<video src="' + esc(r.video_url) + '" autoplay loop muted playsinline style="width:100%;max-height:62vh;object-fit:contain;border-radius:16px;background:#000;display:block"></video>' +
+        '<button class="btn mt" id="sh-share">COMPARTIR VIDEO</button>' +
+        '<div class="row mt" style="gap:10px"><button class="btn ghost" id="sh-img" style="flex:1;margin-top:0">Imagen</button><button class="btn ghost" id="sh-dl" style="flex:1;margin-top:0">Descargar</button></div>' +
+        '<button class="link mt" id="sh-other" style="display:block;margin:14px auto 0">Elegir otro clip</button>';
+      // se descarga de una vez: así el botón comparte al instante (iPhone lo exige)
+      fetch(r.video_url).then(function (x) { return x.blob(); }).then(function (b) { file = new File([b], 'picale_jugada.mp4', { type: 'video/mp4' }); }).catch(function () {});
+      box.querySelector('#sh-share').onclick = function () { shareFile(file, r.video_url, 'picale_jugada.mp4'); };
+      box.querySelector('#sh-img').onclick = function () {
+        fetch(r.image_url).then(function (x) { return x.blob(); }).then(function (b) { shareFile(new File([b], 'picale_stats.jpg', { type: 'image/jpeg' }), r.image_url, 'picale_stats.jpg'); });
+      };
+      box.querySelector('#sh-dl').onclick = function () { download(file, r.video_url, 'picale_jugada.mp4'); };
+      box.querySelector('#sh-other').onclick = choose;
+    }
+    api('/ai/sessions/' + m.id + '/clips').then(function (d) {
+      clips = ((d && d.clips) || d || []).filter(function (c) { return c.status === 'ready'; });
+      if (pick && !clips.some(function (c) { return c.id === pick; })) pick = null;
+      if (preId && pick) create(); else choose();
+    }).catch(function () { box.innerHTML = '<div class="empty">No se pudieron cargar tus clips.</div>'; });
+  }
+  function shareFile(f, url, name) {
+    if (Plugins.Share && Plugins.Filesystem) return saveVideo(url);           // app nativa
+    if (f && navigator.canShare && navigator.canShare({ files: [f] })) {
+      return navigator.share({ files: [f], title: 'Mi jugada en PÍCALE' }).catch(function () {});
+    }
+    if (!f) { toast('Un segundo, se está descargando…'); return; }
+    download(f, url, name);
+  }
+  function download(f, url, name) {
+    var a = document.createElement('a');
+    a.href = f ? URL.createObjectURL(f) : url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('Descargado · súbelo a tus historias');
+  }
+
   function closeModal() { var m = document.getElementById('modal'); m.classList.add('hidden'); m.classList.remove('solid'); m.innerHTML = ''; }
 
   function shareUrl(url, title) {
@@ -723,13 +791,14 @@
         (training && m.is_owner !== false
           ? '<h2>Notas del coach</h2><textarea id="note" class="ta" placeholder="Qué trabajar la próxima clase…">' + esc((sel && sel.coach_note) || '') + '</textarea>' +
             '<button class="btn mt" id="send">Enviar reporte a ' + esc(who(sel)) + '</button>'
-          : '<button class="btn mt" id="share">Compartir mis estadísticas</button>');
+          : ((m.players || []).some(function (p) { return p.is_me; }) || m.is_owner
+              ? '<button class="btn mt" id="share">📲 Compartir en redes</button><p class="free">Elige un clip y armamos tu historia con tus stats</p>' : ''));
       sbox.querySelectorAll('[data-t]').forEach(function (b) { b.onclick = function () { sel = players.filter(function (p) { return String(p.track_id) === b.getAttribute('data-t'); })[0]; draw(); }; });
       sbox.querySelectorAll('[data-shot]').forEach(function (b) { b.onclick = function () {
         var arr = sel.clips_by_shot[b.getAttribute('data-shot')] || [];
         if (arr[0] && arr[0].url) openClip({ url: arr[0].url, created_at: m.started_at }); else toast('Clips de ejemplo: en el análisis real se abren aquí');
       }; });
-      var sh = sbox.querySelector('#share'); if (sh) sh.onclick = function () { shareUrl(CFG.WEB + '/analisis/' + m.id, 'Mi partido analizado con PÍCALE AI'); };
+      var sh = sbox.querySelector('#share'); if (sh) sh.onclick = function () { shareSheet(m, null, m.is_owner && sel && !sel.is_me ? sel.track_id : null); };
       var sd = sbox.querySelector('#send'); if (sd) sd.onclick = function () {
         var note = sbox.querySelector('#note').value.trim();
         sel.coach_note = note;
@@ -785,7 +854,7 @@
     }
     function wire() {
       box.querySelectorAll('[data-c]').forEach(function (b) {
-        b.onclick = function () { var c = clips[+b.getAttribute('data-c')]; if (c.status === 'ready') openClip({ url: c.url, created_at: m.started_at }); else toast('Se está cortando, unos segundos…'); };
+        b.onclick = function () { var c = clips[+b.getAttribute('data-c')]; if (c.status === 'ready') openClip({ url: c.url, created_at: m.started_at, session: m, clip_id: c.id }); else toast('Se está cortando, unos segundos…'); };
       });
       var v = box.querySelector('#fv'); if (!v) return;
       box.querySelectorAll('[data-m]').forEach(function (b) {
@@ -1190,7 +1259,7 @@
       if (!courts.length) courts = E.courts;
       var total = E.courts.reduce(function (n, c) { return n + c.matches.length; }, 0);
       box.innerHTML = '<div class="spread"><div><h1 style="margin:0">' + esc(E.title) + '</h1><div class="sub" style="margin:2px 0 0">' + esc((E.club_name || '') + ' · ' + fmtTime(E.started_at)) + '</div></div>' + evChip(E.status) + '</div>' +
-        (E.status === 'live' ? '<div class="note mt">Se está grabando (termina a las ' + hhmm(E.ends_at) + '). Al terminar, la IA separa cada partido (tarda unos minutos) y aquí te buscas. No necesitas token.</div>' +
+        (E.status === 'live' ? '<div class="note mt">Se está grabando (termina a las ' + hhmm(E.ends_at) + '). Al terminar, la IA separa cada partido (tarda unos minutos) y aquí te buscas.</div>' +
           (E.is_club_admin ? '<button class="btn danger mt" id="ev-end">Terminar americana ahora</button>' : '') : '') +
         (E.status === 'processing' ? '<div class="note mt">La IA está separando los partidos. Esta página se actualiza sola.</div>' : '') +
         (E.status === 'ready' ? '<p class="sub mt">' + total + ' partido' + (total === 1 ? '' : 's') + ' encontrado' + (total === 1 ? '' : 's') + '. Toca el tuyo y elige cuál eres.</p>' : '') +
@@ -1236,7 +1305,7 @@
           var taken = p.claimed && !p.is_me;
           return '<button data-t="' + p.track_id + '"' + (taken ? ' disabled' : '') + '><b>' + p.track_id + '</b><small>' + (taken ? esc(p.name || 'Ocupado') : 'Soy yo') + '</small></button>';
         }).join('') + '</div>' +
-        (E.claim_cost ? '<p class="free">Ver tu partido cuesta ' + E.claim_cost + ' token' + (E.claim_cost > 1 ? 's' : '') + '.</p>' : '<p class="free">Gratis · lo pagó el club</p>') +
+        (E.claim_cost ? '<p class="free">Ver tu partido cuesta ' + E.claim_cost + ' token' + (E.claim_cost > 1 ? 's' : '') + '.</p>' : '') +
         '<p class="free">Si alguien eligió tu letra por error, avisa en recepción.</p></div>';
       md.classList.remove('hidden'); md.classList.add('solid');
       md.querySelector('#mx').onclick = closeModal;
@@ -1262,7 +1331,7 @@
     var ev = c.event;
     box.innerHTML = '<h1>' + esc(c.court_name) + '</h1><p class="sub">' + esc(c.club_name) + '</p>' +
       '<div class="card mt" style="border-color:var(--green-line)"><div class="spread"><b>🏆 ' + esc(ev.title) + '</b>' + evChip(ev.live ? 'live' : 'ready') + '</div>' +
-        '<div class="sub" style="margin:6px 0 0">' + (ev.live ? 'Esta cancha se está grabando con la americana del club. Tu partido ya queda grabado: no necesitas token.' : 'Esta cancha estuvo en una americana. Búscate en tu partido.') + '</div></div>' +
+        '<div class="sub" style="margin:6px 0 0">' + (ev.live ? 'Esta cancha se está grabando con la americana del club. Tu partido ya queda grabado.' : 'Esta cancha estuvo en una americana. Búscate en tu partido.') + '</div></div>' +
       '<a class="btn mt" href="#/americana/' + ev.id + '/' + c.court_id + '">' + (ev.live ? 'VER LA AMERICANA' : 'BUSCAR MI PARTIDO') + '</a>' +
       (ev.live ? '' : '<button class="btn ghost" id="other">Analizar otro partido con token</button>');
     var o = box.querySelector('#other');
