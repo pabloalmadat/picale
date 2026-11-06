@@ -739,8 +739,10 @@
         }
         clearInterval(S.timer);
         if (m.status === 'failed') { box.innerHTML = '<div class="empty"><div class="ico">⚠️</div>No pudimos analizar esta sesión. Tu token fue devuelto.</div>'; return; }
+        if (m.event_id) { var bk = $view.querySelector('a.link'); if (bk) { bk.href = '#/americana/' + m.event_id; bk.textContent = '‹ ' + (m.event_title || 'Americana'); } }
         drawReport(box, m);
-      }).catch(function () {
+      }).catch(function (e) {
+        if (e && !e.status) console.error('analisis', e);
         var box = document.getElementById('ad'); if (box) box.innerHTML = '<div class="empty">No se encontró el análisis.</div>';
       });
     }
@@ -811,12 +813,24 @@
       };
     }
     function stat(v, k) { return '<div class="stat"><div class="v">' + esc(v) + '</div><div class="k">' + esc(k) + '</div></div>'; }
-    box.innerHTML = '<span class="chip' + (training ? ' amber' : ' green') + '">' + (training ? '🎯 Entrenamiento' : '🎾 Partido') + '</span>' +
-      '<h1 class="mt">' + esc(ct ? ct.club : 'Tu sesión') + '</h1><p class="sub">' + esc((ct ? ct.name + ' · ' : '') + fmtTime(m.started_at)) + '</p>' +
+    var ev = !!m.event_id;
+    box.innerHTML = '<span class="chip' + (training ? ' amber' : ' green') + '">' + (training ? '🎯 Entrenamiento' : ev ? '🏆 Americana' : '🎾 Partido') + '</span>' +
+      '<h1 class="mt">' + esc(ev ? (m.event_title || 'Americana') : ct ? ct.club : 'Tu sesión') + '</h1><p class="sub">' +
+      esc((ev ? (m.court_name || (ct && ct.name) || '') + ' · ' : ct ? ct.name + ' · ' : '') + fmtTime(m.started_at)) + '</p>' +
+      (m.spectator
+        ? (m.snapshot_url ? '<img src="' + esc(m.snapshot_url) + '" style="width:100%;border-radius:14px;display:block;margin-top:6px" alt="">' : '') +
+          '<div class="card mt" style="border-color:var(--green-line)"><b>¿Jugaste este partido?</b><div class="sub" style="margin:4px 0 0">Elige tu letra y te salen tus estadísticas, tu mapa de calor y tus clips.</div>' +
+          '<button class="btn mt" id="iam">ELEGIR MI LETRA</button></div>'
+        : '') +
       '<div id="clipsec"></div><div id="statsec"></div>';
     var sbox = box.querySelector('#statsec');
     drawClips(box.querySelector('#clipsec'), m);
-    draw();
+    var iam = box.querySelector('#iam');
+    if (iam) iam.onclick = function () {
+      claimSheet({ session_id: m.id, snapshot_url: m.snapshot_url, start: m.started_at, end: m.ends_at,
+        players: players.map(function (p) { return { track_id: p.track_id, claimed: !!p.display_name, is_me: p.is_me, name: p.display_name }; }) }, m.claim_cost);
+    };
+    if (!m.spectator) draw();
   }
 
   // Clips del partido completo: los puntos salen solos y el jugador corta los suyos.
@@ -826,7 +840,7 @@
     function t(x) { return mmss(x || 0); }
     function render() {
       box.innerHTML =
-        '<h2>Tus clips</h2>' +
+        '<h2>' + (m.spectator ? 'Mejores puntos' : 'Tus clips') + '</h2>' +
         (clips.length ? '<div class="grid">' + clips.map(function (c, i) {
           return '<button class="clip" data-c="' + i + '">' +
             (c.status === 'ready' ? '<img src="' + esc(c.thumbnail_url) + '" loading="lazy">' : '<div class="empty" style="padding:40% 0 0"><div class="spin" style="margin:auto;color:var(--green)"></div></div>') +
@@ -842,13 +856,13 @@
             (moments.length ? '<div class="sub" style="margin:10px 0 6px">' + moments.length + ' puntos detectados · toca uno para verlo</div><div class="chips">' + moments.map(function (x, i) {
               return '<button class="chip' + (x.top ? ' green' : '') + '" data-m="' + i + '">' + (x.top ? '★ ' : '') + 'Punto ' + (i + 1) + ' · ' + t(x.start) + '</button>';
             }).join('') + '</div>' : '') +
-            '<div class="card mt"><div class="ttl" style="font-weight:700">Crea tu clip</div>' +
+            (m.spectator ? '' : '<div class="card mt"><div class="ttl" style="font-weight:700">Crea tu clip</div>' +
             '<p class="sub" style="margin-top:4px">Pon el video donde empieza la jugada y marca el inicio; luego donde termina y marca el fin.</p>' +
             '<div class="row mt"><button class="btn ghost" id="b-in" style="flex:1">Inicio ' + (markIn != null ? t(markIn) : '') + '</button>' +
             '<button class="btn ghost" id="b-out" style="flex:1;margin-top:0">Fin ' + (markOut != null ? t(markOut) : '') + '</button></div>' +
             '<label class="field"><span>Nombre (opcional)</span><input id="b-title" maxlength="60" placeholder="Ej. Bandeja ganadora"></label>' +
             '<button class="btn mt" id="b-make"' + (markIn != null && markOut != null && markOut - markIn >= 2 ? '' : ' disabled') + '>CREAR CLIP' +
-            (markIn != null && markOut != null && markOut > markIn ? ' · ' + Math.round(markOut - markIn) + ' s' : '') + '</button></div>'
+            (markIn != null && markOut != null && markOut > markIn ? ' · ' + Math.round(markOut - markIn) + ' s' : '') + '</button></div>')
           : (clips.length ? '<p class="free">El partido completo se guarda 30 días; tus clips se quedan.</p>' : ''));
       wire();
     }
@@ -882,6 +896,7 @@
       };
       var tl = box.querySelector('#tl');
       if (tl) tl.onclick = function (e) { if (e.target.hasAttribute('data-m')) return; var r = tl.getBoundingClientRect(); v.currentTime = (e.clientX - r.left) / r.width * dur; };
+      if (!box.querySelector('#b-in')) return;          // espectador: sin editor
       box.querySelector('#b-in').onclick = function () { markIn = v.currentTime; if (markOut != null && markOut <= markIn) markOut = null; updMarks(); };
       box.querySelector('#b-out').onclick = function () { markOut = v.currentTime; if (markIn != null && markOut <= markIn) markIn = null; updMarks(); };
       box.querySelector('#b-make').onclick = make;
@@ -1046,7 +1061,7 @@
   // ───────────────────────── PERFIL
   function viewPerfil() {
     var u = S.user || {};
-    var nm = u.name || u.username || 'Jugador';
+    var nm = u.name || u.username || (u.email ? u.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); }) : 'Jugador');
     $view.innerHTML = '<div class="row"><div class="avatar">' + (u.photo_url ? '<img src="' + esc(u.photo_url) + '">' : esc(nm[0].toUpperCase())) + '</div>' +
       '<div><h1 style="font-size:30px">' + esc(nm) + '</h1>' + (u.username ? '<div class="sub" style="margin-top:2px">@' + esc(u.username) + '</div>' : '') + '</div></div>' +
       '<div class="list mt">' +
@@ -1258,7 +1273,8 @@
       var courts = E.courts.filter(function (c) { return !onlyCourt || c.court_id === onlyCourt; });
       if (!courts.length) courts = E.courts;
       var total = E.courts.reduce(function (n, c) { return n + c.matches.length; }, 0);
-      box.innerHTML = '<div class="spread"><div><h1 style="margin:0">' + esc(E.title) + '</h1><div class="sub" style="margin:2px 0 0">' + esc((E.club_name || '') + ' · ' + fmtTime(E.started_at)) + '</div></div>' + evChip(E.status) + '</div>' +
+      box.innerHTML = '<div class="spread"><div><h1 style="margin:0">' + esc(E.title) + '</h1>' +
+        (E.is_club_admin ? '<button class="link" id="ev-name" style="font-size:13px;margin-top:4px">✏️ Cambiar nombre</button>' : '') + '<div class="sub" style="margin:2px 0 0">' + esc((E.club_name || '') + ' · ' + fmtTime(E.started_at)) + '</div></div>' + evChip(E.status) + '</div>' +
         (E.status === 'live' ? '<div class="note mt">Se está grabando (termina a las ' + hhmm(E.ends_at) + '). Al terminar, la IA separa cada partido (tarda unos minutos) y aquí te buscas.</div>' +
           (E.is_club_admin ? '<button class="btn danger mt" id="ev-end">Terminar americana ahora</button>' : '') : '') +
         (E.status === 'processing' ? '<div class="note mt">La IA está separando los partidos. Esta página se actualiza sola.</div>' : '') +
@@ -1277,6 +1293,14 @@
             }).join('') + '</div>'
               : (c.status === 'ready' ? '<div class="dsc sub">No se detectaron partidos en esta cancha.</div>' : c.status === 'failed' ? '<div class="dsc sub">' + esc(c.error || 'No se pudo analizar') + ' · token devuelto al club</div>' : ''));
         }).join('');
+      var ren = box.querySelector('#ev-name');
+      if (ren) ren.onclick = function () {
+        var t = prompt('Nombre de la americana', E.title || '');
+        if (t == null || !t.trim() || t.trim() === E.title) return;
+        api('/ai/events/' + E.id, { method: 'PATCH', json: { title: t.trim() } })
+          .then(function (e) { E = e; toast('Nombre actualizado'); draw(); })
+          .catch(function (e) { toast(errDetail(e, 'No se pudo cambiar')); });
+      };
       var end = box.querySelector('#ev-end');
       if (end) end.onclick = function () {
         if (!confirm('¿Terminar la americana ahora? Se dejan de grabar todas las canchas.')) return;
@@ -1288,41 +1312,41 @@
         b.onclick = function () {
           var sid = b.getAttribute('data-s'), m = null;
           E.courts.forEach(function (c) { c.matches.forEach(function (x) { if (x.session_id === sid) m = x; }); });
-          if (m.mine) { location.hash = '#/analisis/' + sid; return; }
-          claimSheet(m);
+          location.hash = '#/analisis/' + sid;
         };
       });
       clearInterval(S.timer);
       if (E.status === 'live' || E.status === 'processing') S.timer = setInterval(load, 20000);
     }
-    function claimSheet(m) {
-      var md = document.getElementById('modal');
-      md.innerHTML = '<div class="bar"><span class="sub" style="margin:0">' + hhmm(m.start) + '–' + hhmm(m.end) + '</span><button class="x" id="mx" aria-label="Cerrar">×</button></div>' +
-        '<div style="padding:0 16px calc(var(--sb) + 18px);overflow:auto">' +
-        (m.snapshot_url ? '<img src="' + esc(m.snapshot_url) + '" style="width:100%;border-radius:14px;display:block" alt="">' : '') +
-        '<h1 class="mt" style="font-size:30px">¿Cuál eres tú?</h1><p class="sub">Busca tu letra sobre cada jugador en la foto.</p>' +
-        '<div class="claim mt">' + m.players.map(function (p) {
-          var taken = p.claimed && !p.is_me;
-          return '<button data-t="' + p.track_id + '"' + (taken ? ' disabled' : '') + '><b>' + p.track_id + '</b><small>' + (taken ? esc(p.name || 'Ocupado') : 'Soy yo') + '</small></button>';
-        }).join('') + '</div>' +
-        (E.claim_cost ? '<p class="free">Ver tu partido cuesta ' + E.claim_cost + ' token' + (E.claim_cost > 1 ? 's' : '') + '.</p>' : '') +
-        '<p class="free">Si alguien eligió tu letra por error, avisa en recepción.</p></div>';
-      md.classList.remove('hidden'); md.classList.add('solid');
-      md.querySelector('#mx').onclick = closeModal;
-      md.querySelectorAll('[data-t]').forEach(function (b) {
-        b.onclick = function () {
-          b.disabled = true;
-          api('/ai/sessions/' + m.session_id + '/claim', { method: 'POST', json: { track_id: b.getAttribute('data-t') } })
-            .then(function () { haptic(); closeModal(); toast('¡Listo! Estos son tus stats'); location.hash = '#/analisis/' + m.session_id; })
-            .catch(function (e) {
-              b.disabled = false;
-              if (e && e.status === 402) { closeModal(); toast('No tienes tokens suficientes'); location.hash = '#/creditos'; return; }
-              toast(errDetail(e, 'No se pudo'));
-            });
-        };
-      });
-    }
     load();
+  }
+
+function claimSheet(m, cost) {
+    var md = document.getElementById('modal');
+    md.innerHTML = '<div class="bar"><span class="sub" style="margin:0">' + hhmm(m.start) + '–' + hhmm(m.end) + '</span><button class="x" id="mx" aria-label="Cerrar">×</button></div>' +
+      '<div style="padding:0 16px calc(var(--sb) + 18px);overflow:auto">' +
+      (m.snapshot_url ? '<img src="' + esc(m.snapshot_url) + '" style="width:100%;border-radius:14px;display:block" alt="">' : '') +
+      '<h1 class="mt" style="font-size:30px">¿Cuál eres tú?</h1><p class="sub">Busca tu letra sobre cada jugador en la foto.</p>' +
+      '<div class="claim mt">' + m.players.map(function (p) {
+        var taken = p.claimed && !p.is_me;
+        return '<button data-t="' + p.track_id + '"' + (taken ? ' disabled' : '') + '><b>' + p.track_id + '</b><small>' + (taken ? esc(p.name || 'Ocupado') : 'Soy yo') + '</small></button>';
+      }).join('') + '</div>' +
+      (cost ? '<p class="free">Ver tu partido cuesta ' + cost + ' token' + (cost > 1 ? 's' : '') + '.</p>' : '') +
+      '<p class="free">Si alguien eligió tu letra por error, avisa en recepción.</p></div>';
+    md.classList.remove('hidden'); md.classList.add('solid');
+    md.querySelector('#mx').onclick = closeModal;
+    md.querySelectorAll('[data-t]').forEach(function (b) {
+      b.onclick = function () {
+        b.disabled = true;
+        api('/ai/sessions/' + m.session_id + '/claim', { method: 'POST', json: { track_id: b.getAttribute('data-t') } })
+          .then(function () { haptic(); closeModal(); toast('¡Listo! Estos son tus stats'); var to = '#/analisis/' + m.session_id; if (location.hash === to) analisisDetail(m.session_id); else location.hash = to; })
+          .catch(function (e) {
+            b.disabled = false;
+            if (e && e.status === 402) { closeModal(); toast('No tienes tokens suficientes'); location.hash = '#/creditos'; return; }
+            toast(errDetail(e, 'No se pudo'));
+          });
+      };
+    });
   }
 
   // QR escaneado en una cancha que está (o estuvo hoy) en una americana
