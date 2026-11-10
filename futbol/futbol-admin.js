@@ -181,8 +181,9 @@ function admLeague(L){
     <label class="fld" for="b2" style="flex:1">Equipo B<select id="b2">${L.teams.map((id,i)=>`<option value="${id}" ${i===1?'selected':''}>${esc(tname(id))}</option>`).join('')}</select></label>
     <button class="btn" data-act="blk-add">Bloquear cruce</button></div>
     <div class="blk" style="margin-top:12px">${(L.blocks||[]).map(([x,y],i)=>`<div class="blk-r">${crest(x,'xs')}${esc(tname(x))} <span class="vs">VS</span> ${crest(y,'xs')}${esc(tname(y))}<button class="btn sm ghost" data-act="blk-del" data-i="${i}">Quitar</button></div>`).join('')||'<span class="note">Sin bloqueos manuales.</span>'}</div></div>`:'';
-  if(L.kind==='grupos')return head+enr+admGroups(L)+admCalendar(L)+admKO(L)+admAvisos(L);
-  return head+enr+blk+(L.kind==='liga'?admCalendar(L):admBracket(L))+admAvisos(L);
+  const exc=L.teams.length?admUnavail(L):'';
+  if(L.kind==='grupos')return head+enr+exc+admGroups(L)+admCalendar(L)+admKO(L)+admAvisos(L);
+  return head+enr+blk+exc+(L.kind==='liga'?admCalendar(L):admBracket(L))+admAvisos(L);
 }
 function admCalendar(L){
   const RS=L.rounds.filter(r=>!r.ko);
@@ -196,9 +197,9 @@ function admCalendar(L){
     const isA=r.id===B.round;const open=OPEN.has(r.id)||isA;
     const rows=r.matches.map(m=>calRow(L,r,m)).join('');
     const slot=side=>{const id=isA?B[side]:null;return`<button class="slot ${id?'full':''}" data-drop="slot" data-act="slot" data-r="${r.id}" data-side="${side}">${id?crest(id,'xs')+esc(tname(id)):side==='h'?'Local':'Visitante'}</button>`};
-    return`<details class="rnd ${isA?'act':''}" data-rid="${r.id}" data-drop="round" ${open?'open':''}><summary>${r.matches.some(m=>m.status!=='programado')?`<span class="rgrip off" title="Jornada con partidos jugados: queda fija">${LOCK}</span>`:`<span class="rgrip" draggable="true" data-drag="r:${r.id}" title="Arrastra sobre otra jornada para intercambiarlas">⠿</span>`}<h3>${rname(L,i)}</h3>${lv?'<span class="pill live"><span class="dot"></span>En vivo</span>':done?'<span class="pill fin">Completa</span>':`<span class="pill">${r.matches.length} partidos</span>`}
+    return`<details class="rnd ${isA?'act':''}" data-rid="${r.id}" data-drop="round" ${open?'open':''}><summary>${r.matches.some(m=>m.status!=='programado')?`<span class="rgrip off" title="Jornada con partidos jugados: queda fija">${LOCK}</span>`:`<span class="rgrip" draggable="true" data-drag="r:${r.id}" title="Arrastra sobre otra jornada para intercambiarlas">⠿</span>`}<h3>${rname(L,i)}</h3>${lv?'<span class="pill live"><span class="dot"></span>En vivo</span>':done?'<span class="pill fin">Completa</span>':`<span class="pill">${r.matches.length} partidos</span>`}${(()=>{const n=r.matches.filter(m=>m.status==='programado'&&clashes(L,m).length).length;return n?`<span class="pill warnp">⚠ ${n} choque${n>1?'s':''}</span>`:''})()}
       <span class="sp"><button class="btn sm" data-act="img" data-r="${r.id}" ${r.matches.length?'':'disabled'}>Imagen del rol</button><input type="date" class="inp" style="width:auto;padding:5px 8px" value="${r.date}" data-chg="r-date" data-r="${r.id}" aria-label="Fecha de ${rname(L,i)}"></span></summary>
-      <div class="rnd-b">${rows}${(()=>{const fr=restingIn(L,r);return fr.length?`<div class="rest"><span class="note">${r.matches.length?'Descansan':'Sin partidos todavía'}:</span>${fr.map(id=>`<span class="tchip mini">${crest(id,'xs')}${esc(shortN(id))}</span>`).join('')}${canFill(L,r)?`<button class="btn sm pri" data-act="fill-round" data-r="${r.id}">Completar jornada automáticamente</button>`:fr.length>1&&r.matches.length?'<span class="note">Ya se enfrentaron entre ellos</span>':''}</div>`:''})()}<div class="build">${slot('h')}<span class="vs">VS</span>${slot('a')}</div>
+      <div class="rnd-b">${rows}${(()=>{const fr=restingIn(L,r);return fr.length?`<div class="rest"><span class="note">${r.matches.length?'Descansan':'Sin partidos todavía'}:</span>${fr.map(id=>`<span class="tchip mini" ${dayBlocked(L,id,r.date)?'title="No puede jugar ese día"':''}>${crest(id,'xs')}${esc(shortN(id))}${dayBlocked(L,id,r.date)?' <span class="note">(no puede)</span>':''}</span>`).join('')}${canFill(L,r)?`<button class="btn sm pri" data-act="fill-round" data-r="${r.id}">Completar jornada automáticamente</button>`:fr.length>1&&r.matches.length?'<span class="note">Ya se enfrentaron entre ellos</span>':''}</div>`:''})()}<div class="build">${slot('h')}<span class="vs">VS</span>${slot('a')}</div>
       <div class="rnd-f">${r.matches.some(m=>m.status==='programado')?`<button class="btn sm" data-act="sched-round" data-r="${r.id}">Ordenar horarios</button>`:''}${r.matches.some(m=>m.status!=='programado')||RS.length<2?'':`<select class="inp mv" data-chg="rswap" data-r="${r.id}" aria-label="Intercambiar con otra jornada"><option value="">Intercambiar con…</option>${RS.map((R,k)=>R===r?'':`<option value="${R.id}" ${roundSwapWhy(L,r.id,R.id)?'disabled':''}>${rname(L,k)}${roundSwapWhy(L,r.id,R.id)?' · jugada':''}</option>`).join('')}</select>`}<button class="btn sm ghost danger" data-act="del-round" data-r="${r.id}" data-confirm="1">Eliminar jornada</button></div></div></details>`}).join('');
   return`<div class="box"><div class="box-h"><div><h3>${L.kind==='grupos'?'Fase de grupos':'Calendario'}</h3><p>Genera el calendario completo, <b>ve jornada por jornada</b> con “Siguiente jornada”, o arma cada una a mano. Para reprogramar: <b>arrastra una jornada</b> (⠿) sobre otra para intercambiar sus partidos, <b>arrastra un partido</b> a otra jornada (si sus equipos ya juegan allá, esos partidos se pasan a la jornada de origen), o <b>arrastra un equipo</b> sobre otro para intercambiarlos. En celular usa los selectores o toca los equipos. Verde = se puede, rojo = ya se enfrentaron o hay choque. Los partidos jugados quedan fijos.</p></div></div>
     <div class="toolbar"><label class="fld" for="g-start">Inicio<input type="date" id="g-start" value="${L.rounds[0]?.date||isoD(new Date())}"></label>
@@ -222,6 +223,43 @@ function admBracket(L){
 
 
 
+/* --- Excepciones: días u horarios en que un equipo no puede jugar --- */
+const DOWS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const blocksFor=(L,tid)=>(L.unavail||[]).filter(u=>u.team===tid);
+const dowOf=d=>new Date(d+'T12:00').getDay();
+function hitsBlock(u,dt){
+  const d=String(dt).slice(0,10),t=String(dt).slice(11,16);
+  if(u.kind==='date'&&u.date!==d)return false;
+  if(u.kind==='weekday'&&dowOf(d)!==+u.dow)return false;
+  return t>=(u.from||'00:00')&&t<(u.to||'24:00');
+}
+const wholeDay=u=>!u.from&&!u.to;
+const dayBlocked=(L,tid,d)=>blocksFor(L,tid).some(u=>wholeDay(u)&&hitsBlock(u,d+'T12:00'));
+function clashes(L,m){if(!m||!m.date||m.bye)return[];return[m.h,m.a].filter(Boolean).flatMap(t=>blocksFor(L,t).filter(u=>hitsBlock(u,m.date)).map(u=>({t,u})))}
+function blockWhen(u){if(u.kind==='weekday')return`los ${DOWS[+u.dow]}`;const s=new Date(u.date+'T12:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'short'}).replace('.','');return`el ${s}`}
+function blockHours(u){if(wholeDay(u))return'';if(!u.from)return` antes de las ${u.to}`;if(!u.to)return` después de las ${u.from}`;return` de ${u.from} a ${u.to}`}
+const blockText=u=>`no puede${blockHours(u)} ${blockWhen(u)}`;
+const clashText=c=>`${shortN(c.t)} ${blockText(c.u)}${c.u.note?` (${c.u.note})`:''}`;
+function admUnavail(L){
+  const list=(L.unavail||[]);
+  return`<div class="box"><div class="box-h"><div><h3>Excepciones de horario</h3><p>Días u horarios en que un equipo no puede jugar. Al armar jornadas y al ordenar horarios se respetan solas; si un equipo no puede en todo el día, descansa esa jornada. Si un partido queda en un horario que choca, aparece marcado en amarillo.</p></div></div>
+    ${list.length?`<div class="blk">${list.map(u=>`<div class="blk-r">${crest(u.team,'xs')}<b>${esc(tname(u.team))}</b><span>${esc(blockText(u))}${u.note?` <span class="note">· ${esc(u.note)}</span>`:''}</span><button class="btn sm ghost" data-act="ex-del" data-id="${u.id}">Quitar</button></div>`).join('')}</div>`:'<p class="note" style="margin:0 0 4px">Sin excepciones todavía.</p>'}
+    ${L.teams.length?`<div class="exform">
+      <label class="fld" for="ex-team">Equipo<select id="ex-team" class="inp">${L.teams.map(id=>`<option value="${id}">${esc(tname(id))}</option>`).join('')}</select></label>
+      <label class="fld" for="ex-kind">Cuándo<select id="ex-kind" class="inp" data-chg="ex-ui"><option value="date">Una fecha</option><option value="weekday">Cada semana</option></select></label>
+      <label class="fld" for="ex-date" data-ex="date">Fecha<input id="ex-date" class="inp" type="date" value="${addDays(isoD(new Date()),7)}"></label>
+      <label class="fld" for="ex-dow" data-ex="weekday" hidden>Día<select id="ex-dow" class="inp">${DOWS.map((d,i)=>`<option value="${i}" ${i===5?'selected':''}>${d}</option>`).join('')}</select></label>
+      <label class="fld" for="ex-mode">Horario<select id="ex-mode" class="inp" data-chg="ex-ui"><option value="all">Todo el día</option><option value="before">No puede antes de…</option><option value="after">No puede después de…</option><option value="between">No puede entre…</option></select></label>
+      <label class="fld" for="ex-t1" data-ex="t1" hidden>Hora<input id="ex-t1" class="inp num" type="time" step="300" value="20:00"></label>
+      <label class="fld" for="ex-t2" data-ex="t2" hidden>y las<input id="ex-t2" class="inp num" type="time" step="300" value="22:00"></label>
+      <label class="fld" for="ex-note" style="flex:1;min-width:160px">Motivo (opcional)<input id="ex-note" class="inp" placeholder="Ej. torneo de empresa"></label>
+      <button class="btn pri" data-act="ex-add">Agregar excepción</button></div>`:''}
+  </div>`;
+}
+function exUI(){const k=$('#ex-kind')?.value,m=$('#ex-mode')?.value;const show=(n,v)=>{const el=document.querySelector(`[data-ex="${n}"]`);if(el)el.hidden=!v};
+  show('date',k==='date');show('weekday',k==='weekday');show('t1',m&&m!=='all');show('t2',m==='between');
+  const l=document.querySelector('[for="ex-t1"]');if(l)l.firstChild.textContent=m==='between'?'De':'Hora'}
+
 /* --- Horarios y jornada por jornada --- */
 const addDays=(d,n)=>isoD(new Date(new Date(d+'T12:00').getTime()+n*864e5));
 const SCH=L=>({t:'19:00',step:60,courts:1,...(L.sched||{})});
@@ -233,7 +271,19 @@ function slotOf(L,r,k){
 }
 function scheduleRound(L,r,only){
   const list=r.matches.filter(m=>!m.bye).sort((a,b)=>a.date.localeCompare(b.date));
-  list.forEach((m,k)=>{if(m.status!=='programado'||(only&&!only.includes(m)))return;Object.assign(m,slotOf(L,r,k))});
+  const todo=list.filter(m=>m.status==='programado'&&(!only||only.includes(m)));
+  const fixed=list.filter(m=>!todo.includes(m));
+  const max=list.length+24,taken=new Set();
+  for(let k=0;k<max;k++){const s=slotOf(L,r,k);if(fixed.some(m=>m.date===s.date&&(m.venue||'')===(s.venue||'')))taken.add(k)}
+  // Primero los equipos con más restricciones; cada partido toma el primer horario libre donde nadie tenga excepción.
+  const nb=m=>blocksFor(L,m.h).length+blocksFor(L,m.a).length;
+  todo.sort((a,b)=>nb(b)-nb(a)||a.date.localeCompare(b.date)).forEach(m=>{
+    let first=-1,pick=-1;
+    for(let k=0;k<max;k++){if(taken.has(k))continue;const s=slotOf(L,r,k);if(first<0)first=k;
+      if(s.date.slice(0,10)!==r.date&&first>=0&&k>=list.length)break;
+      if(!clashes(L,{...m,date:s.date}).length){pick=k;break}}
+    const k=pick>=0?pick:first;taken.add(k);Object.assign(m,slotOf(L,r,k));
+  });
   r.matches.sort((a,b)=>a.date.localeCompare(b.date));
 }
 const canMeet=(L,a,b)=>a!==b&&!isBlocked(L,a,b)&&meetings(L,a,b)<(+L.vueltas||1)&&(L.kind!=='grupos'||groupOf(L,a)===groupOf(L,b));
@@ -262,7 +312,8 @@ function homeAway(L,a,b){
 // Completa la jornada con los equipos libres. Si son impares, descansa el que más ha jugado.
 function fillRound(L,r){
   const busy=new Set(r.matches.flatMap(m=>[m.h,m.a]));const added=[];
-  const pools=L.kind==='grupos'?L.groups.map(g=>({g:g.id,ids:g.teams.filter(t=>!busy.has(t))})):[{g:null,ids:L.teams.filter(t=>!busy.has(t))}];
+  const free=t=>!busy.has(t)&&!dayBlocked(L,t,r.date);
+  const pools=L.kind==='grupos'?L.groups.map(g=>({g:g.id,ids:g.teams.filter(free)})):[{g:null,ids:L.teams.filter(free)}];
   pools.forEach(({g,ids})=>{
     // Primero intenta la siguiente jornada del rol "todos contra todos": así nunca sobra una jornada extra al final.
     const all=g?L.groups.find(x=>x.id===g).teams:L.teams;
@@ -279,7 +330,7 @@ function fillRound(L,r){
   scheduleRound(L,r,added);return added.length;
 }
 function restingIn(L,r){const busy=new Set(r.matches.flatMap(m=>[m.h,m.a]));return(L.kind==='grupos'?L.groups.flatMap(g=>g.teams):L.teams).filter(t=>!busy.has(t))}
-function canFill(L,r){const free=restingIn(L,r);return free.some((a,i)=>free.slice(i+1).some(b=>canMeet(L,a,b)))}
+function canFill(L,r){const free=restingIn(L,r).filter(t=>!dayBlocked(L,t,r.date));return free.some((a,i)=>free.slice(i+1).some(b=>canMeet(L,a,b)))}
 function pendingPairs(L){const ids=L.kind==='grupos'?L.groups.flatMap(g=>g.teams):L.teams;let n=0;ids.forEach((a,i)=>ids.slice(i+1).forEach(b=>{if(!isBlocked(L,a,b)&&(L.kind!=='grupos'||groupOf(L,a)===groupOf(L,b)))n+=Math.max(0,(+L.vueltas||1)-meetings(L,a,b))}));return n}
 // Fecha (día de la semana) y hora editables en cada partido.
 function whenCell(L,r,m){
@@ -478,7 +529,7 @@ function calRow(L,r,m){
   const mv=prog&&L.rounds.length>1?`<select class="inp mv" data-chg="mv" data-m="${m.id}" aria-label="Mover a otra jornada">${L.rounds.map((R,i)=>{if(R.ko)return'';if(R===r)return`<option value="" selected>Mover a…</option>`;const pl=movePlan(L,m.id,R.id);const k=pl.back?pl.back.length:0;return`<option value="${R.id}" ${pl.why?'disabled':''}>${rname(L,i)}${pl.why?' · ya jugado':k?` · cambia ${k} partido${k>1?'s':''}`:''}</option>`}).join('')}</select>`:'';
   return`<div class="mrow ${prog?'':'locked'}" ${prog?`draggable="true" data-drag="m:${m.id}" title="Arrastra el partido a otra jornada"`:'title="Partido jugado: ya no se puede mover"'}>
     <span class="grip">${prog?'⠿':LOCK}</span>${whenCell(L,r,m)}${teamCell(L,m,'h')}<span class="s">${prog?'vs':h+'–'+a}</span>${teamCell(L,m,'a')}
-    <div class="ac">${prog?'':statusPill(m)}${mv}<button class="btn sm" data-act="edit-m" data-m="${m.id}">Capturar</button><button class="btn sm ghost danger" data-act="del-m" data-m="${m.id}" data-confirm="1" aria-label="Eliminar partido">✕</button></div></div>`;
+    <div class="ac">${prog&&clashes(L,m).length?'<span class="pill warnp">⚠ Choque</span>':''}${prog?'':statusPill(m)}${mv}<button class="btn sm" data-act="edit-m" data-m="${m.id}">Capturar</button><button class="btn sm ghost danger" data-act="del-m" data-m="${m.id}" data-confirm="1" aria-label="Eliminar partido">✕</button></div>${prog&&clashes(L,m).length?`<div class="mwarn">⚠ ${esc(clashes(L,m).map(clashText).join(' · '))}</div>`:''}</div>`;
 }
 let DRAG=null;
 function markTargets(pl){
@@ -666,7 +717,7 @@ const ACT={
   'gen-cal'(){const L=curL();const vu=+$('#g-vu').value;const st=$('#g-start').value||isoD(new Date());L.vueltas=vu;
     const base=new Date(st+'T12:00');
     L.rounds=roundRobin(L.teams,vu).map((pairs,i)=>{const d=isoD(new Date(base.getTime()+i*7*864e5));let k=0;
-      const r={id:uid('r'),date:d,matches:[]};r.matches=pairs.filter(([h,a])=>!isBlocked(L,h,a)).map(([h,a])=>({id:uid('m'),h,a,...slotOf(L,r,k++),status:'programado',ev:[],stream:'',vod:''}));return r});
+      const r={id:uid('r'),date:d,matches:[]};r.matches=pairs.filter(([h,a])=>!isBlocked(L,h,a)).map(([h,a])=>({id:uid('m'),h,a,...slotOf(L,r,k++),status:'programado',ev:[],stream:'',vod:''}));scheduleRound(L,r);return r});
     B={round:null,h:null,a:null};OPEN.clear();save();toast(`${L.rounds.length} jornadas generadas`);render()},
   'next-round'(){const L=curL();if(L.kind!=='torneo')L.vueltas=+($('#g-vu')?.value||L.vueltas||1);const RS=L.rounds.filter(x=>!x.ko);const last=RS.at(-1);
     const r={id:uid('r'),date:last?addDays(last.date,7):($('#g-start')?.value||isoD(new Date())),matches:[]};
@@ -686,6 +737,14 @@ const ACT={
   'blk-add'(){const L=curL();const a=$('#b1').value,b=$('#b2').value;if(a===b){toast('Elige dos equipos distintos','warn');return}if(isBlocked(L,a,b)){toast('Ese cruce ya está bloqueado','warn');return}(L.blocks=L.blocks||[]).push([a,b]);save();render()},
   'blk-del'(el){curL().blocks.splice(+el.dataset.i,1);save();render()},
   'gen-bracket'(){const L=curL();genBracket(L,[$('#g-start').value]);propagate(L);save();toast('Cuadro generado');render()},
+  'ex-add'(){const L=curL();const kind=$('#ex-kind').value,mode=$('#ex-mode').value,t1=$('#ex-t1').value,t2=$('#ex-t2').value;
+    const u={id:uid('x'),team:$('#ex-team').value,kind,note:$('#ex-note').value.trim().slice(0,60),from:'',to:''};
+    if(kind==='date'){if(!$('#ex-date').value){toast('Elige la fecha','warn');return}u.date=$('#ex-date').value}else u.dow=+$('#ex-dow').value;
+    if(mode==='before')u.to=t1;else if(mode==='after')u.from=t1;else if(mode==='between'){if(!(t1<t2)){toast('La primera hora debe ser antes que la segunda','warn');return}u.from=t1;u.to=t2}
+    (L.unavail=L.unavail||[]).push(u);save();
+    const n=L.rounds.flatMap(r=>r.matches).filter(m=>m.status==='programado'&&clashes(L,m).some(c=>c.u===u)).length;
+    toast(`${shortN(u.team)}: ${blockText(u)}${n?` · ${n} partido${n>1?'s':''} ya programado${n>1?'s':''} choca${n>1?'n':''}: usa “Ordenar horarios” o muévelo`:''}`,n?'warn':'');render()},
+  'ex-del'(el){const L=curL();L.unavail=(L.unavail||[]).filter(u=>u.id!==el.dataset.id);save();render()},
   'avisos-reload'(){const id=curL().id;delete NLOG[id];render()},
   publish(){const L=curL();delete L.draft;save();toast(`${L.name} ya está publicada`);render()},
   unpublish(){const L=curL();L.draft=true;save();toast('Regresó a borrador: ya no aparece en la página pública');render()},
@@ -739,7 +798,8 @@ document.addEventListener('change',e=>{
     // Mueve toda la jornada conservando el día de cada partido (si uno era el domingo, sigue en domingo).
     const shift=Math.round((new Date(el.value+'T12:00')-new Date(r.date+'T12:00'))/864e5);r.date=el.value;r.matches.forEach(m=>m.date=addDays(m.date.slice(0,10),shift)+m.date.slice(10));save();render()}
   if(k==='m-time'||k==='m-day'){const L=curL();const{m,r}=findM(L,el.dataset.m);if(!m||!el.value)return;
-    m.date=k==='m-time'?m.date.slice(0,11)+el.value:el.value+m.date.slice(10);r.matches.sort((a,b)=>a.date.localeCompare(b.date));save();toast(`${shortN(m.h)} vs ${shortN(m.a)}: ${fmtD(m.date)} ${fmtT(m.date)}`);render();return}
+    m.date=k==='m-time'?m.date.slice(0,11)+el.value:el.value+m.date.slice(10);r.matches.sort((a,b)=>a.date.localeCompare(b.date));save();const cl=clashes(L,m);toast(cl.length?`⚠ ${cl.map(clashText).join(' · ')}`:`${shortN(m.h)} vs ${shortN(m.a)}: ${fmtD(m.date)} ${fmtT(m.date)}`,cl.length?'warn':'');render();return}
+  if(k==='ex-ui'){exUI();return}
   if(k==='l-notify'){curL().notify=el.value;save();toast(el.value==='off'?'Avisos apagados para esta competencia':el.value==='captains'?'Se avisará solo a capitanes':'Se avisará a todos los jugadores con WhatsApp');return}
   if(k==='sched'){const L=curL();L.sched={...SCH(L),[el.dataset.k]:el.dataset.k==='t'?el.value:+el.value};save();return}
   if(k==='g-count'){const L=curL();const n=+el.value;const old=L.groups;const ng=mkGroups(n);old.forEach((g,i)=>{if(ng[i])ng[i].teams=g.teams});L.groups=ng;save();render();return}
