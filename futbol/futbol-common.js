@@ -118,7 +118,11 @@ const groupOf=(L,tid)=>(L.groups||[]).find(g=>g.teams.includes(tid));
 const groupName=(L,gid)=>(L.groups||[]).find(g=>g.id===gid)?.name||'';
 const groupTable=(L,g)=>table(L,g.teams,m=>m.g===g.id);
 const mkGroups=n=>Array.from({length:n},(_,i)=>({id:'g'+GL[i],name:'Grupo '+GL[i],teams:[]}));
-const srcLabel=(L,x)=>x?`${x.p}° ${groupName(L,x.g)}`:'Pase directo';
+const srcLabel=(L,x)=>x?(x.g?`${x.p}° ${groupName(L,x.g)}`:`${x.p}° de la tabla`):'Pase directo';
+// Liga con liguilla: los mejores N de la tabla general pasan a eliminación directa.
+const hasKO=L=>L.kind==='grupos'||(L.kind==='liga'&&+L.lig>1);
+// Orden del cuadro para que 1° y 2° solo se puedan ver en la final (1v8, 4v5, 2v7, 3v6).
+function seedOrder(n){let o=[1];while(o.length<n){const k=o.length*2;o=o.flatMap(x=>[x,k+1-x])}return o}
 function genGroupCal(L,start,vu){
   const per=L.groups.map(g=>roundRobin(g.teams,vu));const n=Math.max(0,...per.map(x=>x.length));const base=new Date(start+'T12:00');const out=[];
   for(let k=0;k<n;k++){const d=isoD(new Date(base.getTime()+k*7*864e5));let slot=0;const ms=[];
@@ -128,6 +132,8 @@ function genGroupCal(L,start,vu){
 }
 // Cruces de la primera ronda: 1° de un grupo contra 2° de otro, y los del mismo grupo en mitades opuestas.
 function koSlots(L){
+  if(L.kind==='liga'){const n=Math.min(+L.lig||0,L.teams.length);let size=2;while(size<n)size*=2;if(n<2)return[];
+    const o=seedOrder(size),pairs=[];for(let i=0;i<o.length;i+=2)pairs.push([o[i]<=n?{p:o[i]}:null,o[i+1]<=n?{p:o[i+1]}:null]);return pairs}
   const G=(L.groups||[]).filter(g=>g.teams.length);const q=Math.max(1,+L.qual||2);
   if(q===2&&[2,4,8].includes(G.length)){const top=[],bot=[];for(let k=0;k<G.length;k+=2){top.push([{g:G[k].id,p:1},{g:G[k+1].id,p:2}]);bot.push([{g:G[k+1].id,p:1},{g:G[k].id,p:2}])}return top.concat(bot)}
   const seeds=[];for(let p=1;p<=q;p++)G.forEach(g=>seeds.push({g:g.id,p}));if(seeds.length<2)return[];
@@ -145,16 +151,19 @@ function buildKO(L,start){
 function groupsDone(L){const ms=groupRoundsOf(L).flatMap(r=>r.matches);return ms.length>0&&ms.every(m=>m.status==='final')}
 function fillKO(L,force){
   const R0=koRounds(L)[0];if(!R0||(!force&&!groupsDone(L)))return;
-  const pos={};(L.groups||[]).forEach(g=>pos[g.id]=groupTable(L,g).map(r=>r.id));
-  R0.matches.forEach(m=>{if(!m.src||m.status!=='programado'||(m.ev||[]).length)return;['h','a'].forEach(s=>{const x=m.src[s];m[s]=x?(pos[x.g]?.[x.p-1]||null):null})});
+  const pos={};(L.groups||[]).forEach(g=>pos[g.id]=groupTable(L,g).map(r=>r.id));const gen=L.kind==='liga'?table(L).map(r=>r.id):[];
+  R0.matches.forEach(m=>{if(!m.src||m.status!=='programado'||(m.ev||[]).length)return;['h','a'].forEach(s=>{const x=m.src[s];m[s]=x?((x.g?pos[x.g]:gen)?.[x.p-1]||null):null});if(m.bye)m.h=m.h||m.a});
 }
-function winner(m){
+function winner(m,L){
   if(!m)return null;if(m.bye)return m.h||m.a;if(m.status!=='final'||!m.h||!m.a)return null;
-  const[h,a]=sc(m);if(h>a)return m.h;if(a>h)return m.a;return m.pen==='h'?m.h:m.pen==='a'?m.a:null;
+  const[h,a]=sc(m);if(h>a)return m.h;if(a>h)return m.a;if(m.pen==='h')return m.h;if(m.pen==='a')return m.a;
+  // Liguilla: en empate pasa el mejor ubicado en la tabla general.
+  if(L&&L.kind==='liga'&&L.ligTie==='pos'){const o=table(L).map(r=>r.id);return o.indexOf(m.h)<=o.indexOf(m.a)?m.h:m.a}
+  return null;
 }
 function propagate(L){
-  let R;if(L.kind==='torneo')R=L.rounds;else if(L.kind==='grupos'){fillKO(L);R=koRounds(L)}else return;
-  for(let r=1;r<R.length;r++)R[r].matches.forEach((m,i)=>{const p=R[r-1].matches;m.h=winner(p[2*i]);m.a=winner(p[2*i+1])});
+  let R;if(L.kind==='torneo')R=L.rounds;else if(hasKO(L)){fillKO(L);R=koRounds(L)}else return;
+  for(let r=1;r<R.length;r++)R[r].matches.forEach((m,i)=>{const p=R[r-1].matches;m.h=winner(p[2*i],L);m.a=winner(p[2*i+1],L)});
 }
 
 
@@ -340,7 +349,7 @@ const all=L=>L.rounds.flatMap((r,ri)=>r.matches.map(m=>({...m,ri,_m:m})));
 const fmtD=d=>{const s=new Date(d).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'}).replace(/\./g,'');return s.charAt(0).toUpperCase()+s.slice(1)};
 const fmtT=d=>{const x=new Date(d);return p2(x.getHours())+':'+p2(x.getMinutes())};
 const rname=(L,i)=>L.kind==='torneo'||L.rounds[i]?.ko?L.rounds[i]?.name:`Jornada ${i+1}`;
-const kindLabel=L=>L.kind==='liga'?'Liga':L.kind==='grupos'?'Grupos + eliminación directa':'Torneo eliminatorio';
+const kindLabel=L=>L.kind==='liga'?(+L.lig>1?'Liga + liguilla':'Liga'):L.kind==='grupos'?'Grupos + eliminación directa':'Torneo eliminatorio';
 function curRound(L){const i=L.rounds.findIndex(r=>r.matches.some(m=>m.status!=='final'&&!m.bye));return i<0?Math.max(0,L.rounds.length-1):i}
 function featured(L){
   const ms=all(L).filter(m=>!m.bye&&m.h&&m.a);
@@ -361,7 +370,7 @@ function statusPill(m){
 
 function table(L,teams=L.teams,filt=null){
   const R={};teams.forEach(id=>R[id]={id,pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0,form:[]});
-  L.rounds.forEach(r=>r.matches.forEach(m=>{
+  L.rounds.forEach(r=>!r.ko&&r.matches.forEach(m=>{
     if(m.status!=='final'||!R[m.h]||!R[m.a]||(filt&&!filt(m)))return;const[h,a]=sc(m);
     const H=R[m.h],A=R[m.a];H.pj++;A.pj++;H.gf+=h;H.gc+=a;A.gf+=a;A.gc+=h;
     if(h>a){H.g++;H.pts+=3;A.p++;H.form.push('G');A.form.push('P')}

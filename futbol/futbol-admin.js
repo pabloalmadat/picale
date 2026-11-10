@@ -8,7 +8,12 @@ const curL=()=>LG(AV.id);
 function findM(L,mid){for(const r of L.rounds)for(const m of r.matches)if(m.id===mid)return{m,r};return{}}
 
 /* ===================== Cuenta del dueño de liga ===================== */
-let GATE='login',PREPLAN=null,OWN=null;
+let GATE='login',PREPLAN=null,OWN=null,CFG=null,NEWOWN=false;
+async function loadCfg(){if(CFG||MODE!=='server')return;try{CFG=await api('/config')}catch(e){CFG={}}}
+function contactBtns(msg){
+  const wa=CFG?.wa,em=CFG?.email,t=encodeURIComponent(msg);
+  return`${wa?`<a class="btn pri" href="https://wa.me/${wa}?text=${t}" target="_blank" rel="noopener">Escribir a PÍCALE por WhatsApp</a>`:''}${em?`<a class="btn ${wa?'ghost':'pri'}" href="mailto:${esc(em)}?subject=${encodeURIComponent('Acceso a PÍCALE Fútbol')}&body=${t}">Escribir por correo</a>`:''}`;
+}
 const myLeagues=()=>ME?.role==='admin'?S.leagues:S.leagues.filter(L=>L.owner===ME?.id);
 const isOwner=()=>ME?.role==='owner';
 const subActive=()=>!isOwner()||ME.status==='activo';
@@ -27,12 +32,13 @@ function viewGate(){
     login:`<label class="fld" for="g-email">Correo<input id="g-email" class="inp" type="email" autocomplete="email" required></label>
       <label class="fld" for="g-pass">Contraseña<input id="g-pass" class="inp" type="password" autocomplete="current-password" required></label>
       <button class="btn pri" type="submit">Entrar</button>`,
-    signup:`${PREPLAN?`<div class="pill acc" style="align-self:flex-start">Plan elegido: ${esc(planOf(PREPLAN)?.name||'')}</div>`:''}
+    signup:`<p class="note" style="margin:0">Para crear torneos, PÍCALE activa tu cuenta. Envía tu solicitud y nos comunicamos contigo.</p>
       <label class="fld" for="g-name">Tu nombre<input id="g-name" class="inp" autocomplete="name" required></label>
       <label class="fld" for="g-league">Nombre de tu liga u organización<input id="g-league" class="inp" placeholder="Ej. Liga Nocturna Cumbres"></label>
+      <label class="fld" for="g-phone">WhatsApp<input id="g-phone" class="inp" type="tel" inputmode="tel" autocomplete="tel" placeholder="81 1234 5678"></label>
       <label class="fld" for="g-email">Correo<input id="g-email" class="inp" type="email" autocomplete="email" required></label>
       <label class="fld" for="g-pass">Contraseña (mínimo 6 caracteres)<input id="g-pass" class="inp" type="password" autocomplete="new-password" minlength="6" required></label>
-      <button class="btn pri" type="submit">Crear cuenta</button>`,
+      <button class="btn pri" type="submit">Solicitar acceso</button>`,
     pin:`<label class="fld" for="pin">PIN de PÍCALE<input id="pin" class="inp" type="password" inputmode="numeric" autocomplete="off"></label>
       <button class="btn pri" type="submit">Entrar como PÍCALE</button>${local?'<p class="note">Modo demo local · PIN: 2026. Las cuentas de dueños necesitan el servidor.</p>':''}`,
   }[GATE];
@@ -40,7 +46,7 @@ function viewGate(){
     <div class="gate-pitch"><div class="eyebrow">PÍCALE Fútbol · para dueños de liga</div><h1>Tu liga, transmitida como profesional</h1>
       <ul class="ticks"><li>Calendario, tabla, grupos y eliminatoria sin hojas de cálculo</li><li>Tus jugadores con su cuenta, su foto y sus estadísticas</li><li>Cámara All-in-One: cada partido en vivo y grabado</li><li>Página pública e imagen del rol para tus grupos de WhatsApp</li></ul>
       <a class="btn ghost" href="/futbol" target="_blank" rel="noopener">Ver ligas en vivo</a></div>
-    <form class="gate box" id="gate">${local?'':`<div class="seg">${tab('login','Entrar')}${tab('signup','Crear cuenta')}</div>`}${f}
+    <form class="gate box" id="gate">${local?'':`<div class="seg">${tab('login','Entrar')}${tab('signup','Solicitar acceso')}</div>`}${f}
       ${local?'':GATE==='pin'?'<button type="button" class="linkb" data-act="gate-tab" data-k="login">Soy dueño de liga</button>':'<button type="button" class="linkb" data-act="gate-tab" data-k="pin">Acceso PÍCALE</button>'}</form>
   </div></div>`;
 }
@@ -101,17 +107,42 @@ function viewCams(){
 async function loadOwners(){try{OWN=await api('/owners')}catch(e){OWN=[];toast(e.message,'warn')}render()}
 function viewOwners(){
   if(!OWN){loadOwners();return'<div class="box"><div class="empty">Cargando cuentas…</div></div>'}
-  const own=OWN.filter(o=>o.role!=='player'),pl=OWN.filter(o=>o.role==='player');
+  const all=OWN.filter(o=>o.role!=='player'),pl=OWN.filter(o=>o.role==='player');
+  const pend=all.filter(o=>o.access==='pendiente'),own=all.filter(o=>o.access!=='pendiente');
+  const wa=o=>{const d=String(o.phone||'').replace(/\D/g,'');return d?`<a href="https://wa.me/${d.length===10?'52'+d:d}" target="_blank" rel="noopener">${esc(o.phone)}</a>`:'—'};
   const linked=id=>S.teams.filter(t=>(t.players||[]).some(p=>p.uid===id));
   return`<div class="kpis"><div class="kpi"><span class="eyebrow">Dueños de liga</span><b class="num">${own.length}</b></div><div class="kpi"><span class="eyebrow">Jugadores con cuenta</span><b class="num">${pl.length}</b></div><div class="kpi"><span class="eyebrow">Cámaras conectadas</span><b class="num">${own.reduce((s,o)=>s+(o.cams||[]).length,0)}</b></div><div class="kpi"><span class="eyebrow">Competencias</span><b class="num">${S.leagues.length}</b></div></div>
-  <div class="box"><div class="box-h"><div><h2>Dueños de liga</h2><p>Cada dueño solo ve y edita sus competencias.</p></div><button class="btn sm" data-act="owners-reload">Actualizar</button></div>
-  ${own.length?`<div class="tw"><table class="st"><thead><tr><th class="l">Dueño</th><th class="l">Liga</th><th class="l">Correo</th><th>Cámaras</th><th>Competencias</th><th>Alta</th></tr></thead><tbody>
-  ${own.map(o=>`<tr><td class="tn l">${esc(o.name)}</td><td class="l" style="font-family:var(--f-body)">${esc(o.league||'—')}</td><td class="l">${esc(o.email)}</td><td>${(o.cams||[]).length}</td><td>${S.leagues.filter(L=>L.owner===o.id).length}</td><td>${esc(o.created||'')}</td></tr>`).join('')}
-  </tbody></table></div>`:'<div class="empty">Aún no hay dueños registrados.</div>'}</div>
+  <div class="box ${pend.length?'reqbox':''}"><div class="box-h"><div><div class="eyebrow">${pend.length} pendiente${pend.length===1?'':'s'}</div><h2 style="margin-top:6px">Solicitudes para crear torneos</h2><p>Quien se registra como dueño de liga espera aquí hasta que lo apruebes.</p></div><button class="btn sm" data-act="owners-reload">Actualizar</button></div>
+  ${pend.length?`<div class="reqs">${pend.map(o=>`<div class="req"><div class="req-b"><b>${esc(o.name)}</b><small>${esc(o.league||'Sin nombre de liga')} · ${esc(o.email)} · WhatsApp ${wa(o)} · ${esc(o.created||'')}</small></div>
+    <div class="toolbar"><button class="btn sm pri" data-act="own-access" data-o="${o.id}" data-v="activo">Aprobar</button><button class="btn sm ghost danger" data-act="own-access" data-o="${o.id}" data-v="eliminar" data-confirm="1">Rechazar</button></div></div>`).join('')}</div>`
+    :'<div class="empty">No hay solicitudes pendientes.</div>'}</div>
+  <div class="box"><div class="box-h"><div><h2>Dueños de liga</h2><p>Cada dueño solo ve y edita sus competencias. Si suspendes una cuenta, sus torneos publicados siguen visibles pero ya no puede editarlos.</p></div><button class="btn sm ${NEWOWN?'ghost':'pri'}" data-act="own-new">${NEWOWN?'Cancelar':'+ Dar de alta dueño'}</button></div>
+  ${NEWOWN?`<form class="addcam" id="ownF"><h3>Nuevo dueño de liga</h3><p class="note" style="margin:0">Queda activo desde ya. Al crearla se copian sus datos de acceso para que se los mandes por WhatsApp.</p>
+    <div class="formg"><label class="fld" for="o-name">Nombre<input id="o-name" class="inp" required></label><label class="fld" for="o-league">Liga u organización<input id="o-league" class="inp"></label>
+    <label class="fld" for="o-phone">WhatsApp<input id="o-phone" class="inp" type="tel"></label><label class="fld" for="o-email">Correo<input id="o-email" class="inp" type="email" required></label>
+    <label class="fld" for="o-pass">Contraseña temporal<input id="o-pass" class="inp num" required minlength="6" value="${Math.random().toString(36).slice(2,10)}"></label></div>
+    <div class="toolbar"><button class="btn pri" type="submit">Crear cuenta activa</button></div></form>`:''}
+  ${own.length?`<div class="tw"><table class="st"><thead><tr><th class="l">Dueño</th><th class="l">Liga</th><th class="l">Correo</th><th class="l">WhatsApp</th><th>Cámaras</th><th>Competencias</th><th>Alta</th><th>Acceso</th></tr></thead><tbody>
+  ${own.map(o=>{const s=o.access==='suspendido';return`<tr><td class="tn l">${esc(o.name)}</td><td class="l" style="font-family:var(--f-body)">${esc(o.league||'—')}</td><td class="l">${esc(o.email)}</td><td class="l">${wa(o)}</td><td>${(o.cams||[]).length}</td><td>${S.leagues.filter(L=>L.owner===o.id).length}</td><td>${esc(o.created||'')}</td>
+    <td><button class="btn sm ${s?'pri':'ghost danger'}" data-act="own-access" data-o="${o.id}" data-v="${s?'activo':'suspendido'}" ${s?'':'data-confirm="1"'}>${s?'Reactivar':'Suspender'}</button></td></tr>`}).join('')}
+  </tbody></table></div>`:'<div class="empty">Aún no hay dueños aprobados.</div>'}</div>
   <div class="box"><div class="box-h"><div><h2>Jugadores</h2><p>Se registran con el link de invitación de su equipo.</p></div></div>
   ${pl.length?`<div class="tw"><table class="st"><thead><tr><th class="l">Jugador</th><th class="l">Correo</th><th class="l">Equipos</th><th>Alta</th></tr></thead><tbody>
   ${pl.map(o=>`<tr><td class="tn l"><div>${avatar(o,'sm')}${esc(o.name)}</div></td><td class="l">${esc(o.email)}</td><td class="l" style="font-family:var(--f-body)">${linked(o.id).map(t=>esc(t.name)).join(', ')||'—'}</td><td>${esc(o.created||'')}</td></tr>`).join('')}
   </tbody></table></div>`:'<div class="empty">Aún no hay jugadores con cuenta.</div>'}</div>`;
+}
+function viewPending(){
+  if(!CFG){loadCfg().then(render)}
+  const susp=ME.access==='suspendido',first=esc(ME.name.split(' ')[0]);
+  const msg=`Hola PÍCALE, soy ${ME.name}${ME.league?` de ${ME.league}`:''}. Me registré en PÍCALE Fútbol con el correo ${ME.email} y quiero activar mi cuenta para crear torneos.`;
+  const btns=contactBtns(msg);
+  return`<div class="wrap"><div class="gate box pend" style="margin:60px auto">
+    <div class="eyebrow">${susp?'Cuenta suspendida':'Solicitud recibida'}</div><h2>Hola, ${first}</h2>
+    <p>${susp?'Tu acceso para crear y editar torneos está pausado. Comunícate con PÍCALE para reactivarlo.'
+      :'Tu cuenta ya está creada, pero para crear torneos <b>PÍCALE tiene que activarla</b>. Comunícate con nosotros y te damos acceso.'}</p>
+    ${btns?`<div class="toolbar">${btns}</div>`:'<p class="note" style="margin:0">Comunícate con tu contacto de PÍCALE y dale el correo con el que te registraste.</p>'}
+    <div class="facts"><div><span>Correo registrado</span><b>${esc(ME.email||'')}</b></div>${ME.league?`<div><span>Liga</span><b>${esc(ME.league)}</b></div>`:''}</div>
+    <div class="toolbar"><button class="btn" data-act="pend-check">Ya me activaron</button><button class="btn ghost" data-act="logout">Salir</button></div></div></div>`;
 }
 function camAuto(m){if(!m||!m.cam)return;if(m.status==='vivo'&&!m.stream)m.stream=CAM_URL.stream(m.cam);if(m.status==='final'&&!m.vod)m.vod=CAM_URL.vod(m.cam,m.id)}
 
@@ -120,12 +151,13 @@ function viewAdmin(){
   if(ME.role==='player')return`<div class="wrap"><div class="gate box" style="margin:60px auto"><div class="eyebrow">Cuenta de jugador</div><h2>Hola, ${esc(ME.name.split(' ')[0])}</h2>
     <p>Este panel es para quienes organizan ligas. Tus torneos, tu foto y tus estadísticas están en tu cuenta de jugador.</p>
     <a class="btn pri" href="/futbol?cuenta">Ir a Mis torneos</a><button class="btn ghost" data-act="logout">Salir</button></div></div>`;
+  if(ME.role==='pending')return viewPending();
   const owner=isOwner();const mine=myLeagues();
   if(AV.view==='league'&&!(curL()&&mine.includes(curL())))AV={view:'league',id:mine[0]?.id||null};
   if(AV.view==='league'&&!AV.id)AV={view:'new'};
   const side=`<aside class="adm-side"><div class="acct"><b>${esc(ME.name)}</b><small>${owner?esc(ME.league||'Dueño de liga'):'Administrador PÍCALE'}</small></div>
     <div class="side-h">Mis competencias</div>
-    ${mine.map(L=>`<button class="side-b ${AV.view==='league'&&AV.id===L.id?'on':''}" data-act="adm-sel" data-id="${L.id}">${esc(L.name)}<small>${L.draft?'borrador':L.kind}</small></button>`).join('')}
+    ${mine.map(L=>`<button class="side-b ${AV.view==='league'&&AV.id===L.id?'on':''}" data-act="adm-sel" data-id="${L.id}">${esc(L.name)}<small>${L.draft?'borrador':+L.lig>1?'liga + liguilla':L.kind}</small></button>`).join('')}
     <button class="side-b ${AV.view==='new'?'on':''}" data-act="adm-new">+ Nueva competencia</button>
     <div class="side-h">${owner?'Mi cuenta':'PÍCALE'}</div>
     ${owner?`<button class="side-b ${AV.view==='cams'?'on':''}" data-act="go-cams">Cámaras All-in-One<small>${(ME.cams||[]).length}</small></button>`
@@ -139,14 +171,19 @@ function admNew(){
   return`<form class="box" id="newL"><div class="box-h"><div><h2>Nueva competencia</h2><p>Después de crearla, da de alta sus equipos con sus jugadores y genera el calendario o el cuadro.</p></div></div>
   <div class="formg">
     <label class="fld full" for="nl-name">Nombre<input id="nl-name" required placeholder="Ej. Liga Nocturna Clausura 2027"></label>
-    <label class="fld" for="nl-kind">Formato<select id="nl-kind"><option value="liga">Liga · todos contra todos</option><option value="grupos">Grupos + eliminación directa</option><option value="torneo">Torneo · eliminación directa</option></select></label>
-    <label class="fld" for="nl-vu">Vueltas (liga o grupos)<select id="nl-vu"><option value="1">Una vuelta</option><option value="2">Ida y vuelta</option></select></label>
-    <label class="fld" for="nl-ng">Número de grupos<select id="nl-ng">${[2,3,4,6,8].map(n=>`<option value="${n}" ${n===2?'selected':''}>${n} grupos</option>`).join('')}</select></label>
-    <label class="fld" for="nl-q">Clasifican por grupo<select id="nl-q"><option value="1">1 equipo</option><option value="2" selected>2 equipos</option><option value="3">3 equipos</option><option value="4">4 equipos</option></select></label>
+    <label class="fld" for="nl-kind">Formato<select id="nl-kind" data-chg="nl-kind"><option value="liga">Liga · todos contra todos</option><option value="liguilla">Liga + liguilla</option><option value="grupos">Grupos + eliminación directa</option><option value="torneo">Torneo · eliminación directa</option></select></label>
+    <label class="fld" for="nl-vu" data-for="liga liguilla grupos">Vueltas<select id="nl-vu"><option value="1">Una vuelta</option><option value="2">Ida y vuelta</option></select></label>
+    <label class="fld" for="nl-lig" data-for="liguilla">Pasan a la liguilla<select id="nl-lig">${[[2,'2 · final directa'],[4,'4 · semifinales'],[6,'6 · 1° y 2° pasan directo a semis'],[8,'8 · cuartos de final'],[12,'12 · los 4 primeros directo a cuartos'],[16,'16 · octavos de final']].map(([n,t])=>`<option value="${n}" ${n===8?'selected':''}>${t}</option>`).join('')}</select></label>
+    <label class="fld" for="nl-tie" data-for="liguilla">Si empatan en la liguilla<select id="nl-tie"><option value="pos">Pasa el mejor ubicado en la tabla</option><option value="pen">Se define en penales</option></select></label>
+    <label class="fld" for="nl-ng" data-for="grupos">Número de grupos<select id="nl-ng">${[2,3,4,6,8].map(n=>`<option value="${n}" ${n===2?'selected':''}>${n} grupos</option>`).join('')}</select></label>
+    <label class="fld" for="nl-q" data-for="grupos">Clasifican por grupo<select id="nl-q"><option value="1">1 equipo</option><option value="2" selected>2 equipos</option><option value="3">3 equipos</option><option value="4">4 equipos</option></select></label>
     <label class="fld" for="nl-season">Temporada<input id="nl-season" placeholder="Clausura 2027"></label>
     <label class="fld" for="nl-venue">Sede principal<input id="nl-venue" placeholder="Complejo deportivo"></label>
     <label class="chk full" for="nl-draft"><input id="nl-draft" type="checkbox" checked> Guardar como borrador (no se publica hasta que tú quieras)</label>
   </div><div style="margin-top:16px"><button class="btn pri" type="submit">Crear competencia</button></div></form>`;
+}
+// Muestra solo los campos que aplican al formato elegido.
+function nlFields(){const k=$('#nl-kind')?.value;document.querySelectorAll('#newL [data-for]').forEach(el=>el.hidden=!el.dataset.for.split(' ').includes(k))
 }
 function admTeams(){
   return`<div class="box"><div class="box-h"><div><h2>Equipos</h2><p>Catálogo compartido por todas las competencias. Cada equipo tiene su logo generado y su plantilla, que alimenta la captura de goles, tarjetas y la página del equipo.</p></div><button class="btn pri" data-act="team-new">+ Nuevo equipo</button></div>
@@ -183,7 +220,7 @@ function admLeague(L){
     <div class="blk" style="margin-top:12px">${(L.blocks||[]).map(([x,y],i)=>`<div class="blk-r">${crest(x,'xs')}${esc(tname(x))} <span class="vs">VS</span> ${crest(y,'xs')}${esc(tname(y))}<button class="btn sm ghost" data-act="blk-del" data-i="${i}">Quitar</button></div>`).join('')||'<span class="note">Sin bloqueos manuales.</span>'}</div></div>`:'';
   const exc=L.teams.length?admUnavail(L):'';
   if(L.kind==='grupos')return head+enr+exc+admGroups(L)+admCalendar(L)+admKO(L)+admAvisos(L);
-  return head+enr+blk+exc+(L.kind==='liga'?admCalendar(L):admBracket(L))+admAvisos(L);
+  return head+enr+blk+exc+(L.kind==='liga'?admCalendar(L)+admLiguilla(L):admBracket(L))+admAvisos(L);
 }
 function admCalendar(L){
   const RS=L.rounds.filter(r=>!r.ko);
@@ -393,19 +430,29 @@ function koRow(L,m){
   if(m.bye)return`<div class="mrow"><span class="grip"></span><span class="tm">Pase</span><div class="t h"><span>${lbl(m.src?.h?'h':'a')}</span>${crest(m.h||m.a,'xs')}</div><span class="s">→</span><div class="t"><span class="note">Avanza directo</span></div><div class="ac"></div></div>`;
   return`<div class="mrow"><span class="grip"></span>${whenCell(L,koRounds(L).find(r=>r.matches.includes(m))||{date:m.date.slice(0,10)},m)}<div class="t h"><span>${lbl('h')}</span>${crest(m.h,'xs')}</div><span class="s">${m.status==='programado'?'vs':h+'–'+a}</span><div class="t">${crest(m.a,'xs')}<span>${lbl('a')}</span></div><div class="ac">${statusPill(m)}<button class="btn sm" data-act="edit-m" data-m="${m.id}" ${!m.h||!m.a?'disabled':''}>Capturar</button></div></div>`;
 }
-function admKO(L){
+function admLiguilla(L){
+  const on=+L.lig>1;
+  const cfg=`<div class="toolbar"><label class="fld" for="lg-n">Pasan a la liguilla<select id="lg-n" data-chg="lg-n"><option value="0" ${on?'':'selected'}>Sin liguilla</option>${[[2,'2 · final directa'],[4,'4 · semifinales'],[6,'6 · 1° y 2° pasan directo a semis'],[8,'8 · cuartos de final'],[12,'12 · los 4 primeros directo a cuartos'],[16,'16 · octavos de final']].map(([n,t])=>`<option value="${n}" ${+L.lig===n?'selected':''} ${n>L.teams.length?'disabled':''}>${t}</option>`).join('')}</select></label>
+    ${on?`<label class="fld" for="lg-tie">Si empatan<select id="lg-tie" data-chg="lg-tie"><option value="pos" ${L.ligTie!=='pen'?'selected':''}>Pasa el mejor ubicado</option><option value="pen" ${L.ligTie==='pen'?'selected':''}>Penales</option></select></label>`:''}</div>`;
+  if(!on)return`<div class="box"><div class="box-h"><div><h3>Liguilla</h3><p>Al terminar la fase regular, los mejores de la tabla general juegan eliminación directa hasta la final. Actívala eligiendo cuántos pasan.</p></div></div>${cfg}</div>`;
+  return admKO(L,cfg);
+}
+function admKO(L,cfg=''){
+  const lig=L.kind==='liga';
   const KO=koRounds(L);const last=groupRoundsOf(L).at(-1);
   const start=KO[0]?.date||(last?isoD(new Date(new Date(last.date+'T12:00').getTime()+7*864e5)):isoD(new Date()));
   const done=groupsDone(L);
   const rounds=KO.map(r=>`<details class="rnd" open><summary><h3>${esc(r.name)}</h3><span class="pill">${r.matches.filter(m=>!m.bye).length} partidos</span>
     <span class="sp"><button class="btn sm" data-act="img" data-r="${r.id}" ${r.matches.some(m=>m.h&&m.a)?'':'disabled'}>Imagen del rol</button><input type="date" class="inp" style="width:auto;padding:5px 8px" value="${r.date}" data-chg="r-date" data-r="${r.id}" aria-label="Fecha de ${esc(r.name)}"></span></summary>
     <div class="rnd-b">${r.matches.map(m=>koRow(L,m)).join('')}</div></details>`).join('');
-  return`<div class="box"><div class="box-h"><div><h3>Fase final · eliminación directa</h3><p>Los cruces se llenan solos cuando terminan todos los partidos de grupos: 1° de un grupo contra 2° de otro, y los del mismo grupo no se cruzan hasta la final. Los ganadores avanzan solos; en empate eliges quién pasa por penales.</p></div>
-    ${KO.length?`<span class="pill ${done?'fin':''}">${done?'Grupos terminados':'Grupos en juego'}</span>`:''}</div>
-    <div class="toolbar"><label class="fld" for="ko-start">Inicio de la fase final<input type="date" id="ko-start" value="${start}"></label>
-      <button class="btn pri" data-act="gen-ko" ${KO.some(r=>r.matches.some(m=>m.status!=='programado'))?'disabled':KO.length?'data-confirm="1"':''} ${L.groups.some(g=>g.teams.length)?'':'disabled'}>${KO.length?'Rehacer fase final':'Generar fase final'}</button>
+  const ph=lig?'liguilla':'fase final';
+  return`<div class="box"><div class="box-h"><div><h3>${lig?'Liguilla':'Fase final · eliminación directa'}</h3><p>${lig?`Los cruces se llenan solos con la tabla general cuando se juegan todos los partidos de la fase regular: el 1° contra el último que clasifica, el 2° contra el penúltimo, y así. El 1° y el 2° solo se pueden ver en la final. ${L.ligTie==='pen'?'En empate eliges quién pasa por penales.':'En empate pasa el mejor ubicado en la tabla (o elige penales al capturar).'}`:'Los cruces se llenan solos cuando terminan todos los partidos de grupos: 1° de un grupo contra 2° de otro, y los del mismo grupo no se cruzan hasta la final. Los ganadores avanzan solos; en empate eliges quién pasa por penales.'}</p></div>
+    ${KO.length?`<span class="pill ${done?'fin':''}">${done?(lig?'Fase regular terminada':'Grupos terminados'):(lig?'Fase regular en juego':'Grupos en juego')}</span>`:''}</div>
+    ${cfg}
+    <div class="toolbar"><label class="fld" for="ko-start">Inicio de la ${ph}<input type="date" id="ko-start" value="${start}"></label>
+      <button class="btn pri" data-act="gen-ko" ${KO.some(r=>r.matches.some(m=>m.status!=='programado'))?'disabled':KO.length?'data-confirm="1"':''} ${(lig?L.teams.length>=2:L.groups.some(g=>g.teams.length))?'':'disabled'}>${KO.length?`Rehacer ${ph}`:`Generar ${ph}`}</button>
       ${KO.length?'<button class="btn" data-act="ko-fill">Llenar con la tabla actual</button>':''}</div></div>
-    <div>${rounds||'<div class="empty">Arma los grupos y genera la fase final para ver los cruces.</div>'}</div>`;
+    <div>${rounds||`<div class="empty">${lig?'Genera la liguilla para ver los cruces. Se llenan con la tabla al terminar la fase regular.':'Arma los grupos y genera la fase final para ver los cruces.'}</div>`}</div>`;
 }
 
 /* --- modal de partido --- */
@@ -428,7 +475,7 @@ function drawMatch(){
       <label class="fld" for="mf-status">Estado<select id="mf-status" data-chg="m-f" data-k="status"><option value="programado" ${m.status==='programado'?'selected':''}>Programado</option><option value="vivo" ${m.status==='vivo'?'selected':''}>En vivo</option><option value="final" ${m.status==='final'?'selected':''}>Final</option></select></label>
       <label class="fld" for="mf-date">Fecha y hora<input id="mf-date" type="datetime-local" value="${m.date}" data-chg="m-f" data-k="date"></label>
       <label class="fld" for="mf-venue">Cancha / sede<input id="mf-venue" value="${esc(m.venue)}" data-chg="m-f" data-k="venue"></label>
-      ${L.kind==='torneo'?`<label class="fld" for="mf-pen">Si empatan, avanza por penales<select id="mf-pen" data-chg="m-f" data-k="pen"><option value="">—</option><option value="h" ${m.pen==='h'?'selected':''}>${esc(tname(m.h))}</option><option value="a" ${m.pen==='a'?'selected':''}>${esc(tname(m.a))}</option></select></label>`:'<span></span>'}
+      ${L.kind==='torneo'||L.rounds.find(r=>r.matches.includes(m))?.ko?`<label class="fld" for="mf-pen">Si empatan, avanza (penales)<select id="mf-pen" data-chg="m-f" data-k="pen"><option value="">${L.kind==='liga'&&L.ligTie!=='pen'?'Mejor ubicado en la tabla':'—'}</option><option value="h" ${m.pen==='h'?'selected':''}>${esc(tname(m.h))}</option><option value="a" ${m.pen==='a'?'selected':''}>${esc(tname(m.a))}</option></select></label>`:'<span></span>'}
       <label class="fld full" for="mf-cam">Cámara All-in-One<select id="mf-cam" data-chg="m-cam"><option value="">Sin cámara</option>${myCams().map(c=>`<option value="${esc(c.code)}" ${m.cam===c.code?'selected':''}>${esc(c.name)}${c.cancha?' · '+esc(c.cancha):''}</option>`).join('')}</select></label>
     </div>
     ${m.cam?`<div class="camline ${m.status}"><span class="cam-ic"></span><div><span>${m.status==='vivo'?'<b>Transmitiendo en vivo</b> en la página pública':m.status==='final'?'<b>Grabación guardada:</b> el partido completo está en la página pública':'<b>Listo para transmitir.</b> Al ponerlo En vivo, la transmisión arranca sola'}</span><small>${esc(myCams().find(c=>c.code===m.cam)?.name||m.cam)}</small></div></div>`:(myCams().length?'':`<p class="note" style="margin:0">Con una cámara All-in-One, este partido se transmite y se graba solo. ${isOwner()?'Actívala en “Cámaras All-in-One”.':''}</p>`)}
@@ -673,6 +720,7 @@ const pubURL=id=>location.origin+'/futbol?liga='+encodeURIComponent(id);
 function render(){
   $('#mode').innerHTML=MODE==='server'?`${ME?`<span id="savest" class="mode ${SAVEST[1]}">${SAVEST[0]}</span> <span class="mode">${esc(ME.name)}</span>`:''}`:'<span class="mode">Modo demo · solo este navegador</span>';
   $('#app').innerHTML=viewAdmin();
+  if($('#newL'))nlFields();
 }
 function place(rid,side,tid){
   const L=curL();if(B.round!==rid)B={round:rid,h:null,a:null};
@@ -701,6 +749,10 @@ const ACT={
   'go-cams'(){AV={view:'cams'};render()},
   'go-owners'(){AV={view:'owners'};OWN=null;render()},
   'owners-reload'(){OWN=null;render()},
+  'own-new'(){NEWOWN=!NEWOWN;render();if(NEWOWN)setTimeout(()=>$('#o-name')?.focus(),0)},
+  async 'own-access'(el){const v=el.dataset.v;try{await api('/owners/'+el.dataset.o,{method:'POST',body:JSON.stringify({access:v})});
+    toast({activo:'Cuenta activada: ya puede crear torneos',suspendido:'Cuenta suspendida',eliminar:'Solicitud rechazada'}[v]);OWN=null;render()}catch(e){toast(e.message,'warn')}},
+  async 'pend-check'(){try{const me=await api('/me');ME=me;if(me.role==='owner'){toast('¡Listo! Tu cuenta ya está activa');S=await loadData();AV={view:'league',id:null}}else toast('Todavía está pendiente. Comunícate con PÍCALE.','warn');render()}catch(e){toast(e.message,'warn')}},
   'choose-plan'(el){openCheckout(el.dataset.plan)},
   async pay(el){el.disabled=true;el.textContent='Activando…';
     try{ME={...await api('/subscribe',{method:'POST',body:JSON.stringify({plan:el.dataset.plan})}),role:'owner'};$('#dlg').close();
@@ -717,7 +769,7 @@ const ACT={
   'gen-cal'(){const L=curL();const vu=+$('#g-vu').value;const st=$('#g-start').value||isoD(new Date());L.vueltas=vu;
     const base=new Date(st+'T12:00');
     L.rounds=roundRobin(L.teams,vu).map((pairs,i)=>{const d=isoD(new Date(base.getTime()+i*7*864e5));let k=0;
-      const r={id:uid('r'),date:d,matches:[]};r.matches=pairs.filter(([h,a])=>!isBlocked(L,h,a)).map(([h,a])=>({id:uid('m'),h,a,...slotOf(L,r,k++),status:'programado',ev:[],stream:'',vod:''}));scheduleRound(L,r);return r});
+      const r={id:uid('r'),date:d,matches:[]};r.matches=pairs.filter(([h,a])=>!isBlocked(L,h,a)).map(([h,a])=>({id:uid('m'),h,a,...slotOf(L,r,k++),status:'programado',ev:[],stream:'',vod:''}));scheduleRound(L,r);return r}).concat(koRounds(L));
     B={round:null,h:null,a:null};OPEN.clear();save();toast(`${L.rounds.length} jornadas generadas`);render()},
   'next-round'(){const L=curL();if(L.kind!=='torneo')L.vueltas=+($('#g-vu')?.value||L.vueltas||1);const RS=L.rounds.filter(x=>!x.ko);const last=RS.at(-1);
     const r={id:uid('r'),date:last?addDays(last.date,7):($('#g-start')?.value||isoD(new Date())),matches:[]};
@@ -753,8 +805,8 @@ const ACT={
   'g-shuffle'(){const L=curL();const ids=[...L.teams].sort(()=>Math.random()-.5);L.groups.forEach(g=>g.teams=[]);ids.forEach((id,i)=>L.groups[i%L.groups.length].teams.push(id));save();toast('Grupos sorteados');render()},
   'g-auto'(el){const L=curL();const g=[...L.groups].sort((a,b)=>a.teams.length-b.teams.length)[0];setGroup(el.dataset.team,g.id)},
   'g-out'(el){setGroup(el.dataset.team,null)},
-  'gen-ko'(){const L=curL();buildKO(L,$('#ko-start').value||isoD(new Date()));propagate(L);save();toast('Fase final generada');render()},
-  'ko-fill'(){const L=curL();fillKO(L,true);propagate(L);save();toast('Cruces llenados con la tabla actual de cada grupo');render()},
+  'gen-ko'(){const L=curL();buildKO(L,$('#ko-start').value||isoD(new Date()));koRounds(L).forEach(r=>scheduleRound(L,r));propagate(L);save();toast(L.kind==='liga'?'Liguilla generada':'Fase final generada');render()},
+  'ko-fill'(){const L=curL();fillKO(L,true);propagate(L);save();toast(L.kind==='liga'?'Cruces llenados con la tabla general actual':'Cruces llenados con la tabla actual de cada grupo');render()},
   'team-copy-all'(){const L=curL();const src=LG($('#imp-l').value);if(!src)return;src.teams.forEach(tid=>{const t=T(tid);if(!t)return;const id=uid('t');S.teams.push({...JSON.parse(JSON.stringify(t)),id,lid:L.id});L.teams.push(id)});save();toast(`${src.teams.length} equipos copiados de ${src.name}`);render()},
   'team-new'(){openTeam(null)},
   tsel(el){const m=el.dataset.m,side=el.dataset.side;if(!SW){SW={m,side};render();toast('Ahora toca el equipo con el que lo quieres intercambiar');return}if(SW.m===m&&SW.side===side){SW=null;render();return}doSwap(SW.m,SW.side,m,side)},
@@ -803,6 +855,11 @@ document.addEventListener('change',e=>{
   if(k==='l-notify'){curL().notify=el.value;save();toast(el.value==='off'?'Avisos apagados para esta competencia':el.value==='captains'?'Se avisará solo a capitanes':'Se avisará a todos los jugadores con WhatsApp');return}
   if(k==='sched'){const L=curL();L.sched={...SCH(L),[el.dataset.k]:el.dataset.k==='t'?el.value:+el.value};save();return}
   if(k==='g-count'){const L=curL();const n=+el.value;const old=L.groups;const ng=mkGroups(n);old.forEach((g,i)=>{if(ng[i])ng[i].teams=g.teams});L.groups=ng;save();render();return}
+  if(k==='nl-kind'){nlFields();return}
+  if(k==='lg-n'){const L=curL();const n=+el.value;if(koRounds(L).some(r=>r.matches.some(m=>m.status!=='programado'))){toast('La liguilla ya empezó: no se puede cambiar','warn');render();return}
+    L.lig=n;if(n>1){L.ligTie=L.ligTie||'pos';if(koRounds(L).length){const st=koRounds(L)[0].date;buildKO(L,st);koRounds(L).forEach(r=>scheduleRound(L,r));propagate(L)}}else L.rounds=groupRoundsOf(L);
+    save();toast(n>1?`Liguilla con ${n} equipos`:'Liguilla quitada');render();return}
+  if(k==='lg-tie'){const L=curL();L.ligTie=el.value;propagate(L);save();render();return}
   if(k==='g-qual'){curL().qual=+el.value;save();toast('Si ya generaste la fase final, rehazla para aplicar el cambio');render();return}
   if(k==='rswap'){if(el.value)doSwapRounds(el.dataset.r,el.value);return}
   if(k==='mv'){if(el.value)doMove(el.dataset.m,el.value);return}
@@ -830,7 +887,7 @@ document.addEventListener('submit',async e=>{
       else{
         let res;
         if(GATE==='pin')res=await api('/login',{method:'POST',body:JSON.stringify({pin:$('#pin').value.trim()})});
-        else if(GATE==='signup')res=await api('/signup',{method:'POST',body:JSON.stringify({name:$('#g-name').value,league:$('#g-league').value,email:$('#g-email').value,password:$('#g-pass').value})});
+        else if(GATE==='signup')res=await api('/signup',{method:'POST',body:JSON.stringify({name:$('#g-name').value,league:$('#g-league').value,phone:$('#g-phone').value,email:$('#g-email').value,password:$('#g-pass').value})});
         else res=await api('/login',{method:'POST',body:JSON.stringify({email:$('#g-email').value,password:$('#g-pass').value})});
         setTok(res.token);ME=res.me;
       }
@@ -844,10 +901,18 @@ document.addEventListener('submit',async e=>{
     try{ME={...await api('/cams',{method:'POST',body:JSON.stringify({code:$('#cam-code').value,name:$('#cam-name').value,cancha:$('#cam-cancha').value})}),role:'owner'};toast('Cámara activada');render()}
     catch(e){toast(e.message,'warn')}
   }
+  if(f.id==='ownF'){const btn=f.querySelector('button[type=submit]');btn.disabled=true;
+    const pw=$('#o-pass').value,em=$('#o-email').value.trim();
+    try{const o=await api('/owners',{method:'POST',body:JSON.stringify({name:$('#o-name').value,league:$('#o-league').value,phone:$('#o-phone').value,email:em,password:pw})});
+      NEWOWN=false;OWN=null;render();
+      const txt=`Ya tienes acceso a PÍCALE Fútbol para crear tus torneos.\nEntra en ${location.origin}/futbol/admin\nCorreo: ${em}\nContraseña: ${pw}`;
+      try{await navigator.clipboard.writeText(txt);toast(`Cuenta de ${o.name} creada. Datos de acceso copiados para mandárselos.`)}catch(_){toast(`Cuenta creada. Contraseña: ${pw}`)}}
+    catch(e){toast(e.message,'warn');btn.disabled=false}
+  }
   if(f.id==='newL'){const name=$('#nl-name').value.trim();if(!name)return;
     let id=name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||uid('l');
     id=(id||'liga')+'-'+Math.random().toString(36).slice(2,6);while(LG(id))id+=Math.random().toString(36).slice(2,4);
-    const kind=$('#nl-kind').value;const nl={id,name,kind,draft:!!$('#nl-draft')?.checked,...(isOwner()?{owner:ME.id}:{}),vueltas:+$('#nl-vu').value,season:$('#nl-season').value.trim()||'Temporada',venue:$('#nl-venue').value.trim(),teams:[],blocks:[],rounds:[]};
+    const sel=$('#nl-kind').value;const kind=sel==='liguilla'?'liga':sel;const nl={id,name,kind,...(sel==='liguilla'?{lig:+$('#nl-lig').value,ligTie:$('#nl-tie').value}:{}),draft:!!$('#nl-draft')?.checked,...(isOwner()?{owner:ME.id}:{}),vueltas:+$('#nl-vu').value,season:$('#nl-season').value.trim()||'Temporada',venue:$('#nl-venue').value.trim(),teams:[],blocks:[],rounds:[]};
     if(kind==='grupos'){nl.groups=mkGroups(+$('#nl-ng').value);nl.qual=+$('#nl-q').value}
     S.leagues.push(nl);
     AV={view:'league',id};save();toast('Competencia creada');render()}
@@ -871,6 +936,7 @@ document.addEventListener('drop',e=>{const z=e.target.closest?.('[data-drop]');i
   render();
   afterRefresh=()=>render();
   const idle=()=>!document.hidden&&!$('#dlg').open&&!document.activeElement?.matches?.('input,select,textarea')&&!DRAG;
-  const sync=async()=>{if(!ME||!idle())return;const ch=await syncFromServer();const L=curL();if(L&&NLOG[L.id]&&AV.view==='league'){await loadAvisos(L.id);return}if(ch)render()};
+  const sync=async()=>{if(!ME||!idle())return;
+    if(ME.role==='pending'){try{const me=await api('/me');if(me.role!==ME.role){ME=me;if(me.role==='owner'){S=await loadData();toast('¡Listo! Tu cuenta ya está activa')}render()}}catch(e){}return}const ch=await syncFromServer();const L=curL();if(L&&NLOG[L.id]&&AV.view==='league'){await loadAvisos(L.id);return}if(ch)render()};
   setInterval(sync,20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
 })();

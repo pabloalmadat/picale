@@ -159,7 +159,7 @@ table.st{width:100%;border-collapse:collapse;min-width:720px;font-size:14px}
 .bk-r+.bk-r{border-top:1px solid var(--line)}
 .bk-r span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bk-r b{font-family:var(--f-mono)}
-.bk-r.lo{color:var(--muted)}
+.bk-r.lose{color:var(--muted)}
 .bk-f{font-size:11.5px;color:var(--muted);padding:6px 12px;background:var(--surface-2);display:flex;justify-content:space-between}
 
 /* stats */
@@ -626,3 +626,14 @@ h2 .pill{font-size:11px;vertical-align:middle;margin-left:6px}
 .pill.warnp{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
 .mwarn{grid-column:1/-1;font-size:12.5px;font-weight:600;color:var(--warn);padding:2px 4px 0}
 .blk-r>span:not(.crest){flex:1;min-width:0}
+
+/* ===== v12: acceso de dueños de liga ===== */
+.reqbox{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.reqs{display:flex;flex-direction:column;gap:10px}
+.req{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.req-b{flex:1;min-width:220px;display:flex;flex-direction:column;gap:3px}
+.req-b small{color:var(--muted);overflow-wrap:anywhere}
+.req-b a,.st td a{color:var(--accent)}
+.pend{max-width:560px;display:flex;flex-direction:column;gap:14px}
+.pend p{margin:0}
+[hidden]{display:none!important}

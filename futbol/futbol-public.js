@@ -40,10 +40,10 @@ function viewLeague(L){
   const pct=L.rounds.length?Math.round(doneR/L.rounds.length*100):0;
   const live=all(L).some(m=>m.status==='vivo');
   const tabs=L.kind==='grupos'?[['jornadas','Jornadas'],['grupos','Grupos'],['cuadro','Fase final'],['equipos','Equipos'],['estadisticas','Estadísticas'],['transmision','Transmisión']]
-    :[['jornadas',L.kind==='liga'?'Jornadas':'Partidos'],[L.kind==='liga'?'tabla':'cuadro',L.kind==='liga'?'Tabla':'Cuadro'],['equipos','Equipos'],['estadisticas','Estadísticas'],['transmision','Transmisión']];
+    :[['jornadas',L.kind==='liga'?'Jornadas':'Partidos'],[L.kind==='liga'?'tabla':'cuadro',L.kind==='liga'?'Tabla':'Cuadro'],...(hasKO(L)?[['cuadro','Liguilla']]:[]),['equipos','Equipos'],['estadisticas','Estadísticas'],['transmision','Transmisión']];
   const body={jornadas:pubRounds,tabla:pubTable,grupos:pubGroups,cuadro:pubBracket,equipos:pubTeams,estadisticas:pubStats,transmision:pubWatch}[PT.tab]||pubRounds;
   return`<section class="hero">${PITCH}<div class="wrap hero-in">
-    <div><div class="eyebrow">${L.kind==='liga'?'Liga · todos contra todos':kindLabel(L)} · ${esc(L.season)} · ${L.teams.length} equipos</div>
+    <div><div class="eyebrow">${L.kind==='liga'?(hasKO(L)?'Liga + liguilla':'Liga · todos contra todos'):kindLabel(L)} · ${esc(L.season)} · ${L.teams.length} equipos</div>
       <h1>${esc(L.name)}</h1>
       <div class="prog"><div class="lbl"><span><b>${esc(rname(L,ci)||'—')}</b> de ${L.rounds.length}</span><span>${pct}% jugado</span></div><div class="bar"><i style="width:${pct}%"></i></div>
       <div class="note">Sede principal: ${esc(L.venue||'Por definir')}</div></div></div>
@@ -69,7 +69,7 @@ function pubRounds(L){
   if(!L.rounds.length)return'<div class="empty">El calendario aún no se ha publicado.</div>';
   const i=Math.min(PT.round,L.rounds.length-1);const r=L.rounds[i];
   const sel=L.rounds.map((x,k)=>{const done=x.matches.every(m=>m.status==='final'||m.bye);const lv=x.matches.some(m=>m.status==='vivo');
-    return`<button data-act="round" data-i="${k}" class="${k===i?'on':''} ${done?'done':''} ${lv?'lv':''}" aria-label="${esc(rname(L,k))}">${L.kind==='liga'||(L.kind==='grupos'&&!x.ko)?k+1:esc(({'Semifinales':'Semis','Cuartos de final':'Cuartos','Octavos de final':'Octavos'})[x.name]||x.name.split(' ')[0])}</button>`}).join('');
+    return`<button data-act="round" data-i="${k}" class="${k===i?'on':''} ${done?'done':''} ${lv?'lv':''}" aria-label="${esc(rname(L,k))}">${L.kind!=='torneo'&&!x.ko?k+1:esc(({'Semifinales':'Semis','Cuartos de final':'Cuartos','Octavos de final':'Octavos'})[x.name]||x.name.split(' ')[0])}</button>`}).join('');
   const ms=r.matches.filter(m=>!m.bye);
   return`<div class="sec-h"><div><div class="eyebrow">${fmtD(r.date+'T12:00')}</div><h2>${esc(rname(L,i))}</h2></div></div>
     <div class="rsel">${sel}</div>
@@ -77,10 +77,10 @@ function pubRounds(L){
     <div class="note">Toca un partido para ver goles y tarjetas, o el nombre de un equipo para ver su página.</div>`;
 }
 function pubTable(L){
-  const rows=table(L);
-  return`<div class="sec-h"><h2>Tabla general</h2><div class="legend"><span><i></i>Zona de liguilla (top 4)</span><span>3 pts victoria · 1 empate</span></div></div>
+  const rows=table(L);const q=hasKO(L)?+L.lig:0;
+  return`<div class="sec-h"><h2>Tabla general</h2><div class="legend">${q?`<span><i></i>Zona de liguilla (top ${q})</span>`:''}<span>3 pts victoria · 1 empate</span></div></div>
   <div class="tw"><table class="st"><thead><tr><th>#</th><th class="l">Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th><th>Últimos 5</th></tr></thead><tbody>
-  ${rows.map((r,i)=>`<tr class="${i<4?'q':''}"><td class="pos">${i+1}</td><td class="tn l"><div>${crest(r.id,'sm')}${tlink(L,r.id)}</div></td><td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td><td>${r.gf-r.gc>0?'+':''}${r.gf-r.gc}</td><td class="pts">${r.pts}</td><td><div class="form">${r.form.slice(-5).map(f=>`<i class="${f}">${f}</i>`).join('')}</div></td></tr>`).join('')}
+  ${rows.map((r,i)=>`<tr class="${i<q?'q':''}"><td class="pos">${i+1}</td><td class="tn l"><div>${crest(r.id,'sm')}${tlink(L,r.id)}</div></td><td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td><td>${r.gf-r.gc>0?'+':''}${r.gf-r.gc}</td><td class="pts">${r.pts}</td><td><div class="form">${r.form.slice(-5).map(f=>`<i class="${f}">${f}</i>`).join('')}</div></td></tr>`).join('')}
   </tbody></table></div>`;
 }
 function pubGroups(L){
@@ -93,14 +93,14 @@ function pubGroups(L){
   return`<div class="sec-h"><h2>Grupos</h2><div class="legend"><span><i></i>Clasifican a la fase final (top ${q})</span><span>3 pts victoria · 1 empate</span></div></div><div class="ggrid pub">${cards}</div>`;
 }
 function pubBracket(L){
-  const RS=L.kind==='grupos'?koRounds(L):L.rounds;
-  if(!RS.length)return`<div class="empty">${L.kind==='grupos'?'La fase final se arma al terminar los grupos.':'El cuadro aún no se ha sorteado.'}</div>`;
+  const lig=L.kind==='liga';const RS=hasKO(L)?koRounds(L):L.rounds;
+  if(!RS.length)return`<div class="empty">${lig?`Al terminar la fase regular, los ${+L.lig} primeros de la tabla juegan la liguilla.`:L.kind==='grupos'?'La fase final se arma al terminar los grupos.':'El cuadro aún no se ha sorteado.'}</div>`;
   const cols=RS.map((r,ri)=>`<div class="bk-col"><h4>${esc(r.name)}</h4>${r.matches.map(m=>{
-    const w=winner(m);const[h,a]=sc(m);const showS=m.status!=='programado'&&!m.bye;
-    const row=(id,s,side)=>`<div class="bk-r ${w&&w!==id?'lo':''}">${crest(id,'xs')}${id?tlink(L,id):`<span class="tbd-l">${ri===0&&m.src?esc(srcLabel(L,m.src[side])):m.bye&&ri===0?'Pase directo':'Por definir'}</span>`}${showS?`<b>${s}</b>`:''}</div>`;
-    return`<div class="bk-m ${ri===RS.length-1?'fin-m':''}">${row(m.h,h,'h')}${row(m.a,a,'a')}<div class="bk-f"><span>${fmtD(m.date)} · ${fmtT(m.date)}</span><span>${m.status==='vivo'?'EN VIVO':m.pen&&h===a&&m.status==='final'?'Penales':m.status==='final'?'Final':''}</span></div></div>`}).join('')}</div>`).join('');
-  const champ=winner(RS.at(-1).matches[0]);
-  return`<div class="sec-h"><h2>${L.kind==='grupos'?'Fase final':'Cuadro'}</h2>${L.kind==='grupos'&&!groupsDone(L)?'<span class="note">Los cruces se llenan solos al terminar la fase de grupos</span>':''}${champ?`<span class="pill acc">Campeón: ${esc(tname(champ))}</span>`:''}</div><div class="bk"><div class="bk-in">${cols}</div></div>`;
+    const w=winner(m,L);const[h,a]=sc(m);const showS=m.status!=='programado'&&!m.bye;
+    const row=(id,s,side)=>`<div class="bk-r ${w&&w!==id?'lose':''}">${crest(id,'xs')}${id?tlink(L,id):`<span class="tbd-l">${ri===0&&m.src?esc(srcLabel(L,m.src[side])):m.bye&&ri===0?'Pase directo':'Por definir'}</span>`}${showS?`<b>${s}</b>`:''}</div>`;
+    return`<div class="bk-m ${ri===RS.length-1?'fin-m':''}">${row(m.h,h,'h')}${row(m.a,a,'a')}<div class="bk-f"><span>${fmtD(m.date)} · ${fmtT(m.date)}</span><span>${m.status==='vivo'?'EN VIVO':m.pen&&h===a&&m.status==='final'?'Penales':lig&&h===a&&m.status==='final'&&w?'Pasa mejor ubicado':m.status==='final'?'Final':''}</span></div></div>`}).join('')}</div>`).join('');
+  const champ=winner(RS.at(-1).matches[0],L);
+  return`<div class="sec-h"><h2>${lig?'Liguilla':L.kind==='grupos'?'Fase final':'Cuadro'}</h2>${hasKO(L)&&!groupsDone(L)?`<span class="note">Los cruces se llenan solos al terminar ${lig?'la fase regular':'la fase de grupos'}</span>`:''}${champ?`<span class="pill acc">Campeón: ${esc(tname(champ))}</span>`:''}</div><div class="bk"><div class="bk-in">${cols}</div></div>`;
 }
 function pubTeams(L){
   const rows=table(L);const pos=Object.fromEntries(rows.map((r,i)=>[r.id,{...r,i}]));
