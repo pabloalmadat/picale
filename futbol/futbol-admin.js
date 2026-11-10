@@ -196,25 +196,104 @@ function admCalendar(L){
     const slot=side=>{const id=isA?B[side]:null;return`<button class="slot ${id?'full':''}" data-drop="slot" data-act="slot" data-r="${r.id}" data-side="${side}">${id?crest(id,'xs')+esc(tname(id)):side==='h'?'Local':'Visitante'}</button>`};
     return`<details class="rnd ${isA?'act':''}" data-rid="${r.id}" data-drop="round" ${open?'open':''}><summary>${r.matches.some(m=>m.status!=='programado')?`<span class="rgrip off" title="Jornada con partidos jugados: queda fija">${LOCK}</span>`:`<span class="rgrip" draggable="true" data-drag="r:${r.id}" title="Arrastra sobre otra jornada para intercambiarlas">⠿</span>`}<h3>${rname(L,i)}</h3>${lv?'<span class="pill live"><span class="dot"></span>En vivo</span>':done?'<span class="pill fin">Completa</span>':`<span class="pill">${r.matches.length} partidos</span>`}
       <span class="sp"><button class="btn sm" data-act="img" data-r="${r.id}" ${r.matches.length?'':'disabled'}>Imagen del rol</button><input type="date" class="inp" style="width:auto;padding:5px 8px" value="${r.date}" data-chg="r-date" data-r="${r.id}" aria-label="Fecha de ${rname(L,i)}"></span></summary>
-      <div class="rnd-b">${rows}<div class="build">${slot('h')}<span class="vs">VS</span>${slot('a')}</div>
-      <div class="rnd-f">${r.matches.some(m=>m.status!=='programado')||RS.length<2?'':`<select class="inp mv" data-chg="rswap" data-r="${r.id}" aria-label="Intercambiar con otra jornada"><option value="">Intercambiar con…</option>${RS.map((R,k)=>R===r?'':`<option value="${R.id}" ${roundSwapWhy(L,r.id,R.id)?'disabled':''}>${rname(L,k)}${roundSwapWhy(L,r.id,R.id)?' · jugada':''}</option>`).join('')}</select>`}<button class="btn sm ghost danger" data-act="del-round" data-r="${r.id}" data-confirm="1">Eliminar jornada</button></div></div></details>`}).join('');
-  return`<div class="box"><div class="box-h"><div><h3>${L.kind==='grupos'?'Fase de grupos':'Calendario'}</h3><p>Genera todos contra todos en un clic o arma cada jornada a mano. Para reprogramar: <b>arrastra una jornada</b> (⠿) sobre otra para intercambiar sus partidos, <b>arrastra un partido</b> a otra jornada (si sus equipos ya juegan allá, esos partidos se pasan a la jornada de origen), o <b>arrastra un equipo</b> sobre otro para intercambiarlos. En celular usa los selectores o toca los equipos. Verde = se puede, rojo = ya se enfrentaron o hay choque. Los partidos jugados quedan fijos.</p></div></div>
+      <div class="rnd-b">${rows}${(()=>{const fr=restingIn(L,r);return fr.length?`<div class="rest"><span class="note">${r.matches.length?'Descansan':'Sin partidos todavía'}:</span>${fr.map(id=>`<span class="tchip mini">${crest(id,'xs')}${esc(shortN(id))}</span>`).join('')}${canFill(L,r)?`<button class="btn sm pri" data-act="fill-round" data-r="${r.id}">Completar jornada automáticamente</button>`:fr.length>1&&r.matches.length?'<span class="note">Ya se enfrentaron entre ellos</span>':''}</div>`:''})()}<div class="build">${slot('h')}<span class="vs">VS</span>${slot('a')}</div>
+      <div class="rnd-f">${r.matches.some(m=>m.status==='programado')?`<button class="btn sm" data-act="sched-round" data-r="${r.id}">Ordenar horarios</button>`:''}${r.matches.some(m=>m.status!=='programado')||RS.length<2?'':`<select class="inp mv" data-chg="rswap" data-r="${r.id}" aria-label="Intercambiar con otra jornada"><option value="">Intercambiar con…</option>${RS.map((R,k)=>R===r?'':`<option value="${R.id}" ${roundSwapWhy(L,r.id,R.id)?'disabled':''}>${rname(L,k)}${roundSwapWhy(L,r.id,R.id)?' · jugada':''}</option>`).join('')}</select>`}<button class="btn sm ghost danger" data-act="del-round" data-r="${r.id}" data-confirm="1">Eliminar jornada</button></div></div></details>`}).join('');
+  return`<div class="box"><div class="box-h"><div><h3>${L.kind==='grupos'?'Fase de grupos':'Calendario'}</h3><p>Genera el calendario completo, <b>ve jornada por jornada</b> con “Siguiente jornada”, o arma cada una a mano. Para reprogramar: <b>arrastra una jornada</b> (⠿) sobre otra para intercambiar sus partidos, <b>arrastra un partido</b> a otra jornada (si sus equipos ya juegan allá, esos partidos se pasan a la jornada de origen), o <b>arrastra un equipo</b> sobre otro para intercambiarlos. En celular usa los selectores o toca los equipos. Verde = se puede, rojo = ya se enfrentaron o hay choque. Los partidos jugados quedan fijos.</p></div></div>
     <div class="toolbar"><label class="fld" for="g-start">Inicio<input type="date" id="g-start" value="${L.rounds[0]?.date||isoD(new Date())}"></label>
     <label class="fld" for="g-vu">Vueltas<select id="g-vu"><option value="1" ${L.vueltas!=2?'selected':''}>Una vuelta</option><option value="2" ${L.vueltas==2?'selected':''}>Ida y vuelta</option></select></label>
     ${L.kind==='grupos'?`<button class="btn pri" data-act="gen-gcal" ${RS.length?'data-confirm="1"':''} ${L.groups.some(g=>g.teams.length>=2)?'':'disabled'}>${RS.length?'Regenerar fase de grupos':'Generar fase de grupos'}</button>`:`<button class="btn pri" data-act="gen-cal" ${L.rounds.length?'data-confirm="1"':''} ${L.teams.length<2?'disabled':''}>${L.rounds.length?'Regenerar calendario':'Generar calendario'}</button>`}
-    <button class="btn" data-act="add-round">+ Jornada vacía</button></div></div>
+    <button class="btn" data-act="next-round" ${L.kind==='grupos'&&!L.groups.some(g=>g.teams.length>=2)||L.teams.length<2?'disabled':''}>+ Siguiente jornada</button>
+    <button class="btn ghost" data-act="add-round">+ Jornada vacía (a mano)</button></div>
+    ${L.teams.length>1?`<p class="note" style="margin:10px 0 0">${(()=>{const n=pendingPairs(L);return n?`Faltan <b>${n}</b> partido${n>1?'s':''} para completar ${L.vueltas==2?'ida y vuelta':'la vuelta'}. “Siguiente jornada” arma una jornada nueva solo con equipos que todavía no se enfrentan.`:'Ya se programaron todos los cruces.'})()}</p>`:''}
+    ${schedBar(L)}</div>
     ${tray}<div>${rounds||'<div class="empty">Sin jornadas. Genera el calendario o agrega una jornada vacía.</div>'}</div>`;
 }
 function admBracket(L){
   const rounds=L.rounds.map(r=>`<details class="rnd" open><summary><h3>${esc(r.name)}</h3><span class="pill">${r.matches.filter(m=>!m.bye).length} partidos</span>
     <span class="sp"><button class="btn sm" data-act="img" data-r="${r.id}">Imagen del rol</button><input type="date" class="inp" style="width:auto;padding:5px 8px" value="${r.date}" data-chg="r-date" data-r="${r.id}" aria-label="Fecha de ${esc(r.name)}"></span></summary>
-    <div class="rnd-b">${r.matches.map(m=>{if(m.bye)return`<div class="mrow"><span class="tm">Pase</span><div class="t h"><span>${esc(tname(m.h||m.a))}</span>${crest(m.h||m.a,'xs')}</div><span class="s">→</span><div class="t"><span class="note">Avanza directo</span></div><div class="ac"></div></div>`;const[h,a]=sc(m);return`<div class="mrow"><span class="tm">${fmtT(m.date)}</span><div class="t h"><span>${esc(tname(m.h))}</span>${crest(m.h,'xs')}</div><span class="s">${m.status==='programado'?'vs':h+'–'+a}</span><div class="t">${crest(m.a,'xs')}<span>${esc(tname(m.a))}</span></div><div class="ac">${statusPill(m)}<button class="btn sm" data-act="edit-m" data-m="${m.id}" ${!m.h||!m.a?'disabled':''}>Capturar</button></div></div>`}).join('')}</div></details>`).join('');
+    <div class="rnd-b">${r.matches.map(m=>{if(m.bye)return`<div class="mrow"><span class="grip"></span><span class="tm">Pase</span><div class="t h"><span>${esc(tname(m.h||m.a))}</span>${crest(m.h||m.a,'xs')}</div><span class="s">→</span><div class="t"><span class="note">Avanza directo</span></div><div class="ac"></div></div>`;const[h,a]=sc(m);return`<div class="mrow"><span class="grip"></span>${whenCell(L,r,m)}<div class="t h"><span>${esc(tname(m.h))}</span>${crest(m.h,'xs')}</div><span class="s">${m.status==='programado'?'vs':h+'–'+a}</span><div class="t">${crest(m.a,'xs')}<span>${esc(tname(m.a))}</span></div><div class="ac">${statusPill(m)}<button class="btn sm" data-act="edit-m" data-m="${m.id}" ${!m.h||!m.a?'disabled':''}>Capturar</button></div></div>`}).join('')}</div></details>`).join('');
   return`<div class="box"><div class="box-h"><div><h3>Cuadro eliminatorio</h3><p>Se sortea en el orden de inscripción (1 vs último). Los ganadores avanzan solos; en empate eliges quién pasa por penales.</p></div></div>
     <div class="toolbar"><label class="fld" for="g-start">Primera ronda<input type="date" id="g-start" value="${L.rounds[0]?.date||isoD(new Date())}"></label>
     <button class="btn pri" data-act="gen-bracket" ${L.rounds.length?'data-confirm="1"':''} ${L.teams.length<2?'disabled':''}>${L.rounds.length?'Volver a sortear':'Generar cuadro'}</button></div></div>
     <div>${rounds||'<div class="empty">Inscribe equipos y genera el cuadro.</div>'}</div>`;
 }
 
+
+
+/* --- Horarios y jornada por jornada --- */
+const addDays=(d,n)=>isoD(new Date(new Date(d+'T12:00').getTime()+n*864e5));
+const SCH=L=>({t:'19:00',step:60,courts:1,...(L.sched||{})});
+// Horario del partido número k de la jornada: avanza cada "step" minutos y reparte en las canchas.
+function slotOf(L,r,k){
+  const s=SCH(L),c=Math.max(1,+s.courts||1),[hh,mm]=String(s.t||'19:00').split(':').map(Number);
+  const mins=hh*60+mm+Math.floor(k/c)*(+s.step||60),day=Math.floor(mins/1440),m2=((mins%1440)+1440)%1440;
+  return{date:`${addDays(r.date,day)}T${p2(Math.floor(m2/60))}:${p2(m2%60)}`,venue:c>1?`Cancha ${k%c+1}`:(L.venue||'')};
+}
+function scheduleRound(L,r,only){
+  const list=r.matches.filter(m=>!m.bye).sort((a,b)=>a.date.localeCompare(b.date));
+  list.forEach((m,k)=>{if(m.status!=='programado'||(only&&!only.includes(m)))return;Object.assign(m,slotOf(L,r,k))});
+  r.matches.sort((a,b)=>a.date.localeCompare(b.date));
+}
+const canMeet=(L,a,b)=>a!==b&&!isBlocked(L,a,b)&&meetings(L,a,b)<(+L.vueltas||1)&&(L.kind!=='grupos'||groupOf(L,a)===groupOf(L,b));
+const playedCount=(L,id)=>L.rounds.reduce((s,r)=>s+r.matches.filter(m=>m.h===id||m.a===id).length,0);
+// Busca la mayor cantidad de partidos posible entre equipos que todavía no se enfrentan.
+function pairUp(L,ids){
+  const target=Math.floor(ids.length/2);let best=[],steps=0;
+  const mix=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]);
+  (function rec(rem,acc){
+    if(++steps>40000||best.length===target)return;
+    if(acc.length>best.length)best=acc.slice();
+    if(acc.length+Math.floor(rem.length/2)<=best.length||rem.length<2)return;
+    let pick=0,opts=null;rem.forEach((x,i)=>{const o=rem.filter(y=>canMeet(L,x,y));if(!opts||o.length<opts.length){pick=i;opts=o}});
+    const a=rem[pick],rest=rem.filter((_,i)=>i!==pick);
+    for(const b of mix(opts)){rec(rest.filter(x=>x!==b),[...acc,[a,b]]);if(best.length===target)return}
+    rec(rest,acc);
+  })(mix(ids),[]);
+  return best;
+}
+function homeAway(L,a,b){
+  let prev=null;L.rounds.forEach(r=>r.matches.forEach(m=>{if(m.h===a&&m.a===b)prev='a';if(m.h===b&&m.a===a)prev='b'}));
+  if(prev==='a')return[b,a];if(prev==='b')return[a,b];
+  const homes=id=>L.rounds.reduce((s,r)=>s+r.matches.filter(m=>m.h===id).length,0);
+  const ha=homes(a),hb=homes(b);return ha<hb||(ha===hb&&Math.random()<.5)?[a,b]:[b,a];
+}
+// Completa la jornada con los equipos libres. Si son impares, descansa el que más ha jugado.
+function fillRound(L,r){
+  const busy=new Set(r.matches.flatMap(m=>[m.h,m.a]));const added=[];
+  const pools=L.kind==='grupos'?L.groups.map(g=>({g:g.id,ids:g.teams.filter(t=>!busy.has(t))})):[{g:null,ids:L.teams.filter(t=>!busy.has(t))}];
+  pools.forEach(({g,ids})=>{
+    // Primero intenta la siguiente jornada del rol "todos contra todos": así nunca sobra una jornada extra al final.
+    const all=g?L.groups.find(x=>x.id===g).teams:L.teams;
+    const circ=roundRobin(all,+L.vueltas||1).find(rr=>rr.length&&rr.every(([x,y])=>ids.includes(x)&&ids.includes(y)&&canMeet(L,x,y))&&rr.length===Math.floor(ids.length/2));
+    if(circ){circ.forEach(([x,y])=>{const[h,a]=homeAway(L,x,y);
+      const m={id:uid('m'),h,a,...(g?{g}:{}),date:r.date+'T23:59',venue:L.venue||'',status:'programado',ev:[],stream:'',vod:''};r.matches.push(m);added.push(m)});return}
+    let pairs=pairUp(L,ids);
+    if(ids.length%2&&pairs.length<Math.floor(ids.length/2)){} // no hay cruces suficientes: se queda con los que haya
+    else if(ids.length%2){ // impares: intenta que descanse quien más partidos lleva
+      for(const rest of [...ids].sort((x,y)=>playedCount(L,y)-playedCount(L,x))){const p=pairUp(L,ids.filter(x=>x!==rest));if(p.length===Math.floor(ids.length/2)){pairs=p;break}}
+    }
+    pairs.forEach(([x,y])=>{const[h,a]=homeAway(L,x,y);const m={id:uid('m'),h,a,...(g?{g}:{}),date:r.date+'T23:59',venue:L.venue||'',status:'programado',ev:[],stream:'',vod:''};r.matches.push(m);added.push(m)});
+  });
+  scheduleRound(L,r,added);return added.length;
+}
+function restingIn(L,r){const busy=new Set(r.matches.flatMap(m=>[m.h,m.a]));return(L.kind==='grupos'?L.groups.flatMap(g=>g.teams):L.teams).filter(t=>!busy.has(t))}
+function canFill(L,r){const free=restingIn(L,r);return free.some((a,i)=>free.slice(i+1).some(b=>canMeet(L,a,b)))}
+function pendingPairs(L){const ids=L.kind==='grupos'?L.groups.flatMap(g=>g.teams):L.teams;let n=0;ids.forEach((a,i)=>ids.slice(i+1).forEach(b=>{if(!isBlocked(L,a,b)&&(L.kind!=='grupos'||groupOf(L,a)===groupOf(L,b)))n+=Math.max(0,(+L.vueltas||1)-meetings(L,a,b))}));return n}
+// Fecha (día de la semana) y hora editables en cada partido.
+function whenCell(L,r,m){
+  if(m.bye)return'<span class="tm">Pase</span>';
+  const day=m.date.slice(0,10),base=r.date;const days=[...new Set([...Array.from({length:7},(_,i)=>addDays(base,i)),day])].sort();
+  const lbl=d=>{const s=new Date(d+'T12:00').toLocaleDateString('es-MX',{weekday:'short',day:'numeric'}).replace('.','');return s.charAt(0).toUpperCase()+s.slice(1)};
+  return`<span class="tm when"><select class="inp" data-chg="m-day" data-m="${m.id}" aria-label="Día del partido">${days.map(d=>`<option value="${d}" ${d===day?'selected':''}>${lbl(d)}</option>`).join('')}</select><input class="inp num" type="time" step="300" value="${m.date.slice(11,16)}" data-chg="m-time" data-m="${m.id}" aria-label="Hora del partido"></span>`;
+}
+function schedBar(L){
+  const s=SCH(L);
+  return`<div class="schedbar"><span class="eyebrow">Horarios</span>
+    <label class="fld" for="s-t">Primer partido<input id="s-t" class="inp num" type="time" step="300" value="${esc(s.t)}" data-chg="sched" data-k="t"></label>
+    <label class="fld" for="s-step">Cada<select id="s-step" class="inp" data-chg="sched" data-k="step">${[30,45,50,60,70,75,90,100,120].map(n=>`<option value="${n}" ${n==s.step?'selected':''}>${n} min</option>`).join('')}</select></label>
+    <label class="fld" for="s-c">Canchas a la vez<select id="s-c" class="inp" data-chg="sched" data-k="courts">${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${n==s.courts?'selected':''}>${n}</option>`).join('')}</select></label>
+    <span class="note">Se usan al generar jornadas y con “Ordenar horarios”. Cada partido se puede cambiar a mano.</span></div>`;
+}
 
 /* --- Grupos y fase final --- */
 function setGroup(tid,gid){
@@ -237,7 +316,7 @@ function admGroups(L){
 function koRow(L,m){
   const[h,a]=sc(m);const lbl=s=>m[s]?esc(tname(m[s])):`<span class="note">${esc(m.src?srcLabel(L,m.src[s]):'Ganador anterior')}</span>`;
   if(m.bye)return`<div class="mrow"><span class="grip"></span><span class="tm">Pase</span><div class="t h"><span>${lbl(m.src?.h?'h':'a')}</span>${crest(m.h||m.a,'xs')}</div><span class="s">→</span><div class="t"><span class="note">Avanza directo</span></div><div class="ac"></div></div>`;
-  return`<div class="mrow"><span class="grip"></span><span class="tm">${fmtT(m.date)}</span><div class="t h"><span>${lbl('h')}</span>${crest(m.h,'xs')}</div><span class="s">${m.status==='programado'?'vs':h+'–'+a}</span><div class="t">${crest(m.a,'xs')}<span>${lbl('a')}</span></div><div class="ac">${statusPill(m)}<button class="btn sm" data-act="edit-m" data-m="${m.id}" ${!m.h||!m.a?'disabled':''}>Capturar</button></div></div>`;
+  return`<div class="mrow"><span class="grip"></span>${whenCell(L,koRounds(L).find(r=>r.matches.includes(m))||{date:m.date.slice(0,10)},m)}<div class="t h"><span>${lbl('h')}</span>${crest(m.h,'xs')}</div><span class="s">${m.status==='programado'?'vs':h+'–'+a}</span><div class="t">${crest(m.a,'xs')}<span>${lbl('a')}</span></div><div class="ac">${statusPill(m)}<button class="btn sm" data-act="edit-m" data-m="${m.id}" ${!m.h||!m.a?'disabled':''}>Capturar</button></div></div>`;
 }
 function admKO(L){
   const KO=koRounds(L);const last=groupRoundsOf(L).at(-1);
@@ -374,8 +453,8 @@ function calRow(L,r,m){
   const[h,a]=sc(m);const prog=m.status==='programado';
   const mv=prog&&L.rounds.length>1?`<select class="inp mv" data-chg="mv" data-m="${m.id}" aria-label="Mover a otra jornada">${L.rounds.map((R,i)=>{if(R.ko)return'';if(R===r)return`<option value="" selected>Mover a…</option>`;const pl=movePlan(L,m.id,R.id);const k=pl.back?pl.back.length:0;return`<option value="${R.id}" ${pl.why?'disabled':''}>${rname(L,i)}${pl.why?' · ya jugado':k?` · cambia ${k} partido${k>1?'s':''}`:''}</option>`}).join('')}</select>`:'';
   return`<div class="mrow ${prog?'':'locked'}" ${prog?`draggable="true" data-drag="m:${m.id}" title="Arrastra el partido a otra jornada"`:'title="Partido jugado: ya no se puede mover"'}>
-    <span class="grip">${prog?'⠿':LOCK}</span><span class="tm">${fmtT(m.date)}</span>${teamCell(L,m,'h')}<span class="s">${prog?'vs':h+'–'+a}</span>${teamCell(L,m,'a')}
-    <div class="ac">${statusPill(m)}${mv}<button class="btn sm" data-act="edit-m" data-m="${m.id}">Capturar</button><button class="btn sm ghost danger" data-act="del-m" data-m="${m.id}" data-confirm="1" aria-label="Eliminar partido">✕</button></div></div>`;
+    <span class="grip">${prog?'⠿':LOCK}</span>${whenCell(L,r,m)}${teamCell(L,m,'h')}<span class="s">${prog?'vs':h+'–'+a}</span>${teamCell(L,m,'a')}
+    <div class="ac">${prog?'':statusPill(m)}${mv}<button class="btn sm" data-act="edit-m" data-m="${m.id}">Capturar</button><button class="btn sm ghost danger" data-act="del-m" data-m="${m.id}" data-confirm="1" aria-label="Eliminar partido">✕</button></div></div>`;
 }
 let DRAG=null;
 function markTargets(pl){
@@ -521,8 +600,8 @@ function place(rid,side,tid){
   const other=side==='h'?B.a:B.h;const why=lockReason(L,rid,tid,other);
   if(why){toast(`${tname(tid)}: ${why.toLowerCase()}`,'warn');return}
   B[side]=tid;
-  if(B.h&&B.a){const r=L.rounds.find(x=>x.id===rid);const hh=Math.min(19+r.matches.length,23);
-    r.matches.push({id:uid('m'),h:B.h,a:B.a,...(L.kind==='grupos'?{g:groupOf(L,B.h)?.id}:{}),date:`${r.date}T${p2(hh)}:00`,venue:L.venue||'',status:'programado',ev:[],stream:'',vod:''});
+  if(B.h&&B.a){const r=L.rounds.find(x=>x.id===rid);const k=r.matches.length;
+    r.matches.push({id:uid('m'),h:B.h,a:B.a,...(L.kind==='grupos'?{g:groupOf(L,B.h)?.id}:{}),...slotOf(L,r,k),status:'programado',ev:[],stream:'',vod:''});
     toast(`Partido agregado: ${T(B.h).short} vs ${T(B.a).short}`);B={round:rid,h:null,a:null};save()}
   render();
 }
@@ -559,8 +638,14 @@ const ACT={
   'gen-cal'(){const L=curL();const vu=+$('#g-vu').value;const st=$('#g-start').value||isoD(new Date());L.vueltas=vu;
     const base=new Date(st+'T12:00');
     L.rounds=roundRobin(L.teams,vu).map((pairs,i)=>{const d=isoD(new Date(base.getTime()+i*7*864e5));let k=0;
-      return{id:uid('r'),date:d,matches:pairs.filter(([h,a])=>!isBlocked(L,h,a)).map(([h,a])=>({id:uid('m'),h,a,date:`${d}T${p2(Math.min(19+k++,23))}:00`,venue:L.venue||'',status:'programado',ev:[],stream:'',vod:''}))}});
+      const r={id:uid('r'),date:d,matches:[]};r.matches=pairs.filter(([h,a])=>!isBlocked(L,h,a)).map(([h,a])=>({id:uid('m'),h,a,...slotOf(L,r,k++),status:'programado',ev:[],stream:'',vod:''}));return r});
     B={round:null,h:null,a:null};OPEN.clear();save();toast(`${L.rounds.length} jornadas generadas`);render()},
+  'next-round'(){const L=curL();if(L.kind!=='torneo')L.vueltas=+($('#g-vu')?.value||L.vueltas||1);const RS=L.rounds.filter(x=>!x.ko);const last=RS.at(-1);
+    const r={id:uid('r'),date:last?addDays(last.date,7):($('#g-start')?.value||isoD(new Date())),matches:[]};
+    if(!fillRound(L,r)){toast(pendingPairs(L)?'No se pudo armar otra jornada: los equipos libres ya se enfrentaron':'Ya se programaron todos los cruces','warn');return}
+    L.rounds.splice(RS.length,0,r);OPEN.add(r.id);B={round:r.id,h:null,a:null};save();toast(`${rname(L,RS.length)} lista: ${r.matches.length} partido${r.matches.length>1?'s':''}${restingIn(L,r).length?` · descansa${restingIn(L,r).length>1?'n':''} ${restingIn(L,r).map(shortN).join(', ')}`:''}`);render()},
+  'fill-round'(el){const L=curL();const r=L.rounds.find(x=>x.id===el.dataset.r);const n=fillRound(L,r);save();toast(n?`Se agregaron ${n} partido${n>1?'s':''}`:'No hay más cruces posibles en esta jornada',n?'':'warn');render()},
+  'sched-round'(el){const L=curL();const r=L.rounds.find(x=>x.id===el.dataset.r);scheduleRound(L,r);save();toast('Horarios ordenados');render()},
   'add-round'(){const L=curL();const RS=L.rounds.filter(x=>!x.ko);const last=RS.at(-1);const d=last?isoD(new Date(new Date(last.date+'T12:00').getTime()+7*864e5)):isoD(new Date());
     const r={id:uid('r'),date:d,matches:[]};L.rounds.splice(RS.length,0,r);B={round:r.id,h:null,a:null};save();render()},
   'del-round'(el){const L=curL();L.rounds=L.rounds.filter(r=>r.id!==el.dataset.r);B={round:null,h:null,a:null};save();render()},
@@ -574,7 +659,7 @@ const ACT={
   'blk-del'(el){curL().blocks.splice(+el.dataset.i,1);save();render()},
   'gen-bracket'(){const L=curL();genBracket(L,[$('#g-start').value]);propagate(L);save();toast('Cuadro generado');render()},
   'del-league'(){S.teams=S.teams.filter(t=>t.lid!==AV.id);S.leagues=S.leagues.filter(l=>l.id!==AV.id);AV={view:'league',id:null};save();render()},
-  'gen-gcal'(){const L=curL();const vu=+$('#g-vu').value;L.vueltas=vu;genGroupCal(L,$('#g-start').value||isoD(new Date()),vu);propagate(L);B={round:null,h:null,a:null};OPEN.clear();save();toast(`${groupRoundsOf(L).length} jornadas de grupos generadas`);render()},
+  'gen-gcal'(){const L=curL();const vu=+$('#g-vu').value;L.vueltas=vu;genGroupCal(L,$('#g-start').value||isoD(new Date()),vu);groupRoundsOf(L).forEach(r=>scheduleRound(L,r));propagate(L);B={round:null,h:null,a:null};OPEN.clear();save();toast(`${groupRoundsOf(L).length} jornadas de grupos generadas`);render()},
   'g-shuffle'(){const L=curL();const ids=[...L.teams].sort(()=>Math.random()-.5);L.groups.forEach(g=>g.teams=[]);ids.forEach((id,i)=>L.groups[i%L.groups.length].teams.push(id));save();toast('Grupos sorteados');render()},
   'g-auto'(el){const L=curL();const g=[...L.groups].sort((a,b)=>a.teams.length-b.teams.length)[0];setGroup(el.dataset.team,g.id)},
   'g-out'(el){setGroup(el.dataset.team,null)},
@@ -615,7 +700,12 @@ document.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.tchip[data-act]')){e.preventDefault();e.target.click()}});
 document.addEventListener('change',e=>{
   const el=e.target,k=el.dataset.chg;if(!k)return;
-  if(k==='r-date'){const L=curL();const r=L.rounds.find(x=>x.id===el.dataset.r);r.date=el.value;r.matches.forEach(m=>m.date=el.value+m.date.slice(10));save();render()}
+  if(k==='r-date'){const L=curL();const r=L.rounds.find(x=>x.id===el.dataset.r);if(!el.value)return;
+    // Mueve toda la jornada conservando el día de cada partido (si uno era el domingo, sigue en domingo).
+    const shift=Math.round((new Date(el.value+'T12:00')-new Date(r.date+'T12:00'))/864e5);r.date=el.value;r.matches.forEach(m=>m.date=addDays(m.date.slice(0,10),shift)+m.date.slice(10));save();render()}
+  if(k==='m-time'||k==='m-day'){const L=curL();const{m,r}=findM(L,el.dataset.m);if(!m||!el.value)return;
+    m.date=k==='m-time'?m.date.slice(0,11)+el.value:el.value+m.date.slice(10);r.matches.sort((a,b)=>a.date.localeCompare(b.date));save();toast(`${shortN(m.h)} vs ${shortN(m.a)}: ${fmtD(m.date)} ${fmtT(m.date)}`);render();return}
+  if(k==='sched'){const L=curL();L.sched={...SCH(L),[el.dataset.k]:el.dataset.k==='t'?el.value:+el.value};save();return}
   if(k==='g-count'){const L=curL();const n=+el.value;const old=L.groups;const ng=mkGroups(n);old.forEach((g,i)=>{if(ng[i])ng[i].teams=g.teams});L.groups=ng;save();render();return}
   if(k==='g-qual'){curL().qual=+el.value;save();toast('Si ya generaste la fase final, rehazla para aplicar el cambio');render();return}
   if(k==='rswap'){if(el.value)doSwapRounds(el.dataset.r,el.value);return}

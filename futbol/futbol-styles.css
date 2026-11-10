@@ -565,3 +565,32 @@ table.st.gt{min-width:420px}
 .joincard .crest{margin:0 auto}
 @media (max-width:720px){.plr2{grid-template-columns:40px 54px minmax(0,1fr) auto}.plr2 select{grid-column:3/4}.plr-sub{grid-column:2/-1}.mystats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .acc-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--win);margin-left:6px;vertical-align:middle}
+/* ===== v7: horarios editables y jornada por jornada ===== */
+.mrow{grid-template-columns:18px 168px minmax(0,1fr) 46px minmax(0,1fr) auto}
+.mrow .tm.when{display:flex;gap:4px;color:inherit}
+.mrow .tm.when .inp{padding:5px 6px;font-size:12.5px;min-width:0}
+.mrow .tm.when select{width:76px;flex:0 0 76px}
+.mrow .tm.when input{width:86px;flex:0 0 86px}
+.rest{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 2px}
+.tchip.mini{padding:3px 9px 3px 3px;font-size:12px;cursor:default}
+.schedbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--surface-2)}
+.schedbar .eyebrow{align-self:center;margin-right:4px}
+.schedbar .fld .inp{width:auto;padding:7px 9px}
+.schedbar .note{flex-basis:100%}
+.rnd-f{align-items:center}
+@media (max-width:720px){.mrow .tm.when{grid-column:1/-1}}
+@media (max-width:720px){.mrow{grid-template-columns:minmax(0,1fr) 40px minmax(0,1fr)}.mrow .grip{display:none}}
+.mrow{grid-template-columns:18px 186px minmax(0,1fr) 40px minmax(0,1fr) auto}
+.mrow .tm.when input{width:104px;flex:0 0 104px}
+.mrow .mv{width:112px!important}
+.rnd summary{flex-wrap:wrap}
+.rnd summary .sp{flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:720px){
+  .mrow{grid-template-columns:minmax(0,1fr) 40px minmax(0,1fr)}
+  .tray{position:static;box-shadow:none}
+  .rnd summary .sp{margin-left:0;width:100%;justify-content:flex-start}
+}
+.mrow{grid-template-columns:18px 206px minmax(0,1fr) 40px minmax(0,1fr) auto}
+.mrow .tm.when select{width:88px;flex:0 0 88px}
+.mrow .tm.when input{width:112px;flex:0 0 112px}
+@media (max-width:720px){.mrow{grid-template-columns:minmax(0,1fr) 40px minmax(0,1fr)}}
