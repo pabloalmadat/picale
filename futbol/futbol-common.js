@@ -161,7 +161,7 @@ function propagate(L){
 let S;
 function localData(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}return null}
 async function fetchServer(){
-  const r=await fetch(API,{cache:'no-store'});if(!r.ok)throw new Error('api');
+  const r=await fetch(API,{cache:'no-store',headers:typeof authH==='function'?authH():{}});if(!r.ok)throw new Error('api');
   const j=await r.json();MODE='server';return j&&j.leagues?j:null;
 }
 let MIGRATED=false;
@@ -182,15 +182,40 @@ async function api(path,opts={}){
   if(!r.ok){const err=new Error(j?.detail||'No se pudo completar. Revisa tu conexión.');err.status=r.status;throw err}
   return j;
 }
-let _saveT;
+let _saveT=null,_saving=false,_again=false;
+const DELETED=new Set();let REPLACE=false;
+let afterRefresh=null; // cada página decide cómo redibujar cuando llegan datos nuevos
+let SAVEST=['● Guardado','srv'];
+function saveState(t,cls){SAVEST=[t,cls||''];const el=document.getElementById('savest');if(el){el.textContent=t;el.className='mode '+(cls||'')}}
+const savePending=()=>_saving||_saveT!==null;
 function save(){
   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
   if(MODE!=='server')return;
-  clearTimeout(_saveT);
-  _saveT=setTimeout(async()=>{
-    try{await api('/data',{method:'PUT',body:JSON.stringify(S)})}
-    catch(e){toast(e.status===401?'Tu sesión expiró. Vuelve a entrar.':e.status===402?'Activa tu suscripción para guardar cambios.':'No se pudo guardar en el servidor. Revisa la conexión.','warn')}
-  },350);
+  clearTimeout(_saveT);saveState('Guardando…');
+  _saveT=setTimeout(()=>{_saveT=null;flush()},350);
+}
+async function flush(){
+  if(_saving){_again=true;return}
+  _saving=true;const del=[...DELETED],rep=REPLACE;
+  try{
+    const res=await api('/data',{method:'PUT',body:JSON.stringify({...S,deleted:del,...(rep?{replace:true}:{})})});
+    del.forEach(x=>DELETED.delete(x));if(rep)REPLACE=false;
+    S.leagues.forEach(L=>{if(res.revs&&res.revs[L.id]!=null)L.rev=res.revs[L.id]});
+    if(res.conflicts&&res.conflicts.length){
+      // Otra pantalla cambió esa competencia antes: se carga lo más reciente para no pisarlo.
+      const fresh=await fetchServer();if(fresh){S=fresh;migrate(S)}
+      toast(`Se hicieron cambios en ${res.conflicts.join(', ')} desde otra pantalla. Ya cargué lo más reciente: repite tu último cambio.`,'warn');
+      afterRefresh&&afterRefresh();
+    }
+    saveState('● Guardado','srv');
+  }catch(e){saveState('Sin guardar','');toast(e.status===401?'Tu sesión expiró. Vuelve a entrar.':'No se pudo guardar en el servidor. Revisa la conexión.','warn')}
+  finally{_saving=false;if(_again){_again=false;flush()}}
+}
+// Trae los cambios hechos desde otras pantallas cuando esta no tiene nada pendiente.
+async function syncFromServer(){
+  if(MODE!=='server'||savePending()||DELETED.size)return false;
+  try{const fresh=await fetchServer();if(fresh&&!savePending()&&JSON.stringify(fresh)!==JSON.stringify(S)){S=fresh;migrate(S);return true}}catch(e){}
+  return false;
 }
 
 /* ---------- Planes para dueños de liga ----------

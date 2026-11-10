@@ -125,7 +125,7 @@ function viewAdmin(){
   if(AV.view==='league'&&!AV.id)AV={view:'new'};
   const side=`<aside class="adm-side"><div class="acct"><b>${esc(ME.name)}</b><small>${owner?esc(ME.league||'Dueño de liga'):'Administrador PÍCALE'}</small></div>
     <div class="side-h">Mis competencias</div>
-    ${mine.map(L=>`<button class="side-b ${AV.view==='league'&&AV.id===L.id?'on':''}" data-act="adm-sel" data-id="${L.id}">${esc(L.name)}<small>${L.kind}</small></button>`).join('')}
+    ${mine.map(L=>`<button class="side-b ${AV.view==='league'&&AV.id===L.id?'on':''}" data-act="adm-sel" data-id="${L.id}">${esc(L.name)}<small>${L.draft?'borrador':L.kind}</small></button>`).join('')}
     <button class="side-b ${AV.view==='new'?'on':''}" data-act="adm-new">+ Nueva competencia</button>
     <div class="side-h">${owner?'Mi cuenta':'PÍCALE'}</div>
     ${owner?`<button class="side-b ${AV.view==='cams'?'on':''}" data-act="go-cams">Cámaras All-in-One<small>${(ME.cams||[]).length}</small></button>`
@@ -145,6 +145,7 @@ function admNew(){
     <label class="fld" for="nl-q">Clasifican por grupo<select id="nl-q"><option value="1">1 equipo</option><option value="2" selected>2 equipos</option><option value="3">3 equipos</option><option value="4">4 equipos</option></select></label>
     <label class="fld" for="nl-season">Temporada<input id="nl-season" placeholder="Clausura 2027"></label>
     <label class="fld" for="nl-venue">Sede principal<input id="nl-venue" placeholder="Complejo deportivo"></label>
+    <label class="chk full" for="nl-draft"><input id="nl-draft" type="checkbox" checked> Guardar como borrador (no se publica hasta que tú quieras)</label>
   </div><div style="margin-top:16px"><button class="btn pri" type="submit">Crear competencia</button></div></form>`;
 }
 function admTeams(){
@@ -164,9 +165,10 @@ function lockReason(L,rid,tid,other){
 }
 function admLeague(L){
   const avail=S.teams.filter(t=>!L.teams.includes(t.id));
-  const head=`<div class="box"><div class="box-h"><div><div class="eyebrow">${kindLabel(L)}${L.kind!=='torneo'?` · ${L.vueltas==2?'ida y vuelta':'una vuelta'}`:''} · ${esc(L.season)}</div><h2 style="margin-top:6px">${esc(L.name)}</h2></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn pri" href="/futbol?liga=${L.id}" target="_blank" rel="noopener">Ver página pública</a><button class="btn" data-act="copy-link" data-id="${L.id}">Copiar liga</button><button class="btn danger" data-act="del-league" data-confirm="1">Eliminar</button></div></div>
-    <div class="note">Página pública: <span class="num">${esc(pubURL(L.id))}</span> · ${L.teams.length} equipos · ${L.rounds.length} ${L.kind==='torneo'?'rondas':'jornadas y rondas'} · ${all(L).filter(m=>m.status==='final').length} partidos jugados</div></div>`;
+  const head=`<div class="box"><div class="box-h"><div><div class="eyebrow">${kindLabel(L)}${L.kind!=='torneo'?` · ${L.vueltas==2?'ida y vuelta':'una vuelta'}`:''} · ${esc(L.season)}</div><h2 style="margin-top:6px">${esc(L.name)} ${L.draft?'<span class="pill draft">Borrador</span>':'<span class="pill fin">Publicada</span>'}</h2></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${L.draft?`<button class="btn pri" data-act="publish">Publicar</button>`:''}<a class="btn ${L.draft?'':'pri'}" href="/futbol?liga=${L.id}" target="_blank" rel="noopener">${L.draft?'Vista previa':'Ver página pública'}</a><button class="btn" data-act="copy-link" data-id="${L.id}">Copiar liga</button><button class="btn danger" data-act="del-league" data-confirm="1">Eliminar</button></div></div>
+    <div class="note">Página pública: <span class="num">${esc(pubURL(L.id))}</span> · ${L.teams.length} equipos · ${L.rounds.length} ${L.kind==='torneo'?'rondas':'jornadas y rondas'} · ${all(L).filter(m=>m.status==='final').length} partidos jugados</div>
+    ${L.draft?`<div class="draftbar"><b>Borrador:</b> solo la ves tú. No aparece en la página pública y los links de capitán y de invitación se activan cuando la publiques. Cuando esté lista, pica <b>Publicar</b>.</div>`:`<div class="toolbar" style="margin-top:10px"><button class="btn sm ghost" data-act="unpublish" data-confirm="1">Regresar a borrador (ocultar)</button></div>`}</div>`;
   const others=myLeagues().filter(x=>x.id!==L.id&&x.teams.length);
   const tcards=L.teams.map(id=>{const t=T(id);if(!t)return'';const used=L.rounds.some(r=>r.matches.some(m=>m.h===id||m.a===id));
     return`<div class="tcard">${crest(id)}<div><b>${esc(t.name)}</b><small>${t.players.length} jugadores${used?' · en calendario':''}</small></div><button class="btn sm" data-act="team-edit" data-id="${id}">Editar y jugadores</button></div>`}).join('');
@@ -179,8 +181,8 @@ function admLeague(L){
     <label class="fld" for="b2" style="flex:1">Equipo B<select id="b2">${L.teams.map((id,i)=>`<option value="${id}" ${i===1?'selected':''}>${esc(tname(id))}</option>`).join('')}</select></label>
     <button class="btn" data-act="blk-add">Bloquear cruce</button></div>
     <div class="blk" style="margin-top:12px">${(L.blocks||[]).map(([x,y],i)=>`<div class="blk-r">${crest(x,'xs')}${esc(tname(x))} <span class="vs">VS</span> ${crest(y,'xs')}${esc(tname(y))}<button class="btn sm ghost" data-act="blk-del" data-i="${i}">Quitar</button></div>`).join('')||'<span class="note">Sin bloqueos manuales.</span>'}</div></div>`:'';
-  if(L.kind==='grupos')return head+enr+admGroups(L)+admCalendar(L)+admKO(L);
-  return head+enr+blk+(L.kind==='liga'?admCalendar(L):admBracket(L));
+  if(L.kind==='grupos')return head+enr+admGroups(L)+admCalendar(L)+admKO(L)+admAvisos(L);
+  return head+enr+blk+(L.kind==='liga'?admCalendar(L):admBracket(L))+admAvisos(L);
 }
 function admCalendar(L){
   const RS=L.rounds.filter(r=>!r.ko);
@@ -293,6 +295,28 @@ function schedBar(L){
     <label class="fld" for="s-step">Cada<select id="s-step" class="inp" data-chg="sched" data-k="step">${[30,45,50,60,70,75,90,100,120].map(n=>`<option value="${n}" ${n==s.step?'selected':''}>${n} min</option>`).join('')}</select></label>
     <label class="fld" for="s-c">Canchas a la vez<select id="s-c" class="inp" data-chg="sched" data-k="courts">${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${n==s.courts?'selected':''}>${n}</option>`).join('')}</select></label>
     <span class="note">Se usan al generar jornadas y con “Ordenar horarios”. Cada partido se puede cambiar a mano.</span></div>`;
+}
+
+
+/* --- Avisos por WhatsApp de la competencia --- */
+let NLOG={};
+const KINDS={nuevo:'Programado',cambio:'Cambio',cancelado:'Cancelado',recordatorio:'Recordatorio'};
+async function loadAvisos(lid){try{NLOG[lid]=await api('/avisos?liga='+encodeURIComponent(lid))}catch(e){NLOG[lid]={error:e.message}}if(curL()?.id===lid)render()}
+function waText(e){const p=e.params||[];if(!p.length)return'';const head={nuevo:'Tienes partido',cambio:'Cambió tu partido',cancelado:'Se canceló tu partido',recordatorio:'Recordatorio de tu partido'}[e.kind];
+  return`${head}: ${p[1]} vs ${p[2]}, ${p[3]} a las ${p[4]} · ${p[5]} (${p[6]})`}
+function admAvisos(L){
+  if(MODE!=='server')return'';
+  const mode=L.notify||'all';const d=NLOG[L.id];if(d===undefined){NLOG[L.id]=null;loadAvisos(L.id)}
+  const matchLbl=s=>s?`${esc(shortN(s.h))} vs ${esc(shortN(s.a))} · ${fmtD(s.date)} ${fmtT(s.date)}`:'';
+  return`<div class="box"><div class="box-h"><div><h3>Avisos por WhatsApp</h3><p>Se mandan solos a los jugadores con cuenta que pusieron su celular: cuando se programa un partido, si cambia el día, la hora, la cancha o el rival, si se cancela, y un día antes. Si haces varios cambios seguidos, se espera ${d&&d.wait?d.wait:5} minutos y se manda un solo aviso con lo último.${L.draft?' <b>En borrador no se avisa nada</b>; los avisos empiezan al publicar.':''}</p></div>
+    <label class="fld" for="l-notify">Avisar a<select id="l-notify" class="inp" data-chg="l-notify"><option value="all" ${mode==='all'?'selected':''}>Todos los jugadores con WhatsApp</option><option value="captains" ${mode==='captains'?'selected':''}>Solo capitanes</option><option value="off" ${mode==='off'?'selected':''}>Nadie (apagado)</option></select></label></div>
+    ${!d?'<div class="empty">Cargando avisos…</div>':d.error?`<div class="empty">${esc(d.error)}</div>`:`
+    ${d.live?'':'<div class="draftbar"><b>Modo prueba:</b> los avisos se registran aquí pero todavía no se envían. Se activan cuando PÍCALE conecte su número oficial de WhatsApp.</div>'}
+    <div class="kpis" style="margin-top:12px"><div class="kpi"><span class="eyebrow">Jugadores con cuenta</span><b class="num">${d.accounts}</b></div><div class="kpi"><span class="eyebrow">Con WhatsApp activo</span><b class="num">${d.withWa}</b></div><div class="kpi"><span class="eyebrow">Capitanes con WhatsApp</span><b class="num">${d.captainsWa}/${d.captains}</b></div><div class="kpi"><span class="eyebrow">En espera</span><b class="num">${d.pending.length}</b></div></div>
+    ${d.pending.length?`<div class="sec-h" style="margin-top:14px"><h3>Por enviar</h3></div><div class="wlog">${d.pending.map(p=>`<div class="wl"><span class="pill acc">${KINDS[p.kind]}</span><span>${matchLbl(p.snap)}</span><span class="note">sale ${fmtT(p.due)}</span></div>`).join('')}</div>`:''}
+    <div class="sec-h" style="margin-top:14px"><h3>Últimos avisos</h3><button class="btn sm" data-act="avisos-reload">Actualizar</button></div>
+    ${d.log.length?`<div class="wlog">${d.log.slice(0,40).map(e=>`<div class="wl"><span class="pill ${e.status==='enviado'?'fin':e.status==='error'?'live':''}">${esc(e.status)}</span><span><b>${esc(e.to||'—')}</b> <span class="note">${esc(e.phone||'')}</span><br><small>${esc(KINDS[e.kind]||e.kind)}${e.params&&e.params.length?' · '+esc(waText(e)):''}</small></span><span class="note">${fmtD(e.at)} ${fmtT(e.at)}</span></div>`).join('')}</div>`:'<div class="empty">Aún no se ha mandado ningún aviso.</div>'}`}
+  </div>`;
 }
 
 /* --- Grupos y fase final --- */
@@ -541,12 +565,13 @@ function autoShort(n){const w=(n||'').normalize('NFD').replace(/[̀-ͯ]/g,'').to
   return w.length>=3?w.slice(0,3).map(x=>x[0]).join(''):w.length===2?(w[0][0]+w[1].slice(0,2)):(w[0]||'EQU').slice(0,3)}
 function newCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';const r=crypto.getRandomValues(new Uint8Array(6));r.forEach(x=>s+=a[x%a.length]);return s}
 const inviteURL=(tid,code)=>`${location.origin}/futbol?unirse=${encodeURIComponent(tid)}.${code}`;
+const captainURL=(tid,code)=>`${location.origin}/futbol?capitan=${encodeURIComponent(tid)}.${code}`;
 function openTeam(id){
   TE=id;const t=id?T(id):null;
-  if(t&&!t.code){t.code=newCode();save()}
-  TW=t?{name:t.name,short:t.short,color:t.color,logoV:t.logoV||0,logoImg:t.logoImg||null,code:t.code,removedUids:[...(t.removedUids||[])],
+  if(t&&(!t.code||!t.capCode)){t.code=t.code||newCode();t.capCode=t.capCode||newCode();save()}
+  TW=t?{name:t.name,short:t.short,color:t.color,logoV:t.logoV||0,logoImg:t.logoImg||null,code:t.code,capCode:t.capCode,captains:[...(t.captains||[])],removedUids:[...(t.removedUids||[])],
         players:(t.players||[]).map(p=>({n:p.n,name:p.name,pos:posOf(p),photo:p.photo||null,photoAt:p.photoAt||0,uid:p.uid||null,email:p.email||'',_old:p.name}))}
-      :{name:'',short:'',color:'#2F6FB0',logoV:0,logoImg:null,code:newCode(),removedUids:[],players:[]};
+      :{name:'',short:'',color:'#2F6FB0',logoV:0,logoImg:null,code:newCode(),capCode:newCode(),captains:[],removedUids:[],players:[]};
   LOGOB=Math.floor((TW.logoV||0)/6)*6;drawTeam();const d=$('#dlg');if(!d.open)d.showModal();
 }
 const twPrev=()=>({...TW,short:(TW.short||autoShort(TW.name)).toUpperCase(),name:TW.name||'Equipo'});
@@ -562,6 +587,9 @@ function drawTeam(){
     <div><div class="box-h" style="margin-bottom:8px"><div><h3>Logo</h3><p>${TW.logoImg?'Estás usando el logo que subiste.':'Sube el logo del equipo o elige uno generado con su nombre y color.'}</p></div>
       <div class="toolbar"><button type="button" class="btn sm pri" data-act="logo-up">${TW.logoImg?'Cambiar logo':'Subir logo'}</button>${TW.logoImg?'<button type="button" class="btn sm" data-act="logo-clear">Usar uno generado</button>':'<button type="button" class="btn sm" data-act="logo-more">Más opciones</button>'}</div></div>
       <div class="logo-opts ${TW.logoImg?'dim':''}">${logoOpts()}</div></div>
+    <div class="invite cap"><div><h3>Capitán del equipo</h3><p class="note" style="margin:4px 0 0">${TE?'Mándale este link al capitán. Crea su cuenta de PÍCALE y desde “Mi cuenta” registra y edita a sus jugadores (nombre, número, posición, foto y correo). Puede haber hasta 3 capitanes.':'Guarda el equipo para obtener el link de capitán.'}</p>
+      ${TW.captains.length?`<div class="chips" style="margin-top:8px">${TW.captains.map(u=>{const p=TW.players.find(x=>x.uid===u);return`<span class="tchip mini">★ ${esc(p?.name||'Capitán')}<button type="button" class="xbtn" data-act="cap-del" data-u="${esc(u)}" aria-label="Quitar capitán">✕</button></span>`}).join('')}</div>`:''}</div>
+      ${TE?`<div class="inv-link"><input class="inp num" readonly value="${esc(captainURL(TE,TW.capCode))}" aria-label="Link de capitán" id="cap-url"><button type="button" class="btn sm pri" data-act="cap-copy">Copiar link de capitán</button><button type="button" class="btn sm ghost" data-act="cap-new" data-confirm="1">Cambiar link</button></div>`:''}</div>
     <div class="invite"><div><h3>Invitar jugadores</h3><p class="note" style="margin:4px 0 0">${TE?'Comparte este link en el grupo del equipo. Cada jugador crea su cuenta de PÍCALE, pone su número y su foto, y queda en la plantilla. Al entrar ve sus torneos en “Mi cuenta”.':'Guarda el equipo para obtener su link de invitación.'}</p></div>
       ${TE?`<div class="inv-link"><input class="inp num" readonly value="${esc(url)}" aria-label="Link de invitación" id="inv-url"><button type="button" class="btn sm" data-act="inv-copy">Copiar link</button><button type="button" class="btn sm" data-act="inv-wa">Copiar mensaje</button><button type="button" class="btn sm ghost" data-act="inv-new" data-confirm="1">Cambiar link</button></div>`:''}</div>
     <div><div class="box-h" style="margin-bottom:8px"><div><h3>Jugadores <span class="note">${TW.players.length} registrados · ${TW.players.filter(p=>p.uid).length} con cuenta</span></h3><p>Toca la foto de cada jugador para subirla. Si escribes su correo, al registrarse su cuenta queda ligada sola.</p></div><button type="button" class="btn sm" data-act="pl-add">+ Agregar jugador</button></div>
@@ -571,7 +599,7 @@ function drawTeam(){
         <input class="inp" value="${esc(p.name)}" placeholder="Nombre y apellido" data-pl="${i}" data-k="name" aria-label="Nombre del jugador ${i+1}" autocomplete="off">
         <select class="inp" data-pl="${i}" data-k="pos" aria-label="Posición del jugador ${i+1}">${POS.map(x=>`<option value="${x}" ${p.pos===x?'selected':''}>${POSN[x]}</option>`).join('')}</select>
         <button type="button" class="btn sm ghost danger" data-act="pl-del" data-i="${i}" aria-label="Quitar jugador ${i+1}">✕</button>
-        <div class="plr-sub">${p.uid?'<span class="pill fin">Cuenta PÍCALE ligada</span>':`<input class="inp" type="email" value="${esc(p.email||'')}" placeholder="Correo del jugador (opcional)" data-pl="${i}" data-k="email" aria-label="Correo del jugador ${i+1}" autocomplete="off">`}</div></div>`).join('')||'<span class="note">Sin jugadores. Agrégalos uno por uno, pega una lista o comparte el link de invitación.</span>'}</div>
+        <div class="plr-sub">${p.uid?`<span class="pill fin">Cuenta PÍCALE ligada</span> <button type="button" class="btn sm ${TW.captains.includes(p.uid)?'pri':'ghost'}" data-act="pl-cap" data-u="${esc(p.uid)}">${TW.captains.includes(p.uid)?'★ Capitán':'Hacer capitán'}</button>`:`<input class="inp" type="email" value="${esc(p.email||'')}" placeholder="Correo del jugador (opcional)" data-pl="${i}" data-k="email" aria-label="Correo del jugador ${i+1}" autocomplete="off">`}</div></div>`).join('')||'<span class="note">Sin jugadores. Agrégalos uno por uno, pega una lista o comparte el link de invitación.</span>'}</div>
       <details class="paste"><summary>Pegar una lista de jugadores</summary><textarea id="tf-paste" class="inp" placeholder="10 Juan Pérez&#10;1 Luis Garza POR&#10;9 Mario Leal DEL"></textarea><button type="button" class="btn sm" data-act="pl-import">Agregar a la plantilla</button></details></div>
     <div style="display:flex;gap:8px;justify-content:space-between">${TE?'<button type="button" class="btn danger" data-act="team-del" data-confirm="1">Eliminar equipo</button>':'<span></span>'}<button class="btn pri" type="submit">Guardar equipo</button></div></form>`;
 }
@@ -580,7 +608,7 @@ function saveTeam(){
   const short=(TW.short||autoShort(name)).trim().toUpperCase().slice(0,4);
   const players=TW.players.filter(p=>p.name.trim()).map(p=>{const o={n:p.n===''?'':+p.n,name:p.name.trim(),pos:p.pos};
     if(p.photo){o.photo=p.photo;o.photoAt=p.photoAt||0}if(p.uid)o.uid=p.uid;else if((p.email||'').trim())o.email=p.email.trim().toLowerCase();return o});
-  const base={name,short,color:TW.color,logoV:TW.logoV||0,logoImg:TW.logoImg||null,code:TW.code,removedUids:TW.removedUids,players};
+  const base={name,short,color:TW.color,logoV:TW.logoV||0,logoImg:TW.logoImg||null,code:TW.code,capCode:TW.capCode,captains:TW.captains.filter(u=>players.some(p=>p.uid===u)),removedUids:TW.removedUids,players};
   if(TE){
     // Si renombraste a un jugador, sus goles y tarjetas lo siguen.
     TW.players.forEach(p=>{const nn=p.name.trim();if(p._old&&nn&&p._old!==nn)S.leagues.forEach(L=>L.rounds.forEach(r=>r.matches.forEach(m=>{const side=m.h===TE?'h':m.a===TE?'a':null;if(side)m.ev.forEach(e=>{if(e.side===side&&e.p===p._old)e.p=nn})})))});
@@ -592,7 +620,7 @@ function saveTeam(){
 /* ===================== Arranque (administración) ===================== */
 const pubURL=id=>location.origin+'/futbol?liga='+encodeURIComponent(id);
 function render(){
-  $('#mode').innerHTML=MODE==='server'?`<span class="mode srv">● En línea${ME?' · '+esc(ME.name):''}</span>`:'<span class="mode">Modo demo · solo este navegador</span>';
+  $('#mode').innerHTML=MODE==='server'?`${ME?`<span id="savest" class="mode ${SAVEST[1]}">${SAVEST[0]}</span> <span class="mode">${esc(ME.name)}</span>`:''}`:'<span class="mode">Modo demo · solo este navegador</span>';
   $('#app').innerHTML=viewAdmin();
 }
 function place(rid,side,tid){
@@ -614,7 +642,7 @@ function enroll(id,on){
 const ACT={
   'adm-new'(){AV={view:'new'};render()},
   'adm-teams'(){AV={view:'teams'};render()},
-  reset(){S=seed();save();AV={view:'league',id:null};B={round:null,h:null,a:null};toast('Datos de ejemplo restaurados');render()},
+  reset(){S=seed();REPLACE=true;save();AV={view:'league',id:null};B={round:null,h:null,a:null};toast('Datos de ejemplo restaurados');render()},
   logout(){setTok('');ME=null;OWN=null;AV={view:'league',id:null};render()},
   'gate-tab'(el){GATE=el.dataset.k;render();setTimeout(()=>document.querySelector('#gate input')?.focus(),0)},
   'go-plans'(){AV={view:'plans'};render()},
@@ -658,7 +686,10 @@ const ACT={
   'blk-add'(){const L=curL();const a=$('#b1').value,b=$('#b2').value;if(a===b){toast('Elige dos equipos distintos','warn');return}if(isBlocked(L,a,b)){toast('Ese cruce ya está bloqueado','warn');return}(L.blocks=L.blocks||[]).push([a,b]);save();render()},
   'blk-del'(el){curL().blocks.splice(+el.dataset.i,1);save();render()},
   'gen-bracket'(){const L=curL();genBracket(L,[$('#g-start').value]);propagate(L);save();toast('Cuadro generado');render()},
-  'del-league'(){S.teams=S.teams.filter(t=>t.lid!==AV.id);S.leagues=S.leagues.filter(l=>l.id!==AV.id);AV={view:'league',id:null};save();render()},
+  'avisos-reload'(){const id=curL().id;delete NLOG[id];render()},
+  publish(){const L=curL();delete L.draft;save();toast(`${L.name} ya está publicada`);render()},
+  unpublish(){const L=curL();L.draft=true;save();toast('Regresó a borrador: ya no aparece en la página pública');render()},
+  'del-league'(){DELETED.add(AV.id);S.teams=S.teams.filter(t=>t.lid!==AV.id);S.leagues=S.leagues.filter(l=>l.id!==AV.id);AV={view:'league',id:null};save();render()},
   'gen-gcal'(){const L=curL();const vu=+$('#g-vu').value;L.vueltas=vu;genGroupCal(L,$('#g-start').value||isoD(new Date()),vu);groupRoundsOf(L).forEach(r=>scheduleRound(L,r));propagate(L);B={round:null,h:null,a:null};OPEN.clear();save();toast(`${groupRoundsOf(L).length} jornadas de grupos generadas`);render()},
   'g-shuffle'(){const L=curL();const ids=[...L.teams].sort(()=>Math.random()-.5);L.groups.forEach(g=>g.teams=[]);ids.forEach((id,i)=>L.groups[i%L.groups.length].teams.push(id));save();toast('Grupos sorteados');render()},
   'g-auto'(el){const L=curL();const g=[...L.groups].sort((a,b)=>a.teams.length-b.teams.length)[0];setGroup(el.dataset.team,g.id)},
@@ -679,6 +710,10 @@ const ACT={
   async 'pl-photo'(el){const i=+el.dataset.i;const f=await pickFile();if(!f)return;toast('Subiendo foto…');try{const u=await uploadImage(f,'photo');TW.players[i].photo=u;TW.players[i].photoAt=Date.now();drawTeam();toast('Foto lista. Guarda el equipo para aplicarla.')}catch(e){toast(e.message,'warn')}},
   'inv-copy'(){const u=$('#inv-url').value;navigator.clipboard?.writeText(u).then(()=>toast('Link copiado')).catch(()=>{$('#inv-url').select();toast('Selecciona y copia el link')})},
   'inv-wa'(){const t=`Únete a ${TW.name} en PÍCALE Fútbol: crea tu cuenta, pon tu número y tu foto, y sigue nuestros partidos en vivo.\n${$('#inv-url').value}`;navigator.clipboard?.writeText(t).then(()=>toast('Mensaje copiado: pégalo en el grupo del equipo')).catch(()=>toast('No se pudo copiar','warn'))},
+  'cap-copy'(){const u=$('#cap-url').value;const t=`Eres capitán de ${TW.name} en PÍCALE Fútbol. Entra aquí, crea tu cuenta y registra a tus jugadores:\n${u}`;navigator.clipboard?.writeText(t).then(()=>toast('Mensaje para el capitán copiado')).catch(()=>{$('#cap-url').select();toast('Selecciona y copia el link')})},
+  'cap-new'(){TW.capCode=newCode();if(TE){T(TE).capCode=TW.capCode;save()}drawTeam();toast('Link de capitán nuevo; el anterior ya no funciona')},
+  'cap-del'(el){TW.captains=TW.captains.filter(u=>u!==el.dataset.u);drawTeam();toast('Guarda el equipo para quitarle el acceso')},
+  'pl-cap'(el){const u=el.dataset.u;TW.captains=TW.captains.includes(u)?TW.captains.filter(x=>x!==u):[...TW.captains,u].slice(-3);drawTeam()},
   'inv-new'(){TW.code=newCode();if(TE){T(TE).code=TW.code;save()}drawTeam();toast('Link nuevo listo; el anterior ya no funciona')},
   'pl-add'(){TW.players.push({n:'',name:'',pos:'DEL'});drawTeam();const ins=document.querySelectorAll('#dlg [data-k="name"]');ins[ins.length-1]?.focus()},
   'pl-del'(el){const p=TW.players[+el.dataset.i];if(p?.uid)TW.removedUids.push(p.uid);TW.players.splice(+el.dataset.i,1);drawTeam()},
@@ -705,6 +740,7 @@ document.addEventListener('change',e=>{
     const shift=Math.round((new Date(el.value+'T12:00')-new Date(r.date+'T12:00'))/864e5);r.date=el.value;r.matches.forEach(m=>m.date=addDays(m.date.slice(0,10),shift)+m.date.slice(10));save();render()}
   if(k==='m-time'||k==='m-day'){const L=curL();const{m,r}=findM(L,el.dataset.m);if(!m||!el.value)return;
     m.date=k==='m-time'?m.date.slice(0,11)+el.value:el.value+m.date.slice(10);r.matches.sort((a,b)=>a.date.localeCompare(b.date));save();toast(`${shortN(m.h)} vs ${shortN(m.a)}: ${fmtD(m.date)} ${fmtT(m.date)}`);render();return}
+  if(k==='l-notify'){curL().notify=el.value;save();toast(el.value==='off'?'Avisos apagados para esta competencia':el.value==='captains'?'Se avisará solo a capitanes':'Se avisará a todos los jugadores con WhatsApp');return}
   if(k==='sched'){const L=curL();L.sched={...SCH(L),[el.dataset.k]:el.dataset.k==='t'?el.value:+el.value};save();return}
   if(k==='g-count'){const L=curL();const n=+el.value;const old=L.groups;const ng=mkGroups(n);old.forEach((g,i)=>{if(ng[i])ng[i].teams=g.teams});L.groups=ng;save();render();return}
   if(k==='g-qual'){curL().qual=+el.value;save();toast('Si ya generaste la fase final, rehazla para aplicar el cambio');render();return}
@@ -750,8 +786,8 @@ document.addEventListener('submit',async e=>{
   }
   if(f.id==='newL'){const name=$('#nl-name').value.trim();if(!name)return;
     let id=name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||uid('l');
-    while(LG(id))id+='-'+Math.random().toString(36).slice(2,4);
-    const kind=$('#nl-kind').value;const nl={id,name,kind,...(isOwner()?{owner:ME.id}:{}),vueltas:+$('#nl-vu').value,season:$('#nl-season').value.trim()||'Temporada',venue:$('#nl-venue').value.trim(),teams:[],blocks:[],rounds:[]};
+    id=(id||'liga')+'-'+Math.random().toString(36).slice(2,6);while(LG(id))id+=Math.random().toString(36).slice(2,4);
+    const kind=$('#nl-kind').value;const nl={id,name,kind,draft:!!$('#nl-draft')?.checked,...(isOwner()?{owner:ME.id}:{}),vueltas:+$('#nl-vu').value,season:$('#nl-season').value.trim()||'Temporada',venue:$('#nl-venue').value.trim(),teams:[],blocks:[],rounds:[]};
     if(kind==='grupos'){nl.groups=mkGroups(+$('#nl-ng').value);nl.qual=+$('#nl-q').value}
     S.leagues.push(nl);
     AV={view:'league',id};save();toast('Competencia creada');render()}
@@ -773,4 +809,8 @@ document.addEventListener('drop',e=>{const z=e.target.closest?.('[data-drop]');i
   else if(t&&MODE==='server'){try{const me=await api('/me');ME=me.role?me:{...me,role:'owner'}}catch(e){setTok('')}}
   if(ME?.role==='admin'&&MIGRATED)save();
   render();
+  afterRefresh=()=>render();
+  const idle=()=>!document.hidden&&!$('#dlg').open&&!document.activeElement?.matches?.('input,select,textarea')&&!DRAG;
+  const sync=async()=>{if(!ME||!idle())return;const ch=await syncFromServer();const L=curL();if(L&&NLOG[L.id]&&AV.view==='league'){await loadAvisos(L.id);return}if(ch)render()};
+  setInterval(sync,20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
 })();

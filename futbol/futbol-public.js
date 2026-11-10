@@ -4,7 +4,7 @@ const PITCH=`<svg class="pitch" viewBox="0 0 760 500" fill="none" stroke="var(--
 const tlink=(L,id,txt)=>id&&T(id)?`<a class="tl" href="${teamURL(L.id,id)}">${esc(txt??tname(id))}</a>`:`<span>${esc(txt??tname(id))}</span>`;
 
 function viewHome(){
-  const cards=S.leagues.map(L=>{
+  const cards=S.leagues.filter(L=>!L.draft).map(L=>{
     const f=featured(L);const live=all(L).some(m=>m.status==='vivo');
     const ci=curRound(L);
     return`<a class="comp" href="${leagueURL(L.id)}">
@@ -236,7 +236,7 @@ function viewAccount(){
     ${accForm()}</div></div>`;
   if(ME.role!=='player')return`<div class="wrap"><div class="gate box" style="margin:60px auto"><div class="eyebrow">${ME.role==='admin'?'PÍCALE':'Dueño de liga'}</div><h2>Hola, ${esc(ME.name.split(' ')[0])}</h2>
     <p>Tu cuenta es de organizador. Administra tus competencias desde tu panel.</p><a class="btn pri" href="/futbol/admin">Ir a mi panel</a><button class="btn ghost" data-act="acc-logout">Salir</button></div></div>`;
-  const teams=myTeams();
+  const teams=myTeams().filter(t=>!LG(t.lid)?.draft);
   const cards=teams.map(t=>{const L=LG(t.lid);if(!L)return'';const me=t.players.find(p=>p.uid===ME.id);
     const ps=playerStats(L,t.id).find(x=>x.uid===ME.id||x.name===me.name)||{g:0,mg:0,y:0,r:0};
     const ms=teamMatches(L,t.id);const nx=ms.find(m=>m.status==='vivo')||ms.find(m=>m.status==='programado');
@@ -244,29 +244,130 @@ function viewAccount(){
     else if(L.kind==='grupos'){const g=groupOf(L,t.id);if(g){const gr=groupTable(L,g);const i=gr.findIndex(r=>r.id===t.id);pos=`${i+1}° del ${g.name} · ${gr[i]?.pts||0} pts`}}
     else pos='Torneo eliminatorio';
     const rival=nx?(nx.h===t.id?nx.a:nx.h):null;
-    return`<div class="myt"><div class="myt-h">${crest(t.id,'lg')}<div><small>${esc(L.name)}</small><b>${esc(t.name)}</b><small>${me.n!==''&&me.n!=null?'#'+esc(me.n)+' · ':''}${POSN[posOf(me)]||'Jugador'}${pos?' · '+esc(pos):''}</small></div></div>
+    return`<div class="myt"><div class="myt-h">${crest(t.id,'lg')}<div><small>${esc(L.name)}${isCaptain(t)?' · <span class="pill acc">★ Capitán</span>':''}</small><b>${esc(t.name)}</b><small>${me.n!==''&&me.n!=null?'#'+esc(me.n)+' · ':''}${POSN[posOf(me)]||'Jugador'}${pos?' · '+esc(pos):''}</small></div></div>
       <div class="mystats"><div><b class="num">${ps.g}</b><span>Goles</span></div><div><b class="num">${ps.mg}</b><span>Partidos con gol</span></div><div><b class="num">${ps.y}</b><span>Amarillas</span></div><div><b class="num">${ps.r}</b><span>Rojas</span></div></div>
       ${nx?`<div class="mynext"><div><div class="eyebrow">${nx.status==='vivo'?'Jugando ahora':'Próximo partido'}</div><b>vs ${esc(tname(rival))}</b> <span class="note">· ${fmtD(nx.date)} ${fmtT(nx.date)}${nx.venue?' · '+esc(nx.venue):''}</span></div>${nx.status==='vivo'?'<span class="pill live"><span class="dot"></span>En vivo</span>':`<span class="num" data-cd="${nx.date}">--:--:--</span>`}</div>`:'<div class="mynext"><span class="note">Sin partidos programados por ahora.</span></div>'}
-      <div class="toolbar"><a class="btn pri" href="${teamURL(L.id,t.id)}">Ver mi equipo</a><a class="btn" href="${leagueURL(L.id)}">Ver ${L.kind==='liga'?'la liga':'el torneo'}</a></div></div>`}).join('');
+      <div class="toolbar">${isCaptain(t)?`<a class="btn pri" href="/futbol?cuenta&plantilla=${encodeURIComponent(t.id)}">★ Registrar jugadores</a>`:''}<a class="btn ${isCaptain(t)?'':'pri'}" href="${teamURL(L.id,t.id)}">Ver mi equipo</a><a class="btn" href="${leagueURL(L.id)}">Ver ${L.kind==='liga'?'la liga':'el torneo'}</a></div></div>`}).join('');
   return`<section class="hero">${PITCH}<div class="wrap hero-in" style="grid-template-columns:1fr"><div class="me-hero">
       <button class="me-ava" data-act="me-photo" aria-label="Cambiar mi foto" title="Cambiar mi foto">${avatar(ME,'xl')}<span class="cam-mini"></span></button>
       <div><div class="eyebrow">Mi cuenta · jugador</div><h1 style="margin:6px 0 8px;font-size:clamp(36px,6vw,64px)">${esc(ME.name)}</h1>
       <div class="note">${esc(ME.email)} · ${teams.length} equipo${teams.length===1?'':'s'} · <button class="linkb" data-act="acc-logout">Salir</button></div></div></div></div></section>
-    <div class="wrap sec"><div class="sec-h"><h2>Mis torneos</h2>${ME.photo?'':'<span class="note">Toca tu círculo para subir tu foto; sale en la plantilla de tu equipo.</span>'}</div>
+    <div class="wrap sec">${teams.length?`<div class="sec-h"><h2>Mi estadística total</h2><a class="btn sm" href="${profileURL(ME.id)}">Ver mi perfil completo</a></div>${careerTiles(careerOf(ME.id))}`:''}<div class="sec-h"><h2>Mis torneos</h2>${ME.photo?'':'<span class="note">Toca tu círculo para subir tu foto; sale en la plantilla de tu equipo.</span>'}</div>
+    ${waBox(false)}
     ${cards?`<div class="mytgrid">${cards}</div>`:`<div class="empty">Aún no estás en ningún equipo.<br>Pídele al organizador de tu liga el <b>link de invitación</b> de tu equipo, o que registre tu correo (${esc(ME.email)}) en la plantilla.</div>`}</div>`;
 }
 function viewJoin(){
   const t=T(JOIN.tid);const L=t&&LG(t.lid);
-  if(!t||!L)return`<div class="wrap sec"><div class="empty">Este link de invitación ya no es válido. Pídele uno nuevo a tu equipo.</div></div>`;
-  const head=`<div style="text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center">${crest(t.id,'xl')}<div class="eyebrow">${esc(L.name)}</div><h2>Únete a ${esc(t.name)}</h2></div>`;
+  const head=linkHead(t,L,'Únete a','Únete a tu equipo');
   if(!ME)return`<div class="wrap"><div class="joincard">${accForm(head+'<p class="note" style="margin:0;text-align:center">Crea tu cuenta de PÍCALE o entra con la que ya tienes para unirte a la plantilla.</p>')}</div></div>`;
   if(ME.role!=='player')return`<div class="wrap"><div class="joincard box">${head}<p>Para unirte como jugador entra con una cuenta de jugador. Ahorita tienes abierta una cuenta de organizador.</p><button class="btn" data-act="acc-logout">Salir y entrar como jugador</button></div></div>`;
-  if((t.players||[]).some(p=>p.uid===ME.id))return`<div class="wrap"><div class="joincard box">${head}<p style="text-align:center">Ya estás en la plantilla de ${esc(t.name)}.</p><a class="btn pri" href="/futbol?cuenta">Ver mis torneos</a></div></div>`;
+  if(t&&(t.players||[]).some(p=>p.uid===ME.id))return`<div class="wrap"><div class="joincard box">${head}<p style="text-align:center">Ya estás en la plantilla de ${esc(t?.name||'tu equipo')}.</p><a class="btn pri" href="/futbol?cuenta">Ver mis torneos</a></div></div>`;
   return`<div class="wrap"><form class="joincard box" id="joinF">${head}
     <p class="note" style="margin:0;text-align:center">Entras como <b>${esc(ME.name)}</b>.</p>
     <div class="formg"><label class="fld" for="j-n">Número de playera<input id="j-n" class="inp num" type="number" min="0" max="99" placeholder="10"></label>
     <label class="fld" for="j-pos">Posición<select id="j-pos" class="inp">${POS.map(x=>`<option value="${x}" ${x==='MED'?'selected':''}>${POSN[x]}</option>`).join('')}</select></label></div>
+    ${waBox(true)}
     <button class="btn pri" type="submit">Unirme al equipo</button></form></div>`;
+}
+
+/* ---------- Perfil del jugador: su estadística en todas las ligas ---------- */
+const profileURL=uid=>`/futbol?jugador=${encodeURIComponent(uid)}`;
+function careerOf(uid){
+  const rows=[];
+  S.teams.forEach(t=>{const L=LG(t.lid);if(!L||L.draft)return;const me=(t.players||[]).find(p=>p.uid===uid);if(!me)return;
+    const ps=playerStats(L,t.id).find(x=>x.uid===uid)||{g:0,mg:0,y:0,r:0};
+    let G=0,E=0,P=0;const goals=[];
+    teamMatches(L,t.id).forEach(m=>{if(m.status!=='final')return;const[h,a]=sc(m);const f=m.h===t.id?h:a,c=m.h===t.id?a:h;f>c?G++:f<c?P++:E++;
+      const side=m.h===t.id?'h':'a';m.ev.forEach(e=>{if(e.t==='g'&&e.side===side&&e.p===me.name)goals.push({m,e,rival:m.h===t.id?m.a:m.h})})});
+    rows.push({L,t,me,ps,G,E,P,pj:G+E+P,goals});
+  });
+  const tot=rows.reduce((s,r)=>({g:s.g+r.ps.g,mg:s.mg+r.ps.mg,y:s.y+r.ps.y,r:s.r+r.ps.r,pj:s.pj+r.pj,G:s.G+r.G}),{g:0,mg:0,y:0,r:0,pj:0,G:0});
+  return{rows,tot};
+}
+function careerTiles(c){
+  return`<div class="kpis k6"><div class="kpi"><span class="eyebrow">Torneos</span><b class="num">${c.rows.length}</b></div><div class="kpi"><span class="eyebrow">Goles</span><b class="num">${c.tot.g}</b></div><div class="kpi"><span class="eyebrow">Partidos con gol</span><b class="num">${c.tot.mg}</b></div><div class="kpi"><span class="eyebrow">Partidos de su equipo</span><b class="num">${c.tot.pj}</b></div><div class="kpi"><span class="eyebrow">Amarillas</span><b class="num">${c.tot.y}</b></div><div class="kpi"><span class="eyebrow">Rojas</span><b class="num">${c.tot.r}</b></div></div>`;
+}
+function careerTable(c){
+  if(!c.rows.length)return'<div class="empty">Todavía no aparece en ninguna competencia publicada.</div>';
+  return`<div class="tw"><table class="st"><thead><tr><th class="l">Competencia</th><th class="l">Equipo</th><th>#</th><th>Pos</th><th>PJ equipo</th><th>G-E-P</th><th>Goles</th><th>Prom.</th><th>TA</th><th>TR</th></tr></thead><tbody>
+  ${c.rows.map(r=>`<tr><td class="l" style="font-family:var(--f-body)"><a class="tl" href="${leagueURL(r.L.id)}">${esc(r.L.name)}</a></td><td class="tn l"><div>${crest(r.t.id,'sm')}<a class="tl" href="${teamURL(r.L.id,r.t.id)}">${esc(r.t.name)}</a></div></td><td>${esc(r.me.n??'—')}</td><td><span class="pos-c ${posOf(r.me)}">${posOf(r.me)}</span></td><td>${r.pj}</td><td>${r.G}-${r.E}-${r.P}</td><td class="pts">${r.ps.g}</td><td>${r.pj?(r.ps.g/r.pj).toFixed(2):'0'}</td><td>${r.ps.y}</td><td>${r.ps.r}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+function viewProfile(uid){
+  const c=careerOf(uid);const first=c.rows[0]?.me;
+  if(!first&&!(ME&&ME.id===uid))return`<div class="wrap sec"><div class="empty">Este perfil no existe o el jugador todavía no está en ninguna competencia publicada.</div></div>`;
+  const who=first||ME;const mine=ME&&ME.id===uid;
+  const goals=c.rows.flatMap(r=>r.goals.map(g=>({...g,L:r.L}))).sort((a,b)=>b.m.date.localeCompare(a.m.date)).slice(0,10);
+  return`<section class="hero">${PITCH}<div class="wrap hero-in" style="grid-template-columns:1fr"><div class="me-hero">
+      ${avatar(mine?{...who,photo:ME.photo||who.photo}:who,'xl')}
+      <div><div class="eyebrow">Perfil de jugador · PÍCALE Fútbol</div><h1 style="margin:6px 0 8px;font-size:clamp(36px,6vw,64px)">${esc(mine?ME.name:who.name)}</h1>
+      <div class="row" style="display:flex;gap:6px;flex-wrap:wrap">${c.rows.map(r=>`<a class="pill" href="${teamURL(r.L.id,r.t.id)}" style="text-decoration:none">${esc(r.t.short)} · ${esc(r.L.name)}</a>`).join('')}</div></div></div></div></section>
+    <div class="wrap sec">${careerTiles(c)}
+      <div class="sec-h"><h2>Por competencia</h2><span class="note">Solo partidos finalizados</span></div>${careerTable(c)}
+      <div class="sec-h"><h2>Últimos goles</h2></div>
+      ${goals.length?`<div class="fxl">${goals.map(g=>`<a class="goalrow" href="${leagueURL(g.L.id)}"><span class="ic g"></span><b class="num">${g.e.m?g.e.m+"'":'—'}</b><span>vs ${esc(tname(g.rival))}</span><span class="note">${esc(g.L.name)} · ${esc(rname(g.L,g.m.ri))} · ${fmtD(g.m.date)}</span></a>`).join('')}</div>`:'<div class="empty">Sin goles registrados todavía.</div>'}
+      ${mine?`<div class="ownband"><div><h3>Este es tu perfil público</h3><p class="note" style="margin:4px 0 0">Compártelo: cualquiera puede ver tus números en todas tus ligas.</p></div><button class="btn" data-act="copy-profile">Copiar mi link</button></div>`:''}
+    </div>`;
+}
+
+function waBox(compact){
+  const ph=(ME?.phone||'').replace(/^52(?=\d{10}$)/,'');
+  return`<div class="${compact?'wa-mini':'box wa-box'}">${compact?'':`<div class="box-h" style="margin-bottom:6px"><div><h3>Avisos por WhatsApp</h3><p>Te avisamos cuando se programe un partido de tu equipo, si cambia el día, la hora o la cancha, si se cancela, y un día antes.</p></div>${ME?.wa&&ME?.phone?'<span class="pill fin">Activos</span>':'<span class="pill">Apagados</span>'}</div>`}
+    <label class="fld" for="${compact?'x':'w'}-phone">Celular (10 dígitos)<input id="${compact?'x':'w'}-phone" class="inp num" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="81 1234 5678" value="${esc(ph)}"></label>
+    <label class="chk" for="${compact?'x':'w'}-wa"><input id="${compact?'x':'w'}-wa" type="checkbox" ${ME?.wa||!ME?.phone?'checked':''}> Quiero recibir avisos de mis partidos por WhatsApp</label>
+    ${compact?'':'<div class="toolbar"><button class="btn pri" type="button" data-act="wa-save">Guardar</button></div><p class="note" style="margin:0">Puedes apagarlos cuando quieras. Tu número no se muestra en ninguna página.</p>'}</div>`;
+}
+const waBody=pfx=>{const el=document.getElementById(pfx+'-phone');return el?{phone:el.value,wa:document.getElementById(pfx+'-wa').checked}:{}};
+
+/* ---------- Capitanes ---------- */
+let CAPJ=null,RW=null; // CAPJ: {tid,code} del link de capitán · RW: plantilla en edición
+const isCaptain=t=>!!(ME&&t&&(t.captains||[]).includes(ME.id));
+function linkHead(t,L,title,fallback){
+  // En un borrador el equipo no se ve hasta unirse: se muestra un encabezado general.
+  if(!t||!L)return`<div style="text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center"><div class="eyebrow">PÍCALE Fútbol</div><h2>${fallback}</h2></div>`;
+  return`<div style="text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center">${crest(t.id,'xl')}<div class="eyebrow">${esc(L.name)}${L.draft?' · borrador':''}</div><h2>${title} ${esc(t.name)}</h2></div>`;
+}
+function viewCaptainJoin(){
+  const t=T(CAPJ.tid);const L=t&&LG(t.lid);
+  const head=linkHead(t,L,'Capitán de','Registra a tu equipo como capitán');
+  if(!ME)return`<div class="wrap"><div class="joincard">${accForm(head+'<p class="note" style="margin:0;text-align:center">Crea tu cuenta de PÍCALE (o entra con la que ya tienes) para quedar como capitán y registrar a tus jugadores.</p>')}</div></div>`;
+  if(ME.role!=='player')return`<div class="wrap"><div class="joincard box">${head}<p>Para ser capitán entra con una cuenta de jugador. Ahorita tienes abierta una cuenta de organizador.</p><button class="btn" data-act="acc-logout">Salir y entrar como jugador</button></div></div>`;
+  if(isCaptain(t))return`<div class="wrap"><div class="joincard box">${head}<p style="text-align:center">Ya eres capitán de ${esc(t.name)}.</p><a class="btn pri" href="/futbol?cuenta&plantilla=${encodeURIComponent(t.id)}">Registrar a mis jugadores</a></div></div>`;
+  return`<div class="wrap"><form class="joincard box" id="capF">${head}
+    <p class="note" style="margin:0;text-align:center">Entras como <b>${esc(ME.name)}</b>. Como capitán también juegas en el equipo: pon tu número.</p>
+    <div class="formg"><label class="fld" for="c-n">Tu número de playera<input id="c-n" class="inp num" type="number" min="0" max="99" placeholder="10"></label>
+    <label class="fld" for="c-pos">Tu posición<select id="c-pos" class="inp">${POS.map(x=>`<option value="${x}" ${x==='MED'?'selected':''}>${POSN[x]}</option>`).join('')}</select></label></div>
+    ${waBox(true)}
+    <button class="btn pri" type="submit">Ser capitán y registrar a mi equipo</button></form></div>`;
+}
+function openRoster(tid){
+  const t=T(tid);if(!t)return;
+  RW={tid,players:(t.players||[]).map(p=>({n:p.n??'',name:p.name,pos:posOf(p),photo:p.photo||null,photoAt:p.photoAt||0,uid:p.uid||null,email:p.email||'',_old:p.name}))};
+}
+function viewRoster(tid){
+  const t=T(tid);const L=t&&LG(t.lid);
+  if(!ME||ME.role!=='player')return viewAccount();
+  if(!t||!L||!isCaptain(t))return`<div class="wrap sec"><div class="empty">Solo el capitán puede registrar jugadores de este equipo.</div></div>`;
+  if(!RW||RW.tid!==tid)openRoster(tid);
+  const inv=t.code?`${location.origin}/futbol?unirse=${encodeURIComponent(t.id)}.${t.code}`:'';
+  return`<section class="hero">${PITCH}<div class="wrap hero-in" style="grid-template-columns:1fr"><div>
+      <a class="back" href="/futbol?cuenta">← Mis torneos</a>
+      <div class="t-hero">${crest(t.id,'hg')}<div><div class="eyebrow">${esc(L.name)}${L.draft?' · borrador':''} · capitán</div><h1 style="margin:6px 0 8px;font-size:clamp(34px,5vw,60px)">${esc(t.name)}</h1>
+      <div class="note">${RW.players.length} jugadores · ${RW.players.filter(p=>p.uid).length} con cuenta</div></div></div></div></div></section>
+    <div class="wrap sec">
+      <form class="box" id="rosterF"><div class="box-h"><div><h2>Mis jugadores</h2><p>Registra a tu plantilla: toca el círculo para subir la foto. Si pones el correo de un jugador, al crear su cuenta queda ligado solo.</p></div><button type="button" class="btn pri" data-act="r-add">+ Agregar jugador</button></div>
+        <div class="pl-list roster" style="max-height:none">${RW.players.map((p,i)=>`<div class="plr2">
+          <button type="button" class="ava-btn" data-act="r-photo" data-i="${i}" aria-label="Subir foto de ${esc(p.name||'jugador '+(i+1))}" title="Subir foto">${avatar(p)}<span class="cam-mini"></span></button>
+          <input class="inp num" type="number" min="0" max="99" value="${esc(p.n)}" placeholder="#" data-rw="${i}" data-k="n" aria-label="Número del jugador ${i+1}">
+          <input class="inp" value="${esc(p.name)}" placeholder="Nombre y apellido" data-rw="${i}" data-k="name" aria-label="Nombre del jugador ${i+1}" autocomplete="off">
+          <select class="inp" data-rw="${i}" data-k="pos" aria-label="Posición del jugador ${i+1}">${POS.map(x=>`<option value="${x}" ${p.pos===x?'selected':''}>${POSN[x]}</option>`).join('')}</select>
+          ${p.uid===ME.id?'<span class="pill acc" title="Eres capitán">★ Tú</span>':`<button type="button" class="btn sm ghost danger" data-act="r-del" data-i="${i}" aria-label="Quitar a ${esc(p.name||'jugador')}">✕</button>`}
+          <div class="plr-sub">${p.uid?`<span class="pill fin">Cuenta PÍCALE ligada</span>${(t.captains||[]).includes(p.uid)&&p.uid!==ME.id?' <span class="pill acc">★ Capitán</span>':''}`:`<input class="inp" type="email" value="${esc(p.email||'')}" placeholder="Correo del jugador (opcional)" data-rw="${i}" data-k="email" aria-label="Correo del jugador ${i+1}" autocomplete="off">`}</div></div>`).join('')||'<span class="note">Aún no hay jugadores.</span>'}</div>
+        <details class="paste"><summary>Pegar una lista de jugadores</summary><textarea id="r-paste" class="inp" placeholder="10 Juan Pérez&#10;1 Luis Garza POR&#10;9 Mario Leal DEL"></textarea><button type="button" class="btn sm" data-act="r-import">Agregar a la plantilla</button></details>
+        <div class="toolbar" style="justify-content:flex-end;margin-top:14px"><button class="btn pri" type="submit">Guardar plantilla</button></div></form>
+      ${inv?`<div class="invite"><div><h3>Que cada jugador se registre solo</h3><p class="note" style="margin:4px 0 0">Comparte este link en el grupo del equipo: cada quien crea su cuenta, pone su número y su foto, y ve sus partidos y sus goles.</p></div>
+        <div class="inv-link"><input class="inp num" readonly value="${esc(inv)}" id="r-inv" aria-label="Link de invitación"><button type="button" class="btn sm" data-act="r-inv">Copiar mensaje para el grupo</button></div></div>`:''}
+    </div>`;
 }
 
 /* ---------- Página de equipo ---------- */
@@ -282,7 +383,7 @@ function viewTeam(L,tid){
   const res=ms.filter(m=>m.status!=='programado').reverse();const up=ms.filter(m=>m.status==='programado');
   let big=null;res.forEach(m=>{if(m.status!=='final')return;const[h,a]=sc(m);const d=(m.h===tid?h-a:a-h);if(d>0&&(!big||d>big.d))big={m,d,s:m.h===tid?`${h}-${a}`:`${a}-${h}`,rv:m.h===tid?m.a:m.h}});
   const squad=ps.length?`<div class="tw"><table class="st sq"><thead><tr><th>#</th><th class="l">Jugador</th><th>Pos</th><th>Goles</th><th>Partidos con gol</th><th>Amarillas</th><th>Rojas</th></tr></thead><tbody>
-    ${ps.map(p=>`<tr class="${top&&top.g&&p.name===top.name?'q':''}"><td class="pos">${esc(p.n||'—')}</td><td class="tn l"><div>${avatar(p,'sm')}<span>${esc(p.name)}${p.uid?'<span class="acc-dot" title="Tiene cuenta PÍCALE"></span>':''}</span>${top&&top.g&&p.name===top.name?'<span class="pill acc">Goleador</span>':''}</div></td><td><span class="pos-c ${p.pos}">${p.pos}</span></td><td class="pts">${p.g}</td><td>${p.mg}</td><td>${p.y?`${p.y}<span class="cy">▮</span>`:'0'}</td><td>${p.r?`${p.r}<span class="cr">▮</span>`:'0'}</td></tr>`).join('')}
+    ${ps.map(p=>`<tr class="${top&&top.g&&p.name===top.name?'q':''}"><td class="pos">${esc(p.n||'—')}</td><td class="tn l"><div>${avatar(p,'sm')}<span>${p.uid?`<a class="tl" href="${profileURL(p.uid)}" title="Ver su perfil y estadística en todas sus ligas">${esc(p.name)}</a><span class="acc-dot" title="Tiene cuenta PÍCALE"></span>`:esc(p.name)}</span>${top&&top.g&&p.name===top.name?'<span class="pill acc">Goleador</span>':''}</div></td><td><span class="pos-c ${p.pos}">${p.pos}</span></td><td class="pts">${p.g}</td><td>${p.mg}</td><td>${p.y?`${p.y}<span class="cy">▮</span>`:'0'}</td><td>${p.r?`${p.r}<span class="cr">▮</span>`:'0'}</td></tr>`).join('')}
     </tbody></table></div>`:'<div class="empty">Este equipo aún no registra jugadores.</div>';
   return`<section class="hero">${PITCH}<div class="wrap hero-in">
     <div><a class="back" href="${leagueURL(L.id)}">← ${esc(L.name)}</a>
@@ -293,7 +394,7 @@ function viewTeam(L,tid){
       <div class="kpis k6"><div class="kpi"><span class="eyebrow">Jugados</span><b class="num">${r.pj}</b></div><div class="kpi"><span class="eyebrow">G · E · P</span><b class="num">${r.g}-${r.e}-${r.p}</b></div><div class="kpi"><span class="eyebrow">Goles a favor</span><b class="num">${r.gf}</b></div><div class="kpi"><span class="eyebrow">Goles en contra</span><b class="num">${r.gc}</b></div><div class="kpi"><span class="eyebrow">Porterías en cero</span><b class="num">${st.cs}</b></div><div class="kpi"><span class="eyebrow">Promedio de gol</span><b class="num">${r.pj?(r.gf/r.pj).toFixed(1):'0'}</b></div></div>
       <div class="sec-h"><h2>Plantilla y estadísticas</h2><span class="note">Solo partidos finalizados</span></div>${squad}
       <div class="grid2">
-        <div class="panel"><h3>Goleadores del equipo</h3>${(()=>{const g=ps.filter(p=>p.g).sort((a,b)=>b.g-a.g).slice(0,5);return g.length?`<div class="lb">${g.map((p,i)=>`<div class="lb-r"><span class="rk">${i+1}</span>${avatar(p)}<div class="nm"><b>${esc(p.name)}</b><small>${POSN[p.pos]||'Jugador'} · #${esc(p.n||'—')}</small></div><span class="v">${p.g}</span><div class="lb-bar"><i style="width:${Math.round(p.g/Math.max(leagueTop,1)*100)}%"></i></div></div>`).join('')}</div><p class="note" style="margin:12px 0 0">La barra compara contra el líder de goleo de la liga (${leagueTop}).</p>`:'<div class="empty">Sin goles todavía.</div>'})()}</div>
+        <div class="panel"><h3>Goleadores del equipo</h3>${(()=>{const g=ps.filter(p=>p.g).sort((a,b)=>b.g-a.g).slice(0,5);return g.length?`<div class="lb">${g.map((p,i)=>`<div class="lb-r"><span class="rk">${i+1}</span>${avatar(p)}<div class="nm"><b>${p.uid?`<a class="tl" href="${profileURL(p.uid)}">${esc(p.name)}</a>`:esc(p.name)}</b><small>${POSN[p.pos]||'Jugador'} · #${esc(p.n||'—')}</small></div><span class="v">${p.g}</span><div class="lb-bar"><i style="width:${Math.round(p.g/Math.max(leagueTop,1)*100)}%"></i></div></div>`).join('')}</div><p class="note" style="margin:12px 0 0">La barra compara contra el líder de goleo de la liga (${leagueTop}).</p>`:'<div class="empty">Sin goles todavía.</div>'})()}</div>
         <div class="panel"><h3>Resumen</h3><div class="facts">
           <div><span>Posición</span><b>${L.kind==='liga'&&ri>=0?`${ri+1}° de ${rows.length}`:L.kind==='grupos'&&groupOf(L,tid)?(()=>{const g=groupOf(L,tid);const gr=groupTable(L,g);return`${gr.findIndex(x=>x.id===tid)+1}° de ${gr.length} en ${esc(g.name)}`})():'—'}</b></div>
           <div><span>Diferencia de gol</span><b>${r.gf-r.gc>0?'+':''}${r.gf-r.gc}</b></div>
@@ -310,12 +411,17 @@ function viewTeam(L,tid){
 /* ===================== Arranque (página pública) ===================== */
 function render(){
   const q=new URLSearchParams(location.search);const id=q.get('liga'),tid=q.get('equipo');
+  if(!(q.has('cuenta')&&q.get('plantilla')))RW=null;
   const L=id&&LG(id);
   const nav=document.querySelector('.top nav');if(nav)nav.innerHTML=`<a href="/futbol" class="${!q.has('cuenta')&&!q.has('unirse')?'on':''}">Competencias</a><a href="/futbol?cuenta" class="${q.has('cuenta')?'on':''}">${ME?.role==='player'?esc(ME.name.split(' ')[0]):'Mi cuenta'}</a>`;
   if(q.has('unirse')){const[tid,code]=(q.get('unirse')||'').split('.');JOIN={tid,code};document.title='Unirme a mi equipo · PÍCALE Fútbol';$('#app').innerHTML=viewJoin();return}
-  if(q.has('cuenta')){document.title='Mi cuenta · PÍCALE Fútbol';$('#app').innerHTML=viewAccount();tick();return}
+  if(q.has('cuenta')&&!q.get('plantilla')){document.title='Mi cuenta · PÍCALE Fútbol';$('#app').innerHTML=viewAccount();tick();return}
+  if(q.get('jugador')){const c=careerOf(q.get('jugador'));document.title=`${c.rows[0]?.me.name||'Jugador'} · PÍCALE Fútbol`;$('#app').innerHTML=viewProfile(q.get('jugador'));return}
+  if(q.has('capitan')){const[ct,cc]=(q.get('capitan')||'').split('.');CAPJ={tid:ct,code:cc};document.title='Capitán · PÍCALE Fútbol';$('#app').innerHTML=viewCaptainJoin();return}
+  if(q.has('cuenta')&&q.get('plantilla')){document.title='Mis jugadores · PÍCALE Fútbol';$('#app').innerHTML=viewRoster(q.get('plantilla'));return}
   if(L&&tid&&T(tid)){document.title=`${tname(tid)} · ${L.name}`;$('#app').innerHTML=viewTeam(L,tid)}
   else{document.title=L?`${L.name} · PÍCALE Fútbol`:'PÍCALE Fútbol';$('#app').innerHTML=L?viewLeague(L):viewHome()}
+  if(L&&L.draft)$('#app').insertAdjacentHTML('afterbegin','<div class="draftban"><div class="wrap"><b>Vista previa de borrador:</b> solo tú la ves. Publícala desde tu panel cuando esté lista.</div></div>');
   tick();mountPlayer();
 }
 function tick(){document.querySelectorAll('[data-cd]').forEach(el=>{let s=Math.max(0,Math.floor((new Date(el.dataset.cd)-Date.now())/1000));const d=Math.floor(s/86400);s%=86400;el.textContent=(d?d+'d ':'')+p2(Math.floor(s/3600))+':'+p2(Math.floor(s%3600/60))+':'+p2(s%60)})}
@@ -326,6 +432,13 @@ const ACT={
     PT.tab=el.dataset.tab;if(el.dataset.round)PT.round=+el.dataset.round;render();document.querySelector('.tabs')?.scrollIntoView({block:'start'})},
   round(el){PT.round=+el.dataset.i;render()},
   'acc-tab'(el){ACC=el.dataset.k;render()},
+  async 'wa-save'(el){el.disabled=true;try{ME=await api('/profile',{method:'POST',body:JSON.stringify(waBody('w'))});toast(ME.wa&&ME.phone?'Listo: te avisaremos por WhatsApp':'Avisos por WhatsApp apagados');render()}catch(e){toast(e.message,'warn');el.disabled=false}},
+  'copy-profile'(){const u=location.origin+profileURL(ME.id);navigator.clipboard?.writeText(u).then(()=>toast('Link de tu perfil copiado')).catch(()=>toast(u))},
+  'r-add'(){RW.players.push({n:'',name:'',pos:'MED',email:''});render();const ins=document.querySelectorAll('[data-rw][data-k="name"]');ins[ins.length-1]?.focus()},
+  'r-del'(el){RW.players.splice(+el.dataset.i,1);render()},
+  async 'r-photo'(el){const i=+el.dataset.i;const f=await pickFile();if(!f)return;toast('Subiendo foto…');try{RW.players[i].photo=await uploadImage(f,'photo');RW.players[i].photoAt=Date.now();render();toast('Foto lista. Guarda la plantilla para aplicarla.')}catch(e){toast(e.message,'warn')}},
+  'r-import'(){const t=$('#r-paste').value;t.split('\n').map(l=>l.trim()).filter(Boolean).forEach(l=>{const m=l.match(/^(\d+)?[\s.-]*(.+?)(?:\s+(POR|DEF|MED|DEL))?$/i);if(!m)return;RW.players.push({n:m[1]?+m[1]:'',name:m[2].trim(),pos:(m[3]||'').toUpperCase()||posOf({n:m[1]}),email:''})});render();toast('Jugadores agregados. Guarda la plantilla.')},
+  'r-inv'(){const t=T(RW.tid);const txt=`Únete a ${t.name} en PÍCALE Fútbol: crea tu cuenta, pon tu número y tu foto, y sigue nuestros partidos en vivo.\n${$('#r-inv').value}`;navigator.clipboard?.writeText(txt).then(()=>toast('Mensaje copiado: pégalo en el grupo del equipo')).catch(()=>{$('#r-inv').select();toast('Selecciona y copia el link')})},
   'acc-logout'(){setTok('');ME=null;render()},
   async 'me-photo'(){const f=await pickFile();if(!f)return;toast('Subiendo foto…');
     try{const url=await uploadImage(f,'photo');ME={...ME,...await api('/profile',{method:'POST',body:JSON.stringify({photo:url})})};S=(await fetchServer())||S;render();toast('Foto actualizada en todos tus equipos')}catch(e){toast(e.message,'warn')}},
@@ -336,6 +449,8 @@ const ACT={
     (document.getElementById('watch')||document.querySelector('.tabs'))?.scrollIntoView({block:'start',behavior:'smooth'})},
 };
 document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;if(el.closest('summary'))e.preventDefault();ACT[el.dataset.act]?.(el,e)});
+document.addEventListener('input',e=>{const el=e.target;if(RW&&el.dataset.rw!=null){const p=RW.players[+el.dataset.rw];if(p)p[el.dataset.k]=el.dataset.k==='n'?(el.value===''?'':+el.value):el.value}});
+document.addEventListener('change',e=>{const el=e.target;if(RW&&el.dataset.rw!=null&&el.dataset.k==='pos'){RW.players[+el.dataset.rw].pos=el.value}});
 document.addEventListener('submit',async e=>{
   e.preventDefault();const f=e.target;const btn=f.querySelector('button[type=submit]');if(btn)btn.disabled=true;
   try{
@@ -345,9 +460,21 @@ document.addEventListener('submit',async e=>{
       setTok(res.token);ME=res.me;S=(await fetchServer())||S;
       toast(ACC==='signup'?'Cuenta creada':'Bienvenido');render();
     }
+    if(f.id==='capF'){
+      const r=await api('/captain/claim',{method:'POST',body:JSON.stringify({team:CAPJ.tid,code:CAPJ.code,n:$('#c-n').value,pos:$('#c-pos').value,...waBody('x')})});
+      ME=await api('/me');
+      S=(await fetchServer())||S;RW=null;history.replaceState(null,'',`/futbol?cuenta&plantilla=${encodeURIComponent(r.team)}`);toast('Ya eres capitán: registra a tus jugadores');render();
+    }
+    if(f.id==='rosterF'){
+      const players=RW.players.filter(p=>p.name.trim()).map(p=>({n:p.n,name:p.name.trim(),pos:p.pos,photo:p.photo,photoAt:p.photoAt,uid:p.uid,email:p.email}));
+      const renames=RW.players.filter(p=>p._old&&p.name.trim()&&p._old!==p.name.trim()).map(p=>[p._old,p.name.trim()]);
+      await api('/captain/roster',{method:'POST',body:JSON.stringify({team:RW.tid,players,renames})});
+      S=(await fetchServer())||S;const tid=RW.tid;RW=null;openRoster(tid);toast('Plantilla guardada');render();if(btn)btn.disabled=false;
+    }
     if(f.id==='joinF'){
-      await api('/join',{method:'POST',body:JSON.stringify({team:JOIN.tid,code:JOIN.code,n:$('#j-n').value,pos:$('#j-pos').value})});
-      S=(await fetchServer())||S;history.replaceState(null,'','/futbol?cuenta');toast(`Ya estás en ${tname(JOIN.tid)}`);render();
+      await api('/join',{method:'POST',body:JSON.stringify({team:JOIN.tid,code:JOIN.code,n:$('#j-n').value,pos:$('#j-pos').value,...waBody('x')})});
+      ME=await api('/me');
+      S=(await fetchServer())||S;history.replaceState(null,'','/futbol?cuenta');toast(`Ya estás en ${T(JOIN.tid)?.name||'tu equipo'}`);render();
     }
   }catch(err){toast(err.message,'warn');if(btn)btn.disabled=false}
 });
@@ -355,7 +482,7 @@ window.addEventListener('popstate',render);
 // Actualización automática: servidor cada 15 s; en modo demo, cuando el admin guarda en este mismo navegador.
 function playing(){const v=$('#pv');return v&&!v.paused}
 async function refresh(){
-  if(MODE!=='server'||playing()||document.activeElement?.matches?.('input,select,textarea'))return;
+  if(MODE!=='server'||playing()||RW||document.activeElement?.matches?.('input,select,textarea'))return;
   try{const j=await fetchServer();if(j&&JSON.stringify(j)!==JSON.stringify(S)){S=j;render()}}catch(e){}
 }
 window.addEventListener('storage',e=>{if(e.key===KEY&&MODE==='local'&&!playing()){const d=localData();if(d){S=d;render()}}});
