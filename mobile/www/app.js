@@ -466,13 +466,42 @@
       '<p class="sub">Está en la reja o en la botonera de la cancha. Así sabemos exactamente qué cámara grabar.</p>' +
       '<div class="qrbox mt"><svg viewBox="0 0 120 120"><path d="M8 34V14a6 6 0 0 1 6-6h20M86 8h20a6 6 0 0 1 6 6v20M112 86v20a6 6 0 0 1-6 6H86M34 112H14a6 6 0 0 1-6-6V86"/><rect x="40" y="40" width="16" height="16" rx="2"/><rect x="64" y="40" width="16" height="16" rx="2"/><rect x="40" y="64" width="16" height="16" rx="2"/><path d="M66 66h4v4h-4zM74 74h6v6h-6z"/></svg></div>' +
       '<button class="btn mt" id="scan">ABRIR CÁMARA</button>' +
+      '<button class="btn ghost" id="pick">¿No hay QR? Elige tu cancha</button>' +
       (S.demo ? '<button class="btn ghost" id="sim">Simular escaneo (demo)</button>' : '') +
       '<div class="err" id="qerr"></div>';
     box.querySelector('#back').onclick = stepUseToken;
+    box.querySelector('#pick').onclick = stepPickCourt;
     box.querySelector('#scan').onclick = function () {
       scanRaw().then(function (raw) { if (raw) resolveQR(raw); });
     };
     var sim = box.querySelector('#sim'); if (sim) sim.onclick = function () { resolveQR(CFG.WEB + '/c/demo-somos-3'); };
+  }
+  // Sin QR en la cancha: lista de canchas con su estado (conectada, ocupada, sin señal)
+  function stepPickCourt() {
+    var box = pt(); if (!box) return;
+    box.innerHTML = stepper(1) + '<button class="link" id="back">‹ Escanear QR</button><h1 class="mt">Elige tu cancha</h1>' +
+      '<p class="sub">Solo puedes elegir las que están conectadas en este momento.</p><div class="err" id="qerr"></div><div id="pc" class="mt"><div class="empty"><div class="spin" style="margin:auto;color:var(--green)"></div></div></div>';
+    box.querySelector('#back').onclick = stepScan;
+    var LBL = { ok: ['green', '● Conectada'], busy: ['amber', 'Ocupada'], event: ['amber', 'En americana'], offline: ['red', 'Club sin conexión'], no_camera: ['red', 'Cámara sin señal'] };
+    function load() {
+      api('/ai/courts').then(function (d) {
+        var el = document.getElementById('pc'); if (!el) return;
+        var clubs = (d && d.clubs) || [];
+        el.innerHTML = clubs.length ? clubs.map(function (cl) {
+          return '<div class="spread mt"><b>' + esc(cl.club_name) + '</b>' + (cl.edge_online ? '' : '<span class="chip red">Sin conexión</span>') + '</div><div class="list mt">' +
+            cl.courts.map(function (c) {
+              var l = LBL[c.status] || ['', c.status];
+              return '<button class="item" data-q="' + esc(c.qr_code) + '"' + (c.status === 'ok' ? '' : ' disabled') + ' style="width:100%;text-align:left' + (c.status === 'ok' ? '' : ';opacity:.5') + '">' +
+                '<span class="tag">' + (c.sport === 'futbol' ? '⚽' : '🎾') + '</span><div class="ttl">' + esc(c.court_name) + '</div>' +
+                '<span class="chip ' + l[0] + '" style="margin-left:auto">' + l[1] + '</span></button>';
+            }).join('') + '</div>';
+        }).join('') + '<button class="link mt" id="rf" style="display:block;margin:16px auto 0">Actualizar</button>'
+          : '<div class="empty">No hay canchas disponibles.</div>';
+        el.querySelectorAll('[data-q]').forEach(function (b) { b.onclick = function () { if (!b.disabled) resolveQR(b.getAttribute('data-q')); }; });
+        var rf = el.querySelector('#rf'); if (rf) rf.onclick = function () { el.innerHTML = '<div class="empty"><div class="spin" style="margin:auto;color:var(--green)"></div></div>'; load(); };
+      }).catch(function () { var el = document.getElementById('pc'); if (el) el.innerHTML = '<div class="empty">No se pudo cargar. Intenta de nuevo.</div>'; });
+    }
+    load();
   }
   function scanRaw() {
     var BS = Plugins.BarcodeScanner;
