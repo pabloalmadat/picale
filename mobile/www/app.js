@@ -555,7 +555,7 @@
               var l = LBL[c.status] || ['', c.status];
               return '<button class="item" data-q="' + esc(c.qr_code) + '"' + (c.status === 'ok' ? '' : ' disabled') + ' style="width:100%;text-align:left' + (c.status === 'ok' ? '' : ';opacity:.5') + '">' +
                 '<span class="tag">' + (c.sport === 'futbol' ? '⚽' : '🎾') + '</span><div class="ttl">' + esc(c.court_name) + '</div>' +
-                '<span class="chip ' + l[0] + '" style="margin-left:auto">' + l[1] + '</span></button>';
+                '<span class="chip ' + l[0] + '" style="margin-left:auto">' + (c.status === 'ok' && c.live === false ? 'Conectada · sin en vivo' : l[1]) + '</span></button>';
             }).join('') + '</div>';
         }).join('') + '<button class="link mt" id="rf" style="display:block;margin:16px auto 0">Actualizar</button>'
           : '<div class="empty">No hay canchas disponibles.</div>';
@@ -639,12 +639,13 @@
     var f = S.flow;
     box.innerHTML = stepper(1) + '<h1>¿Es tu cancha?</h1><p class="sub">Revisa que en la cámara se vea tu cancha antes de iniciar.</p>' +
       '<div class="card mt"><div class="spread"><div><div class="sub" style="margin:0">' + esc(c.club_name) + '</div><div style="font-weight:700;font-size:22px;margin-top:2px">' + esc(c.court_name) + '</div></div>' +
-        (c.stream_ok ? '<span class="chip green">✓ Cámara OK</span>' : '<span class="chip red">Sin señal</span>') + '</div>' +
+        (!c.stream_ok ? '<span class="chip red">Club sin conexión</span>' : c.camera_ok === false ? '<span class="chip amber">Sin en vivo · sí graba</span>' : '<span class="chip green">✓ Cámara OK</span>') + '</div>' +
         '<div class="player mt"><video id="cv" playsinline muted autoplay></video><span class="chip red live"><span class="dot"></span>EN VIVO</span></div></div>' +
       '<div class="card mt spread"><div><div class="sub" style="margin:0">' + typeLabel(f.type) + '</div><b>' + f.min + ' min</b></div><span class="chip green">' + f.cost + ' token' + (f.cost > 1 ? 's' : '') + '</span></div>' +
       '<button class="btn rec mt" id="go"' + (c.stream_ok ? '' : ' disabled') + '>● INICIAR ' + (f.type === 'training' ? 'ENTRENAMIENTO' : 'PARTIDO') + '</button>' +
       '<button class="btn ghost" id="rescan">No es mi cancha · escanear otra vez</button>' +
-      (c.stream_ok ? '' : '<div class="note">' + (c.edge_online === false ? 'El club está sin conexión con PÍCALE en este momento.' : 'La cámara de esta cancha no está transmitiendo.') + ' Avisa en recepción; no se te cobrará el token.</div>');
+      (c.stream_ok ? (c.camera_ok === false ? '<div class="note">La transmisión en vivo de esta cancha está caída, pero tu partido sí se graba en el club y se analiza igual. Si no llega el video, se te regresa el token.</div>' : '')
+        : '<div class="note">El club está sin conexión con PÍCALE en este momento. Avisa en recepción; no se te cobrará el token.</div>');
     if (c.hls_url) playHls(document.getElementById('cv'), c.hls_url);
     box.querySelector('#rescan').onclick = function () { stopHls(); stepScan(); };
     box.querySelector('#go').onclick = function () { stopHls(); startSession(c); };
