@@ -1448,6 +1448,10 @@
   function viewAdmin() {
     $view.innerHTML = '<a href="#/perfil" class="link">‹ Perfil</a><h1 class="mt">Panel PÍCALE AI</h1>' +
       '<h2>Clubes</h2><div id="ad-edges" class="list"><div class="item"><span class="spin" style="color:var(--green)"></span></div></div>' +
+      '<h2>Cuentas de PÍCALE <span class="sub" id="ac-n" style="font-size:14px"></span></h2>' +
+      '<label class="field"><span>Buscar por @usuario, nombre o correo</span><input id="ac-q" autocapitalize="none" autocomplete="off"></label>' +
+      '<div id="ac-list" class="list mt"></div><button class="link mt" id="ac-copy" style="display:block;margin:10px auto 0">Copiar lista de @usuarios</button>' +
+      '<p class="free">Solo tú ves esta lista. "IA" = ya abrió PÍCALE AI.</p>' +
       '<h2>Calibrar canchas</h2><div id="ad-courts" class="list"></div><p class="free">La calibración le dice a la IA dónde están las líneas. Si una cancha sale mal (distancias raras, jugadores fuera de la cancha), calíbrala aquí.</p>' +
       '<h2>Tokens y administradores de cada club</h2><div id="ad-clubs"></div>' +
       '<h2>Dar tokens</h2><label class="field"><span>Buscar jugador (nombre, usuario o correo)</span><input id="ad-q" autocapitalize="none"></label>' +
@@ -1521,6 +1525,26 @@
       }).catch(function () {});
     }
     clubs();
+    var accs = [];
+    function accounts(q) {
+      api('/ai/admin/accounts?q=' + encodeURIComponent(q || '')).then(function (d) {
+        var box = document.getElementById('ac-list'); if (!box) return;
+        accs = d.accounts || [];
+        document.getElementById('ac-n').textContent = '· ' + d.total + ' cuentas';
+        box.innerHTML = accs.slice(0, 200).map(function (a) {
+          return '<div class="item"><div style="min-width:0"><div class="ttl">' + (a.username ? '@' + esc(a.username) : '<span style="color:var(--muted)">sin @usuario</span>') + '</div>' +
+            '<div class="dsc">' + esc((a.name || '') + (a.email ? ' · ' + a.email : '')) + '</div></div>' +
+            (a.uses_ai ? '<span class="chip green" style="margin-left:auto">IA</span>' : '') + '</div>';
+        }).join('') + (accs.length > 200 ? '<div class="item"><div class="dsc">… y ' + (accs.length - 200) + ' más. Usa el buscador.</div></div>' : '') ||
+          '<div class="item"><div class="dsc">Sin resultados</div></div>';
+      }).catch(function (e) { var box = document.getElementById('ac-list'); if (box) box.innerHTML = '<div class="item"><div class="dsc">' + esc(errDetail(e, 'No se pudo cargar')) + '</div></div>'; });
+    }
+    accounts('');
+    var aq; document.getElementById('ac-q').oninput = function (ev) { clearTimeout(aq); aq = setTimeout(function () { accounts(ev.target.value); }, 300); };
+    document.getElementById('ac-copy').onclick = function () {
+      var txt = accs.filter(function (a) { return a.username; }).map(function (a) { return '@' + a.username + (a.name ? ' — ' + a.name : ''); }).join('\n');
+      if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { toast('Lista copiada'); }, function () { toast('No se pudo copiar'); });
+    };
     api('/ai/admin/courts').then(function (d) {
       var box = document.getElementById('ad-courts'); if (!box) return;
       var L = { manual: ['green', 'Manual'], auto: ['amber', 'Automática'] };
