@@ -257,3 +257,13 @@ h2{font-family:var(--display);font-size:22px;letter-spacing:1.2px;font-weight:40
 .calib svg{display:block;width:100%;height:auto;touch-action:none}
 .calib-help ol{margin:8px 0 0;padding-left:20px;font-size:13.5px;line-height:1.5;color:var(--muted)}
 .calib-help b{color:var(--text)}
+
+.field{position:relative}
+.suggest{margin-top:6px;border:1px solid var(--line2);border-radius:12px;background:var(--bg2,#151515);overflow:hidden}
+.suggest button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:none;border:0;border-bottom:1px solid var(--line);color:var(--text);text-align:left;font:inherit}
+.suggest button:last-child{border-bottom:0}
+.suggest button:active{background:var(--green-dim)}
+.suggest .av{width:34px;height:34px;border-radius:50%;background:var(--green-dim);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.suggest .nm{display:flex;flex-direction:column;min-width:0}
+.suggest .nm small{color:var(--muted);font-size:12px}
+.suggest .sg-none{padding:10px 12px;font-size:13px;color:var(--muted)}

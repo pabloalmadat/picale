@@ -1157,12 +1157,42 @@
         .then(done).catch(function (e) { bt.disabled = false; err.textContent = errDetail(e, 'No se pudo agregar'); });
     }
     md.querySelector('#ok').onclick = function () { send(md.querySelector('#who').value.trim()); };
+    userSuggest(md.querySelector('#who'), function (u) { send('@' + u.username); });
     var me = md.querySelector('#me'); if (me) me.onclick = function () { send('me'); };
     var rm = md.querySelector('#rm'); if (rm) rm.onclick = function () {
       api('/ai/sessions/' + m.id + '/players/' + p.track_id + '/assign', { method: 'DELETE' })
         .then(function () { closeModal(); toast('Listo'); analisisDetail(m.id); })
         .catch(function (e) { toast(errDetail(e, 'No se pudo quitar')); });
     };
+  }
+
+  // Sugerencias al escribir @ (como Instagram): lista debajo del campo; tocar una la elige
+  function userSuggest(input, onPick) {
+    var list = document.createElement('div'); list.className = 'suggest hidden';
+    input.parentNode.appendChild(list);
+    var t, last = '';
+    input.addEventListener('input', function () {
+      var v = input.value.trim();
+      clearTimeout(t);
+      if (v.indexOf('@') !== 0 || v.length < 2 || v.indexOf('@', 1) > 0) { list.classList.add('hidden'); return; }
+      t = setTimeout(function () {
+        last = v;
+        api('/ai/users/search?q=' + encodeURIComponent(v.slice(1))).then(function (d) {
+          if (input.value.trim() !== last) return;
+          var us = d.users || [];
+          if (!us.length) { list.innerHTML = '<div class="sg-none">Nadie con ese usuario. Puedes poner su correo.</div>'; list.classList.remove('hidden'); return; }
+          list.innerHTML = us.map(function (u, i) {
+            var ini = (u.name || u.username || '?').trim().charAt(0).toUpperCase();
+            return '<button type="button" data-i="' + i + '"><span class="av">' + esc(ini) + '</span><span class="nm"><b>@' + esc(u.username) + '</b><small>' + esc(u.name || '') + '</small></span></button>';
+          }).join('');
+          list.classList.remove('hidden');
+          list.querySelectorAll('[data-i]').forEach(function (b) {
+            b.onclick = function () { var u = us[+b.getAttribute('data-i')]; input.value = '@' + u.username; list.classList.add('hidden'); haptic(); if (onPick) onPick(u); };
+          });
+        }).catch(function () {});
+      }, 180);
+    });
+    input.addEventListener('blur', function () { setTimeout(function () { list.classList.add('hidden'); }, 200); });
   }
 
   // Clips del partido completo: los puntos salen solos y el jugador corta los suyos.
