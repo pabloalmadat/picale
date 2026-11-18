@@ -143,16 +143,16 @@
   // ───────────────────────── router
   var routes = {
     login: viewLogin, clips: viewClips, vivo: viewVivo, partido: viewPartido,
-    analisis: viewAnalisis, perfil: viewPerfil, creditos: viewCreditos, admin: viewAdmin, calibrar: viewCalibrar,
+    analisis: viewAnalisis, perfil: viewPerfil, creditos: viewCreditos, admin: viewAdmin, calibrar: viewCalibrar, reset: viewReset,
     club: viewClub, americana: viewAmericana,
   };
   function route() {
     stopHls();
     var parts = (location.hash.replace(/^#\/?/, '') || 'clips').split('/');
     var name = parts[0];
-    if (!S.token && name !== 'login') { S.next = location.hash; location.hash = '#/login'; return; }
+    if (!S.token && name !== 'login' && name !== 'reset') { S.next = location.hash; location.hash = '#/login'; return; }
     var fn = routes[name] || viewClips;
-    var chrome = name !== 'login';
+    var chrome = name !== 'login' && name !== 'reset';
     document.getElementById('topbar').classList.toggle('hidden', !chrome);
     document.getElementById('tabbar').classList.toggle('hidden', !chrome);
     $view.classList.toggle('full', !chrome);
@@ -179,12 +179,35 @@
         '<label class="field"><span>Contraseña</span><input id="f-pass" type="password" autocomplete="' + (mode === 'reg' ? 'new-password' : 'current-password') + '"></label>' +
         '<div class="err" id="f-err"></div>' +
         '<button class="btn mt" id="f-go">' + (mode === 'reg' ? 'CREAR CUENTA' : 'ENTRAR') + '</button>' +
+        (mode === 'login' ? '<button class="link mt" id="f-forgot" style="display:block;margin:14px auto 0">¿Olvidaste tu contraseña?</button>' : '') +
         '<p class="free">' + (isNative ? 'Solo entras una vez. La app te mantiene con tu sesión.' : 'Es la misma cuenta de picalereplay.com.') + '</p>' +
         (isNative ? '' : '<p class="free"><a class="link" href="/">‹ Volver a picalereplay.com</a></p>') +
         '</div>';
       $view.querySelectorAll('[data-m]').forEach(function (b) { b.onclick = function () { mode = b.getAttribute('data-m'); draw(); }; });
       $view.querySelector('#f-go').onclick = submit;
+      var fg = $view.querySelector('#f-forgot'); if (fg) fg.onclick = function () { forgot($view.querySelector('#f-email').value.trim()); };
       $view.querySelector('#f-pass').onkeydown = function (e) { if (e.key === 'Enter') submit(); };
+    }
+    function forgot(pre) {
+      $view.innerHTML = '<div class="login"><div class="logo">PÍ<span>CALE</span></div>' +
+        '<h1 class="mt" style="font-size:28px">¿Olvidaste tu contraseña?</h1><p class="sub">Escribe el correo de tu cuenta y te mandamos un link para poner una nueva.</p>' +
+        '<label class="field"><span>Correo</span><input id="r-email" type="email" inputmode="email" autocapitalize="none" autocomplete="email" value="' + esc(pre || '') + '"></label>' +
+        '<div class="err" id="r-err"></div><button class="btn mt" id="r-go">MANDAR LINK</button>' +
+        '<button class="link mt" id="r-back" style="display:block;margin:14px auto 0">‹ Volver a entrar</button></div>';
+      $view.querySelector('#r-back').onclick = draw;
+      $view.querySelector('#r-go').onclick = function () {
+        var bt = this, err = $view.querySelector('#r-err'), email = $view.querySelector('#r-email').value.trim();
+        if (!email) { err.textContent = 'Escribe tu correo'; return; }
+        bt.disabled = true; bt.innerHTML = '<span class="spin"></span>'; err.textContent = '';
+        api('/ai/auth/forgot', { method: 'POST', json: { email: email } }).then(function (r) {
+          $view.innerHTML = '<div class="login"><div class="logo">PÍ<span>CALE</span></div><div class="empty"><div class="ico">✉️</div>' +
+            (r.email_enabled
+              ? '<b>Revisa tu correo</b><p class="sub">Si <b>' + esc(email) + '</b> tiene cuenta en PÍCALE, te llegó un link para cambiar tu contraseña. Sirve 1 hora. Revisa también Spam.</p>'
+              : '<b>Recibimos tu solicitud</b><p class="sub">Si <b>' + esc(email) + '</b> tiene cuenta en PÍCALE, te mandamos el link para cambiar tu contraseña por WhatsApp en un rato.</p>') +
+            '</div><button class="btn ghost mt" id="r-ok">VOLVER A ENTRAR</button></div>';
+          $view.querySelector('#r-ok').onclick = draw;
+        }).catch(function (e) { bt.disabled = false; bt.textContent = 'MANDAR LINK'; err.textContent = errDetail(e, 'No se pudo. Intenta otra vez.'); });
+      };
     }
     function submit() {
       var btn = $view.querySelector('#f-go'), err = $view.querySelector('#f-err');
@@ -207,6 +230,32 @@
         });
     }
     draw();
+  }
+
+  // Link del correo: picalereplay.com/ai/#/reset/<token> → contraseña nueva y entra solo
+  function viewReset(parts) {
+    var token = parts[0] || '';
+    $view.innerHTML = '<div class="login"><div class="logo">PÍ<span>CALE</span></div><div id="rs"><div class="empty"><div class="spin" style="margin:auto;color:var(--green)"></div></div></div></div>';
+    var box = document.getElementById('rs');
+    api('/ai/auth/reset/' + encodeURIComponent(token)).then(function (d) {
+      box.innerHTML = '<h1 class="mt" style="font-size:28px">Nueva contraseña</h1><p class="sub">' + (d.email ? 'Cuenta ' + esc(d.email) : '') + '</p>' +
+        '<label class="field"><span>Contraseña nueva (mínimo 6)</span><input id="p1" type="password" autocomplete="new-password"></label>' +
+        '<label class="field"><span>Repítela</span><input id="p2" type="password" autocomplete="new-password"></label>' +
+        '<div class="err" id="p-err"></div><button class="btn mt" id="p-go">GUARDAR Y ENTRAR</button>';
+      box.querySelector('#p-go').onclick = function () {
+        var bt = this, err = box.querySelector('#p-err'), a = box.querySelector('#p1').value, b = box.querySelector('#p2').value;
+        if (a.length < 6) { err.textContent = 'Mínimo 6 caracteres'; return; }
+        if (a !== b) { err.textContent = 'Las contraseñas no son iguales'; return; }
+        bt.disabled = true; bt.innerHTML = '<span class="spin"></span>'; err.textContent = '';
+        api('/ai/auth/reset', { method: 'POST', json: { token: token, password: a } }).then(function (r) {
+          toast('Contraseña cambiada');
+          return api('/api/v1/auth/login', { method: 'POST', json: { email: r.email, password: a } }).then(saveSession).then(function () { haptic(); location.hash = '#/clips'; afterLogin(); })
+            .catch(function () { location.hash = '#/login'; });
+        }).catch(function (e) { bt.disabled = false; bt.textContent = 'GUARDAR Y ENTRAR'; err.textContent = errDetail(e, 'No se pudo guardar'); });
+      };
+    }).catch(function (e) {
+      box.innerHTML = '<div class="empty"><div class="ico">⌛</div><b>' + esc(errDetail(e, 'El link ya no sirve')) + '</b></div><a class="btn mt" href="#/login">IR A ENTRAR</a>';
+    });
   }
 
   // ───────────────────────── MIS CLIPS
@@ -707,15 +756,40 @@
   // 5 · Nombres: foto del final de la sesión con los jugadores detectados; tocas a cada uno.
   function stepNaming() {
     var m = S.activeMatch, box = pt(); if (!box || !m) return;
+    // Los jugadores cambian de lado durante el partido: se identifican DESPUÉS del análisis, con una foto
+    // donde la IA pone la letra (A–D) encima de cada uno. Aquí solo se manda a analizar.
+    var training0 = m.type === 'training';
+    box.innerHTML = stepper(3) + '<h1>' + (training0 ? '¡Terminó el entrenamiento!' : '¡Terminó tu partido!') + '</h1>' +
+      '<div class="card mt"><b>¿Cómo sabremos quién es quién?</b><div class="sub" style="margin:6px 0 0">Cuando termine el análisis te enseñamos una <b>foto con cada ' + (training0 ? 'alumno' : 'jugador') + ' marcado A, B, C y D</b>. Ahí eliges cuál eres' + (training0 ? '' : ' tú') + ' y agregas a los demás con su @usuario o correo. No importa que hayan cambiado de lado.</div></div>' +
+      '<button class="btn mt" id="go-an">ANALIZAR ' + (training0 ? 'ENTRENAMIENTO' : 'PARTIDO') + '</button>';
+    box.querySelector('#go-an').onclick = function () {
+      var bt = this; bt.disabled = true; bt.innerHTML = '<span class="spin"></span>';
+      var p0 = S.demo ? Promise.resolve({ status: 'queued' }) : api('/ai/sessions/' + m.id + '/players', { method: 'PUT', json: { players: [] } });
+      p0.then(function () {
+        haptic();
+        if (S.demo) { S._demoNames = {}; S._demoType = m.type; S._demoReadyAt = Date.now() + 6000; }
+        S.activeMatch = null; S.flow = null;
+        stepQueued(m);
+      }).catch(function () { bt.disabled = false; bt.textContent = 'ANALIZAR'; toast('No se pudo enviar. Intenta de nuevo.'); });
+    };
+    return;
     box.innerHTML = stepper(3) + '<h1>¿Quiénes jugaron?</h1><div class="empty"><div class="spin" style="margin:auto;color:var(--green)"></div><p class="mt">Sacando una foto de la cancha…</p></div>';
-    var tries = 0;
+    var tries = 0, naming = null;
+    // La foto sale del último pedazo de video que sube el club (o del en vivo). Mientras llega, ya se puede nombrar:
+    // a los 4 s se muestra la lista y la foto aparece sola cuando llegue (se sigue buscando hasta ~5 min).
+    function show(snap) { if (naming) naming.update(snap); else naming = drawNaming(snap); }
     function loadSnap() {
       var p = S.demo ? Promise.resolve(demoSnapshot()) : api('/ai/sessions/' + m.id + '/snapshot');
       p.then(function (snap) {
-        // El último pedazo de video tarda unos segundos en llegar del club
-        if (snap && snap.pending && tries++ < 40) { if (pt()) setTimeout(loadSnap, 3000); return; }
-        drawNaming(snap && !snap.pending ? snap : { image_url: null, people: [] });
-      }).catch(function () { drawNaming({ image_url: null, people: [] }); });
+        if (snap && snap.pending) {
+          tries++;
+          if (!naming && tries >= 2) show({ image_url: null, people: [], waiting: true });
+          if (tries < 100 && pt()) setTimeout(loadSnap, 3000);
+          else if (naming) naming.update({ image_url: null, people: [] });
+          return;
+        }
+        show(snap);
+      }).catch(function () { show({ image_url: null, people: [] }); });
     }
     loadSnap();
 
@@ -727,6 +801,7 @@
       function draw() {
         var meTaken = Object.keys(names).some(function (k) { return names[k].me; });
         box.innerHTML = stepper(3) + '<h1>¿Quiénes ' + (training ? 'entrenaron' : 'jugaron') + '?</h1><p class="sub">Toca a cada ' + (training ? 'alumno' : 'jugador') + ' en la foto y escribe su nombre. Así cada quien recibe sus propias estadísticas.</p>' +
+          (snap.waiting ? '<div class="note mt"><span class="spin" style="width:14px;height:14px;vertical-align:-2px;margin-right:6px;color:var(--green)"></span>La foto de la cancha llega en cuanto el club suba el video. Ya puedes ir nombrando por posición.</div>' : '') +
           (snap.image_url
             ? '<div class="snap mt"><img src="' + esc(snap.image_url) + '">' + people.filter(function (p) { return p.box; }).map(function (p) {
                 var b = p.box, n = names[p.track_id];
@@ -774,6 +849,12 @@
         }).catch(function () { btn.disabled = false; btn.textContent = 'ANALIZAR'; toast('No se pudo enviar. Intenta de nuevo.'); });
       }
       draw();
+      return { update: function (s2) {
+        if (!box.querySelector('#analyze') || box.querySelector('#analyze').disabled && Object.keys(names).length) return;   // ya se mandó
+        snap = s2;
+        if (s2.people && s2.people.length) people = s2.people;
+        draw();
+      } };
     }
   }
 
@@ -942,7 +1023,7 @@
           '<div class="card mt" style="border-color:var(--green-line)"><b>¿Jugaste este partido?</b><div class="sub" style="margin:4px 0 0">Elige tu letra y te salen tus estadísticas, tu mapa de calor y tus clips.</div>' +
           '<button class="btn mt" id="iam">ELEGIR MI LETRA</button></div>'
         : '') +
-      '<div id="clipsec"></div><div id="sumsec"></div><div id="plsec"></div><div id="statsec"></div>';
+      '<div id="whosec"></div><div id="clipsec"></div><div id="sumsec"></div><div id="plsec"></div><div id="statsec"></div>';
     var sbox = box.querySelector('#statsec');
     var sm = m.summary;
     if (sm && sm.rallies) {
@@ -952,7 +1033,25 @@
         stat(sm.longest_rally_s != null ? Math.round(sm.longest_rally_s) + ' s' : '—', 'Punto más largo') +
         stat(sm.avg_shots_per_rally != null ? sm.avg_shots_per_rally : '—', 'Golpes por punto') + '</div>';
     }
-    if (!m.spectator && !training) drawPlayers(box.querySelector('#plsec'), m, players);
+    if (!m.spectator) drawPlayers(box.querySelector('#plsec'), m, players);
+    // Dueño que todavía no dice cuál es: foto con A–D arriba de todo
+    if (m.is_owner && !m.spectator && !training && m.can_add_players && !players.some(function (p) { return p.is_me; })) {
+      var who0 = box.querySelector('#whosec');
+      who0.innerHTML = '<div class="card mt" style="border-color:var(--green-line)"><b>¿Cuál eres tú?</b>' +
+        '<div class="sub" style="margin:4px 0 8px">' + (m.snapshot_letters ? 'Búscate en la foto: cada jugador tiene su letra encima.' : 'A y B: cerca de la cámara · C y D: al fondo (como terminaron el partido).') + '</div>' +
+        (m.snapshot_url ? '<img src="' + esc(m.snapshot_url) + '" style="width:100%;border-radius:12px;display:block" alt="Foto del partido con las letras A, B, C y D">' : '') +
+        '<div class="claim mt">' + players.map(function (p) {
+          return '<button data-me="' + esc(p.track_id) + '"' + (p.display_name ? ' disabled' : '') + '><b>' + esc(p.track_id) + '</b><small>' + (p.display_name ? esc(p.display_name) : 'Soy yo') + '</small></button>';
+        }).join('') + '</div></div>';
+      who0.querySelectorAll('[data-me]').forEach(function (b) {
+        b.onclick = function () {
+          b.disabled = true;
+          api('/ai/sessions/' + m.id + '/players/' + b.getAttribute('data-me') + '/assign', { method: 'POST', json: { who: 'me' } })
+            .then(function () { haptic(); toast('¡Listo! Ahora agrega a los demás'); analisisDetail(m.id); })
+            .catch(function (e) { b.disabled = false; toast(errDetail(e, 'No se pudo')); });
+        };
+      });
+    }
     drawClips(box.querySelector('#clipsec'), m);
     var iam = box.querySelector('#iam');
     if (iam) iam.onclick = function () {
@@ -1113,7 +1212,8 @@
   // Jugadores del partido: quién es cada letra; el dueño (o quien ya está) agrega a los demás por @usuario o correo
   function drawPlayers(box, m, players) {
     if (!box || !players.length) return;
-    box.innerHTML = '<h2>Jugadores</h2><div class="list">' + players.map(function (p) {
+    var showPic = m.snapshot_url && m.snapshot_letters && (!m.is_owner || players.some(function (p) { return p.is_me; }));
+    box.innerHTML = '<h2>Jugadores</h2>' + (showPic ? '<img src="' + esc(m.snapshot_url) + '" style="width:100%;border-radius:12px;display:block;margin-bottom:10px" alt="Foto del partido con las letras A, B, C y D">' : '') + '<div class="list">' + players.map(function (p) {
       var name = p.is_me ? 'Tú' : p.display_name;
       var tag = p.is_me ? '' : p.invited ? '<span class="chip amber">Invitado</span>' : p.has_account ? '<span class="chip green">Con cuenta</span>' : '';
       return '<div class="item pl"><span class="lt">' + esc(p.track_id) + '</span><div><div class="ttl">' + (name ? esc(name) : '<span style="color:var(--muted)">Sin asignar</span>') + '</div>' +
@@ -1450,7 +1550,7 @@
       '<h2>Clubes</h2><div id="ad-edges" class="list"><div class="item"><span class="spin" style="color:var(--green)"></span></div></div>' +
       '<h2>Cuentas de PÍCALE <span class="sub" id="ac-n" style="font-size:14px"></span></h2>' +
       '<label class="field"><span>Buscar por @usuario, nombre o correo</span><input id="ac-q" autocapitalize="none" autocomplete="off"></label>' +
-      '<div id="ac-list" class="list mt"></div><button class="link mt" id="ac-copy" style="display:block;margin:10px auto 0">Copiar lista de @usuarios</button>' +
+      '<div id="ac-req"></div><div id="ac-list" class="list mt"></div><button class="link mt" id="ac-copy" style="display:block;margin:10px auto 0">Copiar lista de @usuarios</button>' +
       '<p class="free">Solo tú ves esta lista. "IA" = ya abrió PÍCALE AI.</p>' +
       '<h2>Calibrar canchas</h2><div id="ad-courts" class="list"></div><p class="free">La calibración le dice a la IA dónde están las líneas. Si una cancha sale mal (distancias raras, jugadores fuera de la cancha), calíbrala aquí.</p>' +
       '<h2>Tokens y administradores de cada club</h2><div id="ad-clubs"></div>' +
@@ -1534,12 +1634,30 @@
         box.innerHTML = accs.slice(0, 200).map(function (a) {
           return '<div class="item"><div style="min-width:0"><div class="ttl">' + (a.username ? '@' + esc(a.username) : '<span style="color:var(--muted)">sin @usuario</span>') + '</div>' +
             '<div class="dsc">' + esc((a.name || '') + (a.email ? ' · ' + a.email : '')) + '</div></div>' +
-            (a.uses_ai ? '<span class="chip green" style="margin-left:auto">IA</span>' : '') + '</div>';
+            (a.uses_ai ? '<span class="chip green" style="margin-left:auto">IA</span>' : '<span style="margin-left:auto"></span>') +
+            '<button class="chip" data-rl="' + esc(a.user_id) + '" aria-label="Link para cambiar contraseña">🔑</button></div>';
         }).join('') + (accs.length > 200 ? '<div class="item"><div class="dsc">… y ' + (accs.length - 200) + ' más. Usa el buscador.</div></div>' : '') ||
           '<div class="item"><div class="dsc">Sin resultados</div></div>';
+        box.querySelectorAll('[data-rl]').forEach(function (b) { b.onclick = function () { resetLink(b.getAttribute('data-rl')); }; });
       }).catch(function (e) { var box = document.getElementById('ac-list'); if (box) box.innerHTML = '<div class="item"><div class="dsc">' + esc(errDetail(e, 'No se pudo cargar')) + '</div></div>'; });
     }
     accounts('');
+    function resetLink(uid) {
+      api('/ai/admin/accounts/' + encodeURIComponent(uid) + '/reset-link', { method: 'POST' }).then(function (r) {
+        shareUrl(r.link, 'Cambia tu contraseña de PÍCALE');
+        toast('Link para ' + (r.name || r.email) + ' (sirve 24 h)');
+      }).catch(function (e) { toast(errDetail(e, 'No se pudo')); });
+    }
+    api('/ai/admin/password-requests').then(function (d) {
+      var box = document.getElementById('ac-req'); if (!box || !(d.requests || []).length) return;
+      box.innerHTML = '<div class="card mt" style="border-color:rgba(242,184,75,.35)"><b>Piden cambiar contraseña</b>' +
+        (d.email_enabled ? '' : '<div class="sub" style="margin:4px 0 0">El correo no está configurado: mándales el link con 🔑.</div>') +
+        d.requests.map(function (x) {
+          return '<div class="spread" style="padding:8px 0;border-top:1px solid var(--line);margin-top:8px"><span style="min-width:0">' + esc(x.name || x.username || x.email) + '<br><span class="sub">' + esc(x.email || '') + ' · ' + esc(fmtTime(x.at)) + '</span></span>' +
+            '<button class="chip green" data-rq="' + esc(x.user_id) + '">🔑 Link</button></div>';
+        }).join('') + '</div>';
+      box.querySelectorAll('[data-rq]').forEach(function (b) { b.onclick = function () { resetLink(b.getAttribute('data-rq')); }; });
+    }).catch(function () {});
     var aq; document.getElementById('ac-q').oninput = function (ev) { clearTimeout(aq); aq = setTimeout(function () { accounts(ev.target.value); }, 300); };
     document.getElementById('ac-copy').onclick = function () {
       var txt = accs.filter(function (a) { return a.username; }).map(function (a) { return '@' + a.username + (a.name ? ' — ' + a.name : ''); }).join('\n');
