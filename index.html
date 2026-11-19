@@ -128,6 +128,37 @@ nav{
   font-family:var(--display);font-size:18px;color:#000;background:var(--green);}
 .ai-steps li small{display:block;color:var(--muted);font-size:13px;margin-top:2px;}
 @media(max-width:820px){.ai-inner{grid-template-columns:1fr;padding:28px 22px;gap:28px;}}
+.hero-free{font-size:13px;color:var(--muted);margin:-40px 0 56px;}
+.hero-free b{color:var(--green);font-weight:600;}
+.hero-live{font-size:14px;color:var(--muted);margin:-34px 0 52px;}
+.hero-live a{color:var(--text);text-decoration:underline;text-underline-offset:3px;}
+.ai-phone{justify-self:center;width:min(300px,78vw);aspect-ratio:585/1000;border-radius:38px;padding:10px;background:#16181a;border:1px solid var(--border2);
+  box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 6px rgba(94,232,122,.06);overflow:hidden;}
+.ai-phone img{width:100%;height:100%;object-fit:cover;object-position:top;border-radius:30px;display:block;}
+.ai-steps.mt{margin:22px 0 26px;}
+.ai-get{max-width:var(--max);margin:22px auto 0;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.ai-get div{padding:18px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid var(--border);font-size:14px;line-height:1.5;color:var(--muted);}
+.ai-get b{display:block;color:var(--text);font-size:15px;margin:8px 0 4px;}
+.ai-get i{font-style:normal;font-size:22px;}
+@media(max-width:820px){.ai-get{grid-template-columns:1fr 1fr;}}
+@media(max-width:480px){.ai-get{grid-template-columns:1fr;}}
+.ai-faq{max-width:var(--max);margin:22px auto 0;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ai-faq details{padding:16px 18px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--border);}
+.ai-faq summary{cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;justify-content:space-between;gap:12px;}
+.ai-faq summary::after{content:'+';color:var(--green);font-size:20px;line-height:1;}
+.ai-faq details[open] summary::after{content:'–';}
+.ai-faq p{color:var(--muted);font-size:14px;line-height:1.6;margin-top:10px;}
+@media(max-width:820px){.ai-faq{grid-template-columns:1fr;}}
+.btn-section{padding:8px 24px 40px;}
+.btn-inner{max-width:var(--max);margin:0 auto;padding:40px 44px;border-radius:24px;background:var(--bg2);border:1px solid var(--border);}
+.btn-badge{display:inline-flex;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text);padding:7px 12px;border-radius:999px;border:1px solid var(--border2);margin-bottom:18px;}
+.btn-head .ai-sub{max-width:620px;}
+.btn-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 24px;}
+.btn-cards div{padding:18px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid var(--border);font-size:14px;line-height:1.5;color:var(--muted);}
+.btn-cards b{display:block;color:var(--text);font-size:15px;margin:8px 0 4px;}
+.btn-cards i{font-style:normal;font-size:22px;}
+.btn-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+@media(max-width:820px){.btn-inner{padding:28px 22px;}.btn-cards{grid-template-columns:1fr;}}
 
 /* ── SOMOS TORNEO BANNER ── */
 .somos-torneo{
@@ -346,7 +377,7 @@ footer{
   </div>
   <div class="nav-auth">
     <div id="auth-btn-container"></div>
-    <a href="clubs.html" class="nav-cta btn-hero" style="padding:8px 18px;font-size:13px;">Entrar →</a>
+    <a href="/ai/" data-ai-go class="nav-cta btn-hero btn-hero-primary" style="padding:8px 18px;font-size:13px;">PÍCALE AI →</a>
   </div>
 </nav>
 
@@ -357,20 +388,42 @@ footer{
 
   <div class="hero-eyebrow">
     <div class="hero-dot"></div>
-    3 clubes activos en México
+    NUEVO · PÍCALE AI
   </div>
 
   <h1 class="hero-title">
-    EL PÁDEL<br>QUE <span>RECORDARÁS</span>
+    TU PARTIDO,<br>ANALIZADO <span>POR IA</span>
   </h1>
 
   <p class="hero-sub">
-    <b>Replay en vivo, clips instantáneos y torneos competitivos</b> — todo en una plataforma diseñada para clubs y jugadores de pádel.
+    Juega como siempre. Al terminar recibes <b>tus mejores puntos en video, tus golpes, distancia y mapa de calor</b> — listos para subir a tus historias.
   </p>
 
   <div class="hero-actions">
-    <a href="clubs.html" class="btn-hero btn-hero-primary">Ver en vivo →</a>
-    <a href="auth.html" class="btn-hero btn-hero-secondary">Crear cuenta gratis</a>
+    <a href="/ai/?registro=1#/partido" data-ai-go class="btn-hero btn-hero-primary">Analizar mi partido →</a>
+    <a href="/ai/?demo=1#/analisis/demo" class="btn-hero btn-hero-secondary">Ver un ejemplo</a>
+  </div>
+  <p class="hero-free" id="hero-free">🎁 <b>5 tokens de regalo</b> al crear tu cuenta · 1 token = 1 partido</p>
+</section>
+
+<!-- EN VIVO Y CLIPS -->
+<section class="btn-section" id="clips-boton">
+  <div class="btn-inner">
+    <div class="btn-head">
+      <div class="btn-badge">EN TODAS LAS CANCHAS PÍCALE</div>
+      <h2 class="ai-title">EN VIVO Y<br><span>CLIPS</span></h2>
+      <p class="ai-sub">Cada cancha PÍCALE se transmite en vivo y, si haces un puntazo, picas el botón y te llevas la jugada.</p>
+    </div>
+    <div class="btn-cards">
+      <div><i>🔴</i><b>Transmisión en vivo</b>Mira cualquier cancha en vivo desde tu celular: tu partido, el de tus amigos o la final del torneo.</div>
+      <div><i>🔘</i><b>Clips</b>Pica el botón justo después de la jugada y se guarda lo que acaba de pasar, con replay al instante.</div>
+      <div><i>📲</i><b>Tuyos para compartir</b>Encuéntralos en Mis clips, descárgalos y súbelos a tus historias o al grupo de WhatsApp.</div>
+    </div>
+    <div class="btn-actions">
+      <a href="clubs.html" class="btn-hero btn-hero-primary">Ver canchas en vivo →</a>
+      <a href="/ai/#/clips" class="btn-hero btn-hero-secondary">Mis clips</a>
+    </div>
+    <p class="ai-note">¿Quieres el partido completo con estadísticas? Eso es <a href="#picale-ai" style="color:var(--green)">PÍCALE AI ↓</a></p>
   </div>
 </section>
 
@@ -378,20 +431,36 @@ footer{
 <section class="ai-section" id="picale-ai">
   <div class="ai-inner">
     <div>
-      <div class="ai-badge"><span class="d"></span> <span data-ai-tag>PRÓXIMAMENTE</span> · PÍCALE AI</div>
-      <h2 class="ai-title">TU PARTIDO COMPLETO,<br><span>ANALIZADO POR IA</span></h2>
-      <p class="ai-sub">Las cámaras del club graban tu partido completo. La inteligencia artificial de PÍCALE <b>corta tus mejores puntos en clips sin que piques el botón</b>, te deja crear los clips que quieras desde el partido completo y te da las estadísticas de cada jugador: <b>distancia, tiempo en la red, mapa de calor y un resumen tipo coach.</b></p>
+      <div class="ai-badge"><span class="d"></span> <span data-ai-tag>NUEVO</span> · PÍCALE AI</div>
+      <h2 class="ai-title">ASÍ DE<br><span>FÁCIL</span></h2>
+      <ol class="ai-steps mt">
+        <li><span>Crea tu cuenta<small>Te regalamos 5 tokens. No hay que descargar nada.</small></span></li>
+        <li><span>En la cancha, toca “Analizar”<small>Elige tu cancha o escanea su QR e inicia el partido.</small></span></li>
+        <li><span>Juega tu partido<small>La cámara del club lo graba completo. Te avisamos cuando la IA termine.</small></span></li>
+        <li><span>Búscate en la foto y comparte<small>Elige tu letra (A, B, C o D), agrega a tus compañeros con su @ y comparte.</small></span></li>
+      </ol>
       <div class="ai-actions">
-        <a id="ai-cta" href="auth.html?redirect=%2Fai%2F%23%2Fpartido" class="btn-hero btn-hero-primary">Crea tu cuenta y pruébalo primero →</a>
-        <span id="ai-note" class="ai-note">Muy pronto en tu club. Los clips del botón siguen gratis.</span>
+        <a id="ai-cta" href="/ai/?registro=1#/partido" data-ai-go class="btn-hero btn-hero-primary">Crear cuenta y analizar →</a>
+        <span id="ai-note" class="ai-note">1 token = 1 partido de hasta 90 minutos.</span>
       </div>
     </div>
-    <ol class="ai-steps">
-      <li><span>Escanea el QR de tu cancha<small>La app te dice en qué cancha estás.</small></span></li>
-      <li><span>Inicia tu partido<small>1 token por partido de hasta 90 minutos.</small></span></li>
-      <li><span>Al terminar, nombra a los jugadores<small>Tocas a cada uno en una foto de la cancha.</small></span></li>
-      <li><span>Recibe tus clips y tu análisis<small>Tus mejores puntos ya cortados, el partido completo y las estadísticas.</small></span></li>
-    </ol>
+    <a class="ai-phone" href="/ai/?demo=1#/analisis/demo" aria-label="Ver un análisis de ejemplo"><img src="assets/ai-demo.jpg" alt="Análisis de un partido en PÍCALE AI: puntos jugados, distancia, velocidad y tipos de golpe" loading="lazy"></a>
+  </div>
+
+  <div class="ai-get">
+    <div><i>🎬</i><b>Tus mejores puntos</b>La IA corta los puntos solos y además creas los clips que quieras del partido completo.</div>
+    <div><i>🎾</i><b>Tus golpes</b>Derechas, reveses, voleas, bandejas, remates y saques — toca uno y lo ves en el video.</div>
+    <div><i>📍</i><b>Cómo te moviste</b>Kilómetros, velocidad, tiempo en la red, sprints y mapa de calor de cada jugador.</div>
+    <div><i>📲</i><b>Para compartir</b>Video vertical ligero con tus stats para historias, y un link para que cualquiera vea el partido.</div>
+  </div>
+
+  <div class="ai-faq">
+    <details><summary>¿Cuánto cuesta?</summary><p>1 token por partido de hasta 90 minutos. Al crear tu cuenta te regalamos 5 tokens para que lo pruebes.</p></details>
+    <details><summary>¿Tengo que descargar una app?</summary><p>No. Funciona desde el navegador del celular en picalereplay.com/ai, y si quieres la agregas a tu pantalla de inicio.</p></details>
+    <details><summary>¿En qué canchas funciona?</summary><p>En las canchas de los clubes PÍCALE que tienen PÍCALE AI. Al tocar “Analizar” la app te muestra las disponibles.</p></details>
+    <details><summary>¿Cuánto tarda el análisis?</summary><p>Depende del internet del club y de la duración del partido. Te avisamos en cuanto está listo.</p></details>
+    <details><summary>¿Quién puede ver mi partido?</summary><p>Solo tú y los jugadores que agregues. Si quieres, sacas un link para que lo vea quien sea: tú decides si se ven también las estadísticas.</p></details>
+    <details><summary>¿Es lo mismo que los clips?</summary><p>No. Un clip guarda una jugada; PÍCALE AI es para cuando quieres el partido completo y tus estadísticas.</p></details>
   </div>
 </section>
 
@@ -407,7 +476,7 @@ footer{
         <div class="feature-icon">🤖</div>
         <div class="feature-title">Análisis con IA</div>
         <div class="feature-desc">Graba tu partido completo: tus mejores puntos salen en clips solos, creas los clips que quieras y recibes las estadísticas de cada jugador.</div>
-        <div><span class="feature-tag" data-ai-tag>PRÓXIMAMENTE</span></div>
+        <div><span class="feature-tag" data-ai-tag>NUEVO</span></div>
         <div class="feature-link">Conoce PÍCALE AI →</div>
       </a>
       <a class="feature-card" href="clubs.html">
@@ -593,22 +662,14 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ───── PÍCALE AI ─────
-// Cambia a 'beta' cuando arranque el piloto; todo el anuncio se actualiza solo.
-var AI_STATUS = 'proximamente'; // 'proximamente' | 'beta'
+// Con sesión iniciada (misma cuenta que la app) los botones van directo a analizar.
 (function () {
-  var beta = AI_STATUS === 'beta', logged = false;
+  var logged = false;
   try { logged = !!localStorage.getItem('picale_token'); } catch (e) {}
-  document.querySelectorAll('[data-ai-tag]').forEach(function (el) { el.textContent = beta ? 'BETA' : 'PRÓXIMAMENTE'; });
-  var cta = document.getElementById('ai-cta'), note = document.getElementById('ai-note');
-  if (logged) {
-    cta.href = '/ai/#/partido';
-    cta.textContent = beta ? 'Analizar mi partido →' : 'Conócelo en la app →';
-    note.textContent = (beta ? 'Beta' : 'Muy pronto') + ': 1 token por partido. Los clips del botón siguen gratis.';
-  } else {
-    cta.href = 'auth.html?redirect=%2Fai%2F%23%2Fpartido';
-    cta.textContent = beta ? 'Inicia sesión para probarlo →' : 'Crea tu cuenta y pruébalo primero →';
-    note.textContent = beta ? 'Beta para jugadores con cuenta PÍCALE. Los clips del botón siguen gratis.' : 'Muy pronto en tu club. Los clips del botón siguen gratis.';
-  }
+  if (!logged) return;
+  document.querySelectorAll('[data-ai-go]').forEach(function (a) { a.href = '/ai/#/partido'; });
+  var cta = document.getElementById('ai-cta'); if (cta) cta.textContent = 'Analizar mi partido →';
+  var hf = document.getElementById('hero-free'); if (hf) hf.innerHTML = '1 token = 1 partido de hasta 90 min · <a href="/ai/#/creditos" style="color:var(--green)">ver mis tokens</a>';
 })();
 
 // Sticky nav shadow

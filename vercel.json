@@ -19,6 +19,10 @@
       "dest": "/mobile/www/$1"
     },
     {
+      "src": "/p/([A-Za-z0-9]+)",
+      "dest": "https://api.picalereplay.com/ai/p/$1"
+    },
+    {
       "src": "/c/(.*)",
       "dest": "/c.html"
     },

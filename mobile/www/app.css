@@ -267,3 +267,24 @@ h2{font-family:var(--display);font-size:22px;letter-spacing:1.2px;font-weight:40
 .suggest .nm{display:flex;flex-direction:column;min-width:0}
 .suggest .nm small{color:var(--muted);font-size:12px}
 .suggest .sg-none{padding:10px 12px;font-size:13px;color:var(--muted)}
+
+.gift{margin:4px 0 14px;padding:12px 14px;border-radius:12px;background:var(--green-dim);border:1px solid var(--green-line);font-size:14px;line-height:1.4}
+.gift b{color:var(--green)}
+
+/* lanzamiento: invitado, compartir partido */
+.topcta{background:var(--green);color:#0A0A0A;font-weight:700;font-size:12.5px;padding:8px 13px;border-radius:20px;white-space:nowrap}
+.sharebar{display:flex;gap:10px}
+.sharebar .btn{flex:1;height:46px;font-size:14px;margin-top:0}
+.sharebar .btn + .btn{margin-top:0}
+.lk{display:flex;gap:8px;align-items:center;padding:8px}
+.lk input{flex:1;min-width:0;background:transparent;border:0;color:var(--text);font-size:14px;padding:0 6px;outline:none}
+.lk .btn{width:auto;height:40px;padding:0 14px;margin:0;font-size:13.5px}
+.switch{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--bg3);cursor:pointer}
+.switch input{appearance:none;-webkit-appearance:none;flex:0 0 44px;height:26px;border-radius:13px;background:var(--line2);position:relative;transition:.2s;margin:0}
+.switch input::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+.switch input:checked{background:var(--green)}
+.switch input:checked::after{left:21px}
+.switch span{font-weight:600;font-size:14.5px;line-height:1.3}
+.switch small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;margin-top:3px}
+.btn.wa{text-decoration:none}
+.pubcta{border-color:var(--green-line);background:var(--green-dim)}

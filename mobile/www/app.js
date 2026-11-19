@@ -97,6 +97,11 @@
         history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
       }
       renderSport();
+      // Sin cuenta se puede: ver la demo (?demo=1) y abrir un partido compartido (#/p/<link>)
+      if (!S.token && (S.demo || isPublicHash(location.hash))) {
+        if (S.demo) { S.user = { name: 'Invitado' }; S._demoGuest = true; }
+        return finishBoot(S.demo && !/^#\/(analisis|p)\b/.test(location.hash) ? '#/analisis/demo' : null);
+      }
       if (!S.token) {
         var h0 = location.hash;
         S.next = h0 && h0 !== '#/login' && h0 !== '#/' ? h0 : (S.pendingQR ? '#/partido' : null);
@@ -144,17 +149,21 @@
   var routes = {
     login: viewLogin, clips: viewClips, vivo: viewVivo, partido: viewPartido,
     analisis: viewAnalisis, perfil: viewPerfil, creditos: viewCreditos, admin: viewAdmin, calibrar: viewCalibrar, reset: viewReset,
-    club: viewClub, americana: viewAmericana,
+    club: viewClub, americana: viewAmericana, p: viewPublic,
   };
+  function isPublicHash(h) { return /^#\/p\/[A-Za-z0-9]+/.test(h || ''); }
   function route() {
     stopHls();
     var parts = (location.hash.replace(/^#\/?/, '') || 'clips').split('/');
     var name = parts[0];
-    if (!S.token && name !== 'login' && name !== 'reset') { S.next = location.hash; location.hash = '#/login'; return; }
+    var guest = !S.token && (name === 'p' || (S._demoGuest && name === 'analisis'));
+    if (!S.token && !guest && name !== 'login' && name !== 'reset') { S.next = location.hash; location.hash = '#/login'; return; }
     var fn = routes[name] || viewClips;
     var chrome = name !== 'login' && name !== 'reset';
     document.getElementById('topbar').classList.toggle('hidden', !chrome);
-    document.getElementById('tabbar').classList.toggle('hidden', !chrome);
+    document.getElementById('tabbar').classList.toggle('hidden', !chrome || guest);
+    document.getElementById('sport-toggle').classList.toggle('hidden', guest);
+    document.getElementById('topcta').classList.toggle('hidden', !guest);
     $view.classList.toggle('full', !chrome);
     var tab = name === 'americana' ? 'partido' : name === 'club' ? 'perfil' : name;
     document.querySelectorAll('.tabbar a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-tab') === tab); });
@@ -165,12 +174,13 @@
 
   // ───────────────────────── LOGIN
   function viewLogin() {
-    var mode = 'login';
+    var mode = /[?&]registro=1/.test(location.search) ? 'reg' : 'login';    // la landing manda ?registro=1
     function draw() {
       $view.innerHTML =
         '<div class="login">' +
         '<div class="logo">PÍ<span>CALE</span></div><div class="tagline">TU JUGADA MÁS CERCA</div>' +
         '<div class="seg"><button data-m="login" class="' + (mode === 'login' ? 'on' : '') + '">Entrar</button><button data-m="reg" class="' + (mode === 'reg' ? 'on' : '') + '">Crear cuenta</button></div>' +
+        (mode === 'reg' ? '<div class="gift">🎁 Al crear tu cuenta te regalamos <b>5 tokens</b>: 5 partidos analizados con IA.</div>' : '') +
         (mode === 'reg'
           ? '<label class="field"><span>Nombre</span><input id="f-name" autocomplete="name"></label>' +
             '<label class="field"><span>Usuario (opcional)</span><input id="f-user" autocapitalize="none" autocomplete="username"></label>'
@@ -180,6 +190,7 @@
         '<div class="err" id="f-err"></div>' +
         '<button class="btn mt" id="f-go">' + (mode === 'reg' ? 'CREAR CUENTA' : 'ENTRAR') + '</button>' +
         (mode === 'login' ? '<button class="link mt" id="f-forgot" style="display:block;margin:14px auto 0">¿Olvidaste tu contraseña?</button>' : '') +
+        '<a class="link" href="?demo=1#/analisis/demo" style="display:block;text-align:center;margin-top:18px;color:var(--muted)">Ver un análisis de ejemplo →</a>' +
         '<p class="free">' + (isNative ? 'Solo entras una vez. La app te mantiene con tu sesión.' : 'Es la misma cuenta de picalereplay.com.') + '</p>' +
         (isNative ? '' : '<p class="free"><a class="link" href="/">‹ Volver a picalereplay.com</a></p>') +
         '</div>';
@@ -922,6 +933,82 @@
     load();
   }
 
+  // ───────────────────────── PARTIDO COMPARTIDO (sin cuenta, solo con el link)
+  function viewPublic(parts) {
+    clearInterval(S.timer);
+    var tok = parts[0] || '';
+    $view.innerHTML = '<div id="ad"><div class="empty"><div class="spin" style="margin:auto;color:var(--green)"></div></div></div>';
+    var p = tok === 'demo' ? Promise.resolve(Object.assign(demoSession('match'), { public: true, spectator: true, public_stats: true, is_owner: false, club_name: 'Somos Pádel' }))
+      : fetch(API + '/ai/public/' + encodeURIComponent(tok)).then(function (r) { if (!r.ok) throw { status: r.status }; return r.json(); });
+    p.then(function (m) {
+      var box = document.getElementById('ad'); if (!box) return;
+      if (tok === 'demo') m.players.forEach(function (x) { x.is_me = false; });
+      drawReport(box, m);
+    }).catch(function () {
+      var box = document.getElementById('ad'); if (!box) return;
+      box.innerHTML = '<div class="empty"><div class="ico">🔗</div><b>Este link ya no está disponible</b><p class="sub">Quien lo compartió pudo haberlo desactivado.</p></div>' +
+        '<a class="btn mt" href="' + (S.token ? '#/partido' : '?registro=1#/login') + '">ANALIZA TU PARTIDO CON IA</a>';
+    });
+  }
+
+  // Link para que cualquiera vea el partido (video y mejores puntos; stats solo si el dueño quiere)
+  function linkSheet(m, onChange) {
+    var md = document.getElementById('modal');
+    md.innerHTML = '<div class="bar"><span class="sub" style="margin:0">Compartir partido</span><button class="x" id="mx" aria-label="Cerrar">×</button></div>' +
+      '<div id="lkb" style="padding:0 16px calc(var(--sb) + 18px);overflow:auto;flex:1"></div>';
+    md.classList.remove('hidden'); md.classList.add('solid');
+    md.querySelector('#mx').onclick = closeModal;
+    var box = md.querySelector('#lkb'), busy = false;
+    function call(method, json) {
+      if (S.demo) {
+        if (method === 'DELETE') return Promise.resolve({ ok: true });
+        return Promise.resolve({ link: CFG.WEB + '/p/demo', stats: json && 'stats' in json ? json.stats : !!m.public_stats, is_owner: true });
+      }
+      return api('/ai/sessions/' + m.id + '/public', { method: method, json: json || {} });
+    }
+    function draw() {
+      var on = !!m.public_link;
+      box.innerHTML = '<h1 style="font-size:30px">Que lo vea quien quieras</h1>' +
+        '<p class="sub">Con el link cualquiera ve el partido completo y los mejores puntos, sin descargar nada ni crear cuenta.</p>' +
+        (on
+          ? '<div class="card mt lk"><input id="lk-url" readonly value="' + esc(m.public_link) + '"><button class="btn ghost" id="lk-copy">Copiar</button></div>' +
+            (m.is_owner ? '<label class="switch mt"><input type="checkbox" id="lk-stats"' + (m.public_stats ? ' checked' : '') + '><span>Mostrar también el análisis<small>Estadísticas, golpes y mapas de calor de los 4 jugadores</small></span></label>'
+              : '<p class="free">' + (m.public_stats ? 'Se ve el video y el análisis.' : 'Se ve el video y los mejores puntos (las estadísticas solo si quien pagó las activa).') + '</p>') +
+            '<button class="btn mt" id="lk-share">COMPARTIR LINK</button>' +
+            '<a class="btn ghost mt wa" id="lk-wa" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent('Mira nuestro partido en PÍCALE 🎾 ' + m.public_link) + '">Mandar por WhatsApp</a>' +
+            (m.is_owner ? '<button class="link mt" id="lk-off" style="display:block;margin:16px auto 0;color:var(--muted)">Dejar de compartir</button>' : '')
+          : (m.is_owner ? '<label class="switch mt"><input type="checkbox" id="lk-stats"' + (m.public_stats ? ' checked' : '') + '><span>Mostrar también el análisis<small>Estadísticas, golpes y mapas de calor de los 4 jugadores</small></span></label>' : '') +
+            '<button class="btn mt" id="lk-make">CREAR LINK</button>');
+      var mk = box.querySelector('#lk-make');
+      if (mk) mk.onclick = function () {
+        var st = box.querySelector('#lk-stats');
+        mk.disabled = true;
+        call('POST', st ? { stats: st.checked } : {}).then(function (r) { haptic(); m.public_link = r.link; m.public_stats = r.stats; changed(); draw(); })
+          .catch(function (e) { mk.disabled = false; toast(errDetail(e, 'No se pudo crear el link')); });
+      };
+      var st = box.querySelector('#lk-stats');
+      if (st && on) st.onchange = function () {
+        if (busy) return; busy = true;
+        call('POST', { stats: st.checked }).then(function (r) { m.public_stats = r.stats; changed(); toast(r.stats ? 'Ahora se ve el análisis' : 'Ahora solo se ve el video'); })
+          .catch(function (e) { st.checked = !st.checked; toast(errDetail(e, 'No se pudo')); }).then(function () { busy = false; });
+      };
+      var cp = box.querySelector('#lk-copy');
+      if (cp) cp.onclick = function () {
+        var i = box.querySelector('#lk-url'); i.select();
+        (navigator.clipboard ? navigator.clipboard.writeText(m.public_link) : Promise.reject()).then(function () { toast('Link copiado'); })
+          .catch(function () { try { document.execCommand('copy'); toast('Link copiado'); } catch (e) {} });
+      };
+      var sh = box.querySelector('#lk-share'); if (sh) sh.onclick = function () { shareUrl(m.public_link, 'Nuestro partido en PÍCALE'); };
+      var off = box.querySelector('#lk-off');
+      if (off) off.onclick = function () {
+        call('DELETE').then(function () { m.public_link = null; m.public_stats = false; changed(); toast('El link ya no funciona'); draw(); })
+          .catch(function (e) { toast(errDetail(e, 'No se pudo')); });
+      };
+    }
+    function changed() { if (onChange) onChange(); }
+    draw();
+  }
+
   function drawReport(box, m) {
     var players = m.players || [];
     var training = m.type === 'training';
@@ -989,7 +1076,7 @@
         }).join('') + '</div>' : '') +
         (sel && sel.heatmap_url ? '<h2>Mapa de calor</h2><img src="' + esc(sel.heatmap_url) + '" style="width:100%;border-radius:16px;border:1px solid var(--line)">' : '') +
         (sel && sel.coach_summary ? '<h2>' + (training ? 'Resumen de la IA' : 'Resumen del coach') + '</h2><div class="card coach">' + esc(sel.coach_summary).replace(/\n/g, '<br>') + '</div>' : '') +
-        (training && m.is_owner !== false
+        (m.public ? '' : training && m.is_owner !== false
           ? '<h2>Notas del coach</h2><textarea id="note" class="ta" placeholder="Qué trabajar la próxima clase…">' + esc((sel && sel.coach_note) || '') + '</textarea>' +
             '<button class="btn mt" id="send">Enviar reporte a ' + esc(who(sel)) + '</button>'
           : ((m.players || []).some(function (p) { return p.is_me; }) || m.is_owner
@@ -1016,14 +1103,42 @@
     function stat(v, k) { return '<div class="stat"><div class="v">' + esc(v) + '</div><div class="k">' + esc(k) + '</div></div>'; }
     var ev = !!m.event_id;
     box.innerHTML = '<span class="chip' + (training ? ' amber' : ' green') + '">' + (training ? '🎯 Entrenamiento' : ev ? '🏆 Americana' : m.type === 'clip' ? '🎬 Jugada' : '🎾 Partido') + '</span>' +
-      '<h1 class="mt">' + esc(ev ? (m.event_title || 'Americana') : ct ? ct.club : 'Tu sesión') + '</h1><p class="sub">' +
-      esc((ev ? (m.court_name || (ct && ct.name) || '') + ' · ' : ct ? ct.name + ' · ' : '') + fmtTime(m.started_at)) + '</p>' +
-      (m.spectator
+      '<h1 class="mt">' + esc(ev ? (m.event_title || 'Americana') : m.event_title || (ct ? ct.club : m.club_name || 'Tu sesión')) + '</h1><p class="sub">' +
+      esc((ev ? (m.court_name || (ct && ct.name) || '') + ' · ' : ct ? ct.name + ' · ' : m.court_name ? m.court_name + ' · ' : '') + fmtTime(m.started_at)) + '</p>' +
+      (m.public
+        ? (players.some(function (p) { return p.display_name; }) ? '<p class="sub" style="margin-top:-4px">' + players.filter(function (p) { return p.display_name; }).map(function (p) { return esc(p.display_name); }).join(' · ') + '</p>' : '') +
+          (m.public_stats ? '<div class="seg mt" id="pubtabs"><button data-go="clipsec" class="on">🎬 El juego</button><button data-go="statsec">📊 El análisis</button></div>' : '')
+        : '') +
+      (!m.spectator && m.status === 'ready' && !training
+        ? '<div class="sharebar mt"><button class="btn" id="sb-link">🔗 Compartir partido</button><button class="btn ghost" id="sb-story">📲 Video para redes</button></div>'
+        : '') +
+      (m.spectator && !m.public
         ? (m.snapshot_url ? '<img src="' + esc(m.snapshot_url) + '" style="width:100%;border-radius:14px;display:block;margin-top:6px" alt="">' : '') +
           '<div class="card mt" style="border-color:var(--green-line)"><b>¿Jugaste este partido?</b><div class="sub" style="margin:4px 0 0">Elige tu letra y te salen tus estadísticas, tu mapa de calor y tus clips.</div>' +
           '<button class="btn mt" id="iam">ELEGIR MI LETRA</button></div>'
         : '') +
-      '<div id="whosec"></div><div id="clipsec"></div><div id="sumsec"></div><div id="plsec"></div><div id="statsec"></div>';
+      '<div id="whosec"></div><div id="clipsec"></div><div id="sumsec"></div><div id="plsec"></div><div id="statsec"></div>' +
+      (m.public
+        ? '<div class="card mt pubcta"><b>Analiza tu partido con IA</b><div class="sub" style="margin:4px 0 0">Golpes, distancia, mapa de calor y tus mejores puntos en video. Te regalamos 5 tokens al crear tu cuenta.</div>' +
+          '<a class="btn mt" href="' + (S.token ? '#/partido' : '?registro=1#/login') + '">' + (S.token ? 'ANALIZAR MI PARTIDO' : 'CREAR CUENTA GRATIS') + '</a>' +
+          '<button class="link mt" id="pub-share" style="display:block;margin:14px auto 0">Compartir este partido</button></div>'
+        : '');
+    var pt = box.querySelector('#pubtabs');
+    if (pt) pt.querySelectorAll('[data-go]').forEach(function (b) {
+      b.onclick = function () {
+        pt.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
+        var t = box.querySelector('#' + b.getAttribute('data-go')); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    });
+    var ps0 = box.querySelector('#pub-share');
+    if (ps0) ps0.onclick = function () { shareUrl(location.href, 'Partido en PÍCALE'); };
+    var sbl = box.querySelector('#sb-link'); if (sbl) sbl.onclick = function () { linkSheet(m); };
+    var sbs = box.querySelector('#sb-story');
+    if (sbs) sbs.onclick = function () {
+      var mine = players.filter(function (p) { return p.is_me; })[0];
+      if (!mine && !m.is_owner) return toast('Primero elige cuál eres');
+      shareSheet(m, null, null);
+    };
     var sbox = box.querySelector('#statsec');
     var sm = m.summary;
     if (sm && sm.rallies) {
@@ -1058,7 +1173,7 @@
       claimSheet({ session_id: m.id, snapshot_url: m.snapshot_url, start: m.started_at, end: m.ends_at,
         players: players.map(function (p) { return { track_id: p.track_id, claimed: !!p.display_name, is_me: p.is_me, name: p.display_name }; }) }, m.claim_cost);
     };
-    if (!m.spectator) draw();
+    if (!m.spectator || (m.public && m.public_stats)) draw();
   }
 
   // ───────────────────────── CALIBRAR UNA CANCHA (admin, desde el cel)
@@ -1308,7 +1423,7 @@
             (c.status === 'ready' ? '<img src="' + esc(c.thumbnail_url) + '" loading="lazy">' : '<div class="empty" style="padding:40% 0 0"><div class="spin" style="margin:auto;color:var(--green)"></div></div>') +
             '<span class="badge' + (c.auto ? ' ai' : '') + '">' + (c.auto ? 'AUTOMÁTICO' : 'TU CLIP') + '</span>' +
             '<div class="meta"><b>' + esc(c.title || 'Clip') + '</b>' + t(c.start) + ' · ' + Math.round(c.end - c.start) + ' s</div></button>';
-        }).join('') + '</div>' : '<div class="note">Aquí aparecen tus clips: los mejores puntos se cortan solos y puedes crear los tuyos abajo.</div>') +
+        }).join('') + '</div>' : '<div class="note">' + (m.spectator ? 'Los mejores puntos aparecen aquí. ' + (m.video_url ? 'Abajo está el partido completo.' : '') : 'Aquí aparecen tus clips: los mejores puntos se cortan solos y puedes crear los tuyos abajo.') + '</div>') +
         (m.video_url
           ? '<h2>' + (m.type === 'clip' ? 'Tu jugada completa' : 'Partido completo') + '</h2>' +
             '<div class="player"><video id="fv" src="' + esc(m.video_url) + '" controls playsinline preload="metadata"></video></div>' +
@@ -1330,7 +1445,7 @@
     }
     function wire() {
       box.querySelectorAll('[data-c]').forEach(function (b) {
-        b.onclick = function () { var c = clips[+b.getAttribute('data-c')]; if (c.status === 'ready') openClip({ url: c.url, created_at: m.started_at, session: m, clip_id: c.id }); else toast('Se está cortando, unos segundos…'); };
+        b.onclick = function () { var c = clips[+b.getAttribute('data-c')]; if (c.status === 'ready') openClip({ url: c.url, created_at: m.started_at, session: m.spectator ? null : m, clip_id: c.id }); else toast('Se está cortando, unos segundos…'); };
       });
       var v = box.querySelector('#fv'); if (!v) return;
       box.querySelectorAll('[data-m]').forEach(function (b) {
@@ -1425,6 +1540,17 @@
       ],
     };
   }
+  // Foto de ejemplo con la letra encima de cada jugador (como la que saca la IA al terminar)
+  function demoLetters() {
+    var snap = demoSnapshot(), svg = decodeURIComponent(snap.image_url.split(',')[1]);
+    var tags = [['A', 190, 300, 1.25], ['B', 430, 290, 1.25], ['C', 250, 100, 0.8], ['D', 380, 95, 0.8]].map(function (t) {
+      var w = 34 * t[3], h = 78 * t[3], x = t[1] - w / 2, y = t[2] - h;
+      return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="none" stroke="#5EE87A" stroke-width="2.5" rx="4"/>' +
+        '<rect x="' + (t[1] - 13) + '" y="' + (y - 30) + '" width="26" height="26" rx="6" fill="#5EE87A"/>' +
+        '<text x="' + t[1] + '" y="' + (y - 11) + '" text-anchor="middle" font-family="Arial" font-weight="700" font-size="18" fill="#06120a">' + t[0] + '</text>';
+    }).join('');
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg.replace('</svg>', tags + '</svg>'));
+  }
   function demoSession(type, id) {
     var t = Date.now() / 1000 - 3600 * 2, names = (type === (S._demoType || 'match') && S._demoNames) || null;
     var ready = !S._demoReadyAt || Date.now() > S._demoReadyAt || id === 'demo-t';
@@ -1445,12 +1571,23 @@
         pl('B', 1100, { Bandeja: 58, Volea: 79, 'Salida de pared': 47, Drive: 40 }, 55, 14, { shots_per_min: 3.7, avg_rally: 5.8, active_min: 49 }),
       ] };
     }
-    return { id: 'demo', type: 'match', status: ready ? 'ready' : 'processing', court_id: 'somos_c3', started_at: t, players: [
-      pl('A', 2140, { Drive: 88, 'Revés': 41, Volea: 37, Globo: 22, Smash: 9, Saque: 30 }, 34, 21.4),
-      pl('B', 1980, { Drive: 52, 'Revés': 71, Volea: 44, Globo: 31, Smash: 14, Saque: 28 }, 41, 19.8),
-      pl('C', 2310, { Drive: 95, 'Revés': 38, Volea: 25, Globo: 40, Smash: 5, Saque: 31 }, 22, 22.9),
-      pl('D', 2050, { Drive: 61, 'Revés': 66, Volea: 30, Globo: 35, Smash: 11, Saque: 29 }, 28, 20.6),
-    ] };
+    function more(back, mid, drive, spr, sub, avg, fore, hand) {
+      return { back_pct: back, mid_pct: mid, net_pct: Math.round((100 - back - mid) * 10) / 10, drive_side_pct: drive, sprints: spr,
+        net_approaches: sub, avg_speed_kmh: avg, distance_per_rally_m: Math.round(18 + spr / 3), shots_per_rally: 2.4,
+        forehand_pct: fore, hand: hand, active_min: 61, minutes: 88 };
+    }
+    var m = { id: 'demo', type: 'match', status: ready ? 'ready' : 'processing', court_id: 'somos_c3', started_at: t,
+      analysis_version: 'v2.1-golpes', is_owner: true, can_add_players: true,
+      snapshot_url: demoLetters(), snapshot_letters: true,
+      summary: { rallies: 112, avg_rally_s: 9, longest_rally_s: 41, avg_shots_per_rally: 9.6, total_shots: 1075 },
+      players: [
+        pl('A', 2140, { Saque: 30, Derecha: 88, 'Revés': 41, 'Volea de derecha': 22, 'Volea de revés': 15, Bandeja: 26, Remate: 9 }, 34, 21.4, more(38, 28, 74, 23, 31, 7.9, 68, 'diestro')),
+        pl('B', 1980, { Saque: 28, Derecha: 52, 'Revés': 71, 'Volea de derecha': 19, 'Volea de revés': 25, Bandeja: 31, Remate: 14 }, 41, 19.8, more(31, 28, 22, 18, 36, 7.2, 46, 'diestro')),
+        pl('C', 2310, { Saque: 31, Derecha: 95, 'Revés': 38, 'Volea de derecha': 14, 'Volea de revés': 11, Bandeja: 18, Remate: 5 }, 22, 22.9, more(49, 29, 71, 27, 19, 8.4, 74, 'diestro')),
+        pl('D', 2050, { Saque: 29, Derecha: 61, 'Revés': 66, 'Volea de derecha': 17, 'Volea de revés': 13, Bandeja: 22, Remate: 11 }, 28, 20.6, more(42, 30, 25, 20, 24, 7.6, 49, 'zurdo')),
+      ] };
+    if (names) m.players.forEach(function (p) { p.has_account = !!p.display_name; });
+    return m;
   }
 
   // ───────────────────────── CRÉDITOS (compras dentro de la app)
