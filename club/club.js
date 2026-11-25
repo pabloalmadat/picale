@@ -56,11 +56,17 @@
     },
     courtNow: function (n) { return json(API + '/api/v1/playtomic/court/' + n + '/now'); },
     bookingsFor: function (today, n) { return ((today && today.by_court) || {})[String(n)] || []; },
-    live: function (arr) { return arr.filter(function (b) { return b.status === 'IN_PROGRESS'; })[0] || null; },
+    // En curso = la hora actual está entre el inicio y el fin. No se confía solo en status:
+    // Playtomic a veces marca IN_PROGRESS una reserva que empieza más tarde.
+    live: function (arr) {
+      var now = P.localIso(), t = P._t;
+      return arr.filter(function (b) { return t(b.start) && t(b.start) <= now && (!t(b.end) || t(b.end) > now) && !/CANCEL/i.test(b.status || ''); })
+        .sort(function (a, b) { return t(a.start) > t(b.start) ? -1 : 1; })[0] || null;
+    },
+    _t: function (iso) { return String(iso || '').replace('Z', '').slice(0, 19); },
     upcoming: function (arr) {
-      var now = P.localIso();
-      var st = function (b) { return String(b.start || '').replace('Z', '').slice(0, 19); };
-      return arr.filter(function (b) { return b.status !== 'IN_PROGRESS' && st(b) > now; })
+      var now = P.localIso(), st = function (b) { return P._t(b.start); };
+      return arr.filter(function (b) { return st(b) > now && !/CANCEL/i.test(b.status || ''); })
         .sort(function (a, b) { return st(a) < st(b) ? -1 : 1; });
     },
     isClass: function (b) { return !!b && (b.display_type === 'clase' || /clase|lesson|class/i.test(b.booking_type || '')); },

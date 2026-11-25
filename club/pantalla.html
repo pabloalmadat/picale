@@ -130,7 +130,8 @@ function mins(iso){ var t = String(iso || '').replace('Z', ''); return t ? Math.
 function renderClass(){
   var b = curClass; if (!b) return;
   var t = P.teams(b), names = t.L.concat(t.R);
-  $('cWho').textContent = (b.activity_name && b.activity_name.trim()) || (names.length ? names.join(' · ') : 'Clase de pádel');
+  var act = (b.activity_name || '').trim().replace(/^private class$/i, 'Clase privada').replace(/^group class$/i, 'Clase grupal');
+  $('cWho').textContent = names.length ? names.join(' · ') + (act ? '  ·  ' + act : '') : (act || 'Clase de pádel');
   var now = mins(P.localIso()), a = mins(b.start), z = mins(b.end), left = z != null ? Math.max(0, z - now) : null;
   $('cTm').innerHTML = 'HASTA ' + P.hhmm(b.end) + (left != null ? '<span>faltan ' + (left >= 60 ? Math.floor(left / 60) + ' h ' + (left % 60) + ' min' : left + ' min') + '</span>' : '');
   $('cBar').style.width = (a != null && z > a ? Math.min(100, Math.max(0, (now - a) / (z - a) * 100)) : 0) + '%';
