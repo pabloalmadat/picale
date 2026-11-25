@@ -23,9 +23,9 @@
   };
 
   function q(name, def) { return new URLSearchParams(location.search).get(name) || def; }
-  function json(url, opt) {
+  function json(url, opt, ms) {
     var ctl = window.AbortController ? new AbortController() : null;
-    var t = ctl && setTimeout(function () { ctl.abort(); }, 10000);
+    var t = ctl && setTimeout(function () { ctl.abort(); }, ms || 10000);
     return fetch(url, Object.assign({ cache: 'no-store', signal: ctl && ctl.signal }, opt || {}))
       .then(function (r) { clearTimeout(t); if (!r.ok) { var e = new Error('HTTP ' + r.status); e.status = r.status; throw e; } return r.json(); });
   }
@@ -40,7 +40,20 @@
     hls: function (c) { return API + '/hls/' + c.key + '/index.m3u8'; },
 
     // ── Playtomic (solo Somos por ahora) ──
-    today: function () { return json(API + '/api/v1/playtomic/today'); },
+    // Playtomic puede tardar (el servidor consulta a Playtomic en ese momento): 30 s, y un reintento
+    today: function () {
+      var u = API + '/api/v1/playtomic/today';
+      return json(u, null, 30000).catch(function () { return json(u, null, 30000); })
+        .then(function (d) {
+          // Si el servidor solo manda la lista "bookings", se agrupa por cancha aquí
+          if (d && !d.by_court && Array.isArray(d.bookings)) {
+            d.by_court = {};
+            d.bookings.forEach(function (b) { var k = String(b.court_num); (d.by_court[k] = d.by_court[k] || []).push(b); });
+          }
+          if (!d || !d.by_court) throw new Error('respuesta sin reservas: ' + JSON.stringify(d).slice(0, 120));
+          return d;
+        });
+    },
     courtNow: function (n) { return json(API + '/api/v1/playtomic/court/' + n + '/now'); },
     bookingsFor: function (today, n) { return ((today && today.by_court) || {})[String(n)] || []; },
     live: function (arr) { return arr.filter(function (b) { return b.status === 'IN_PROGRESS'; })[0] || null; },

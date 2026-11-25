@@ -97,7 +97,7 @@ $('links').innerHTML = [
 var sys = { playtomic: null, score: null, stream: null };
 function drawSys(){
   var it = [
-    ['Playtomic', club.playtomic ? sys.playtomic : 'na', club.playtomic ? (sys.playtomic === 'ok' ? 'Leyendo reservas de hoy' : sys.playtomic === 'bad' ? 'No responde: revisa la conexión de PÍCALE con Playtomic' : 'Revisando…') : 'Este club aún no está ligado'],
+    ['Playtomic', club.playtomic ? sys.playtomic : 'na', club.playtomic ? (sys.playtomic === 'ok' ? 'Leyendo reservas de hoy' : sys.playtomic === 'bad' ? 'No responde (' + P.esc(sys.ptErr || '') + ')' : 'Revisando…') : 'Este club aún no está ligado'],
     ['Marcador (servidor)', sys.score, sys.score === 'ok' ? 'Responde' : sys.score === 'bad' ? 'No responde' : 'Revisando…'],
     ['Transmisión (servidor)', sys.stream, sys.stream === 'ok' ? 'Recibiendo video' : sys.stream === 'bad' ? 'No llega video de ninguna cancha: revisa la mini PC del club' : 'Revisando…'],
     ['Sensores de cancha', 'na', 'Pendientes de instalar']
@@ -110,7 +110,7 @@ function drawSys(){
 drawSys();
 
 function refresh(){
-  var tot = { stream: 0, score: 0, busy: 0, clip: 0 }, todayP = club.playtomic ? P.today().then(function(d){ sys.playtomic = 'ok'; return d; }).catch(function(){ sys.playtomic = 'bad'; return null; }) : Promise.resolve(null);
+  var tot = { stream: 0, score: 0, busy: 0, clip: 0 }, todayP = club.playtomic ? P.today().then(function(d){ sys.playtomic = 'ok'; return d; }).catch(function(e){ sys.playtomic = 'bad'; sys.ptErr = e && e.name === 'AbortError' ? 'tardó más de 30 s' : (e && e.message) || 'sin conexión'; return null; }) : Promise.resolve(null);
   var scoreOk = false, scoreBad = 0;
   return todayP.then(function(today){
     return Promise.all(club.courts.map(function(c){
