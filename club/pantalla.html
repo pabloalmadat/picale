@@ -28,6 +28,15 @@ html,body{width:100%;height:100%;overflow:hidden;cursor:none}
 .sb .sets b{color:var(--text);font-weight:400}
 .sb .pt{justify-content:center;min-width:16vw;font-family:var(--display);font-size:15vh;background:var(--green);color:#0A0A0A;line-height:1}
 .badge{align-self:center;margin-top:3vh;font-family:var(--display);font-size:4vh;letter-spacing:.4vw;padding:1vh 2.4vw;border-radius:1.2vh;background:var(--yellow);color:#0A0A0A}
+/* clase en curso */
+.cls{display:grid;grid-template-columns:1.1fr .9fr;gap:4vw;align-items:center}
+.cls .tag{display:inline-block;font-family:var(--display);font-size:3.4vh;letter-spacing:.4vw;padding:.8vh 2vw;border-radius:1vh;background:var(--yellow);color:#0A0A0A}
+.cls h1{font-family:var(--display);font-size:15vh;line-height:.9;letter-spacing:.3vw;margin-top:2.4vh}
+.cls .who{font-size:3.6vh;font-weight:700;margin-top:2vh;line-height:1.25}
+.cls .tm{font-family:var(--display);font-size:6vh;margin-top:3vh;letter-spacing:.2vw}
+.cls .tm span{color:var(--muted);font-size:3.4vh;margin-left:1.4vw}
+.bar{height:1.4vh;border-radius:1vh;background:var(--line2);margin-top:2vh;overflow:hidden;max-width:46vw}
+.bar i{display:block;height:100%;background:var(--green);border-radius:1vh;transition:width 1s}
 /* sin partido */
 .idle{display:grid;grid-template-columns:1.1fr .9fr;gap:4vw;align-items:center}
 .idle h1{font-family:var(--display);font-size:13vh;line-height:.9;letter-spacing:.3vw}
@@ -54,6 +63,11 @@ html,body{width:100%;height:100%;overflow:hidden;cursor:none}
         <div class="row" id="rR"><div class="nm"><i class="dot"></i><span id="nR"></span></div><div class="sets" id="sR"></div><div class="pt" id="pR"></div></div>
       </div>
       <div class="badge hidden" id="badge"></div>
+    </div>
+    <div id="cls" class="cls hidden">
+      <div><span class="tag">EN CURSO</span><h1>CLASE</h1><div class="who" id="cWho"></div>
+        <div class="tm" id="cTm"></div><div class="bar"><i id="cBar"></i></div></div>
+      <div class="agenda" id="cNext"></div>
     </div>
     <div id="idle" class="idle">
       <div><h1>PÍCALE<br><span>AL BOTÓN</span></h1><p>Haz un puntazo, pica el botón y llévate la jugada. Tu partido completo con estadísticas en picalereplay.com/ai</p></div>
@@ -83,7 +97,19 @@ function render(s){
   var b = s.status === 'finished' ? 'PARTIDO TERMINADO' : s.in_tiebreak ? 'TIE BREAK' : '';
   $('badge').textContent = b; $('badge').classList.toggle('hidden', !b);
 }
-function showScore(on){ $('score').classList.toggle('hidden', !on); $('idle').classList.toggle('hidden', on); }
+var curClass = null;
+function showScore(on){ $('score').classList.toggle('hidden', !on); $('idle').classList.toggle('hidden', on || !!curClass); $('cls').classList.toggle('hidden', on || !curClass); }
+function mins(iso){ var t = String(iso || '').replace('Z', ''); return t ? Math.round(new Date(t).getTime() / 60000) : null; }
+// Clase: quién la da, a qué hora termina y cuánto falta
+function renderClass(){
+  var b = curClass; if (!b) return;
+  var t = P.teams(b), names = t.L.concat(t.R);
+  $('cWho').textContent = (b.activity_name && b.activity_name.trim()) || (names.length ? names.join(' · ') : 'Clase de pádel');
+  var now = mins(P.localIso()), a = mins(b.start), z = mins(b.end), left = z != null ? Math.max(0, z - now) : null;
+  $('cTm').innerHTML = 'HASTA ' + P.hhmm(b.end) + (left != null ? '<span>faltan ' + (left >= 60 ? Math.floor(left / 60) + ' h ' + (left % 60) + ' min' : left + ' min') + '</span>' : '');
+  $('cBar').style.width = (a != null && z > a ? Math.min(100, Math.max(0, (now - a) / (z - a) * 100)) : 0) + '%';
+}
+setInterval(renderClass, 30000);
 
 function check(){
   P.active(court).then(function(id){
@@ -100,6 +126,16 @@ function agenda(){
   if (!club.playtomic) { $('agenda').innerHTML = ''; return; }
   P.today().then(function(d){
     var arr = P.bookingsFor(d, court.n), now = P.live(arr), list = (now ? [now] : []).concat(P.upcoming(arr)).slice(0, 4);
+    curClass = now && P.isClass(now) ? now : null;
+    if (curClass) {
+      var nx = P.upcoming(arr).slice(0, 3);
+      $('cNext').innerHTML = '<div class="ttl">DESPUÉS EN ESTA CANCHA</div>' + (nx.length ? nx.map(function(b){
+        var t = P.teams(b), w = t.L.concat(t.R).join(' · ') || b.activity_name || P.kind(b);
+        return '<div class="bk"><div class="h">' + P.hhmm(b.start) + '</div><div><div class="w">' + P.esc(w) + '</div><div class="k">' + P.kind(b).toUpperCase() + '</div></div></div>';
+      }).join('') : '<div class="bk"><div class="w">Sin más reservas hoy</div></div>');
+      renderClass();
+    }
+    if (!match) showScore(false);
     $('agenda').innerHTML = '<div class="ttl">HOY EN ESTA CANCHA</div>' + (list.length ? list.map(function(b){
       var t = P.teams(b), w = t.L.concat(t.R).join(' · ') || b.activity_name || P.kind(b);
       return '<div class="bk' + (b === now ? ' now' : '') + '"><div class="h">' + P.hhmm(b.start) + '</div><div><div class="w">' + P.esc(w) + '</div><div class="k">' + (b === now ? 'EN CURSO · ' : '') + P.kind(b).toUpperCase() + '</div></div></div>';

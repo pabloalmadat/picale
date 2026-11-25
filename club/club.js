@@ -63,6 +63,7 @@
       return arr.filter(function (b) { return b.status !== 'IN_PROGRESS' && st(b) > now; })
         .sort(function (a, b) { return st(a) < st(b) ? -1 : 1; });
     },
+    isClass: function (b) { return !!b && (b.display_type === 'clase' || /clase|lesson|class/i.test(b.booking_type || '')); },
     kind: function (b) {
       if (!b) return 'Libre';
       if (b.booking_type === 'TOURNAMENT') return 'Reta';

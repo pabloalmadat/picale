@@ -149,7 +149,7 @@
   var routes = {
     login: viewLogin, clips: viewClips, vivo: viewVivo, partido: viewPartido,
     analisis: viewAnalisis, perfil: viewPerfil, creditos: viewCreditos, admin: viewAdmin, calibrar: viewCalibrar, reset: viewReset,
-    club: viewClub, americana: viewAmericana, p: viewPublic,
+    club: viewClub, americana: viewAmericana, p: viewPublic, marcador: viewMarcador,
   };
   function isPublicHash(h) { return /^#\/p\/[A-Za-z0-9]+/.test(h || ''); }
   function route() {
@@ -165,7 +165,7 @@
     document.getElementById('sport-toggle').classList.toggle('hidden', guest);
     document.getElementById('topcta').classList.toggle('hidden', !guest);
     $view.classList.toggle('full', !chrome);
-    var tab = name === 'americana' ? 'partido' : name === 'club' ? 'perfil' : name;
+    var tab = name === 'americana' ? 'partido' : (name === 'club' || name === 'marcador') ? 'perfil' : name;
     document.querySelectorAll('.tabbar a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-tab') === tab); });
     window.scrollTo(0, 0);
     fn(parts.slice(1));
@@ -1667,18 +1667,52 @@
         '<a class="item" href="#/creditos"><div><div class="ttl">Mis tokens</div><div class="dsc" id="pc">—</div></div><span class="chev">›</span></a>' +
         '<button class="item" style="width:100%;text-align:left" id="edit"><div><div class="ttl">Editar perfil</div><div class="dsc">Foto, nombre, categoría</div></div><span class="chev">›</span></button>' +
         '<span id="pclub"></span>' +
+        '<span id="pscore"></span>' +
         (u.is_admin ? '<a class="item" href="#/admin"><div><div class="ttl">Panel PÍCALE AI</div><div class="dsc">Dar tokens, clubes y sesiones</div></div><span class="chev">›</span></a>' : '') +
         '<button class="item" style="width:100%;text-align:left" id="web"><div><div class="ttl">PÍCALE en la web</div><div class="dsc">picalereplay.com</div></div><span class="chev">›</span></button>' +
       '</div>' +
       '<button class="btn danger mt" id="out">Cerrar sesión</button>';
     loadCredits().then(function (c) { var el = document.getElementById('pc'); if (el) el.textContent = c === null ? 'Muy pronto' : c; });
     api('/ai/me/roles').then(function (r) {
+      var sc = document.getElementById('pscore');
+      if (sc && ((r.clubs || []).length || u.is_admin)) sc.outerHTML = '<a class="item" href="#/marcador"><div><div class="ttl">Marcadores</div><div class="dsc">Lleva el marcador de una cancha desde el cel</div></div><span class="chev">›</span></a>';
       var el = document.getElementById('pclub'); if (!el || !(r.clubs || []).length) return;
       el.outerHTML = '<a class="item" href="#/club"><div><div class="ttl">Panel del club</div><div class="dsc">' + esc(r.clubs.map(function (c) { return c.club_name; }).join(', ')) + ' · americanas con IA</div></div><span class="chev">›</span></a>';
     }).catch(function () {});
     document.getElementById('edit').onclick = function () { openExternal(CFG.WEB + '/perfil.html'); };
     document.getElementById('web').onclick = function () { openExternal(CFG.WEB); };
     document.getElementById('out').onclick = function () { if (confirm('¿Cerrar sesión?')) logout(); };
+  }
+
+  // ───────────────────────── MARCADORES (club admin y PÍCALE admin)
+  // Usa la misma página que la web (picalereplay.com/club/control.html) dentro de la app,
+  // así el marcador del cel, el panel y las pantallas siempre van iguales.
+  var SCORE_CLUBS = { somos: 'Somos Pádel', cuatro: 'Cuatro Pádel Sur' };
+  function viewMarcador(args) {
+    clearInterval(S.timer);
+    $view.innerHTML = '<a href="#/perfil" class="link">‹ Perfil</a><div id="mk" class="mt">' + spinner() + '</div>';
+    api('/ai/me/roles').then(function (r) {
+      var box = document.getElementById('mk'); if (!box) return;
+      var mine = (r.clubs || []).map(function (c) { return c.club_id; }).filter(function (c) { return SCORE_CLUBS[c]; });
+      if (S.user && S.user.is_admin) mine = Object.keys(SCORE_CLUBS);
+      if (!mine.length) { box.innerHTML = '<div class="empty"><div class="ico">🎾</div>Tu cuenta no administra ningún club con marcador.</div>'; return; }
+      var id = args[0] && mine.indexOf(args[0]) >= 0 ? args[0] : (mine.length === 1 ? mine[0] : null);
+      if (!id) {
+        box.innerHTML = '<h1>Marcadores</h1><p class="sub">Elige el club</p><div class="list mt">' + mine.map(function (c) {
+          return '<a class="item" href="#/marcador/' + c + '"><div class="ttl">' + esc(SCORE_CLUBS[c]) + '</div><span class="chev">›</span></a>';
+        }).join('') + '</div>';
+        return;
+      }
+      var url = CFG.WEB + '/club/control.html?club=' + id + '&app=1';
+      box.innerHTML = '<div class="spread"><h1 style="font-size:26px">Marcador · ' + esc(SCORE_CLUBS[id]) + '</h1></div>' +
+        '<div class="row mt" style="gap:8px;flex-wrap:wrap"><button class="chip" id="mk-panel">Panel del club</button><button class="chip" id="mk-tv">Pantallas</button></div>' +
+        '<iframe id="mk-f" src="' + url + '" allow="fullscreen" style="display:block;width:100%;border:0;border-radius:16px;margin-top:12px;background:#0A0A0A"></iframe>';
+      var f = document.getElementById('mk-f');
+      var fit = function () { if (!document.getElementById('mk-f')) return window.removeEventListener('resize', fit); var tb = document.getElementById('tabbar'); f.style.height = Math.max(420, window.innerHeight - f.getBoundingClientRect().top - (tb ? tb.offsetHeight : 0) - 12) + 'px'; };
+      fit(); window.addEventListener('resize', fit);
+      document.getElementById('mk-panel').onclick = function () { openExternal(CFG.WEB + '/club/panel.html?club=' + id); };
+      document.getElementById('mk-tv').onclick = function () { openExternal(CFG.WEB + '/club/pantalla.html?club=' + id + '&cancha=1'); };
+    }).catch(function () { var box = document.getElementById('mk'); if (box) box.innerHTML = '<div class="empty">No se pudo cargar. Revisa tu conexión.</div>'; });
   }
 
   // ───────────────────────── ADMIN (piloto)
@@ -1854,6 +1888,7 @@
       box.innerHTML = '<h1>' + esc(P.club_name) + '</h1><p class="sub">Americanas y retas grabadas con IA</p>' +
         '<div class="card mt spread"><div><div class="sub" style="margin:0">Tokens del club</div><b style="font-size:28px">' + P.credits + '</b></div>' +
           (P.edge_online ? '<span class="chip green">● Mini PC en línea</span>' : '<span class="chip red">Mini PC sin conexión</span>') + '</div>' +
+        '<a class="card mt spread" href="#/marcador/' + esc(id) + '" style="display:flex"><div><b>Marcadores</b><div class="sub" style="margin:2px 0 0">Elige cancha y partido de Playtomic</div></div><span class="chev">›</span></a>' +
         live.map(function (e) {
           return '<a class="card mt" href="#/americana/' + e.id + '" style="display:block;border-color:var(--red)"><div class="spread"><div><b>' + esc(e.title) + '</b>' +
             '<div class="sub" style="margin:2px 0 0">' + e.courts + ' cancha' + (e.courts > 1 ? 's' : '') + ' · termina ' + hhmm(e.ends_at) + '</div></div>' + evChip(e.status) + '</div></a>';
