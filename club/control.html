@@ -72,8 +72,10 @@ input{width:100%;height:46px;border-radius:10px;border:1px solid var(--line2);ba
       <div class="row"><input id="r1" placeholder="Jugador 3"><input id="r2" placeholder="Jugador 4"></div>
       <div class="lbl">SACA</div>
       <div class="seg" id="srv"><button data-v="left" class="on">Izquierda</button><button data-v="right">Derecha</button></div>
-      <div class="lbl">PUNTO DE ORO</div>
+      <div class="lbl">EN 40-40</div>
       <div class="seg" id="mode"><button data-v="traditional" class="on">Ventajas</button><button data-v="golden_point">Punto de oro</button></div>
+      <div class="lbl">TERCER SET</div>
+      <div class="seg" id="stb"><button data-v="0" class="on">Set completo</button><button data-v="1">Super tie break a 10</button></div>
       <button class="btn" style="width:100%;margin-top:16px" id="start" onclick="start()">INICIAR MARCADOR</button>
     </div>
   </div>
@@ -106,7 +108,7 @@ input{width:100%;height:46px;border-radius:10px;border:1px solid var(--line2);ba
 <script src="club.js"></script>
 <script>
 var P = PICALE_CLUB, club = P.club(), court = P.court(club, P.q('cancha', 1));
-var match = null, sock = null, state = null, ovlOn = true, srv = 'left', mode = 'traditional';
+var match = null, sock = null, state = null, ovlOn = true, srv = 'left', mode = 'traditional', stb = false;
 document.getElementById('clubName').textContent = club.name;
 function $(id){ return document.getElementById(id); }
 function toast(t){ var e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(e._t); e._t=setTimeout(function(){e.classList.remove('show');},2600); }
@@ -133,7 +135,7 @@ function pickCourt(n){
 }
 
 function seg(id, cb){ [].forEach.call($(id).children, function(b){ b.onclick=function(){ [].forEach.call($(id).children,function(x){x.classList.toggle('on',x===b);}); cb(b.dataset.v); }; }); }
-seg('srv', function(v){ srv=v; }); seg('mode', function(v){ mode=v; });
+seg('srv', function(v){ srv=v; }); seg('mode', function(v){ mode=v; }); seg('stb', function(v){ stb = v === '1'; });
 
 function load(){
   $('live').classList.add('hidden'); $('pick').classList.remove('hidden'); $('form').classList.add('hidden');
@@ -170,7 +172,7 @@ function fill(b){
 function manual(){ fill(null); }
 
 function start(){
-  var f = { l1:$('l1').value.trim(), l2:$('l2').value.trim(), r1:$('r1').value.trim(), r2:$('r2').value.trim(), server:srv, mode:mode };
+  var f = { l1:$('l1').value.trim(), l2:$('l2').value.trim(), r1:$('r1').value.trim(), r2:$('r2').value.trim(), server:srv, mode:mode, stb:stb };
   if (!f.l1 || !f.r1) return toast('Pon al menos un jugador de cada pareja');
   $('start').disabled = true;
   P.create(club, court, f).then(function(d){
@@ -197,8 +199,8 @@ function render(s){
   $('pL').textContent = s.pts_left; $('pR').textContent = s.pts_right;
   $('gL').textContent = (s.sets_left||0)+' · '+(s.games_left||0); $('gR').textContent = (s.sets_right||0)+' · '+(s.games_right||0);
   $('tL').classList.toggle('serving', s.current_server==='left'); $('tR').classList.toggle('serving', s.current_server==='right');
-  var h = (s.sets_history||[]).map(function(x){ return x.left+'-'+x.right; }).join('  ');
-  $('sets').textContent = 'Sets · games' + (h ? '   ('+h+')' : '') + (s.in_tiebreak ? '   TIE BREAK' : '');
+  var h = (s.sets_history||[]).map(function(x){ return P.setL(x)+'-'+P.setR(x); }).join('  ');
+  $('sets').textContent = 'Sets · games' + (h ? '   ('+h+')' : '') + (s.is_super_tiebreak ? '   SUPER TIE BREAK' : s.in_tiebreak ? '   TIE BREAK' : '') + (s.golden_point_now ? '   PUNTO DE ORO' : '');
   if (s.overlay_visible !== undefined) { ovlOn = !!s.overlay_visible; $('ovl').textContent = ovlOn ? '👁 OCULTAR' : '👁 MOSTRAR'; }
   if (s.status === 'finished') { toast('Partido terminado'); setTimeout(function(){ match=null; if(sock){sock.close();sock=null;} load(); }, 1500); }
 }

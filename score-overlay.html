@@ -98,6 +98,7 @@ function render(s){
   for(var i=0;i<3;i++){
     var L=qs('l-s'+(i+1)), R=qs('r-s'+(i+1));
     if(hist[i]){
+      if(Array.isArray(hist[i])) hist[i]={left:hist[i][0],right:hist[i][1]};
       L.textContent=hist[i].left; R.textContent=hist[i].right;
       L.classList.toggle('win', hist[i].left>hist[i].right);
       R.classList.toggle('win', hist[i].right>hist[i].left);

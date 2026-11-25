@@ -4,7 +4,7 @@
   var API = 'https://api.picalereplay.com';
   var CLUBS = {
     somos: {
-      id: 'somos', name: 'Somos Pádel', playtomic: true,
+      id: 'somos', name: 'Somos Pádel', playtomic: true, logo: '/assets/somos_logo_blanco.png',
       courts: [
         { n: 1, uuid: '6bc0621c-f99a-4e1f-8971-d70155ea3383', key: '2111bf2250a5751d' },
         { n: 2, uuid: 'e1dc778e-831f-4fa4-bc86-d6a31a7de1d1', key: 'e6835934e7a68e22' },
@@ -91,12 +91,16 @@
         .then(function (d) { return d && d.match_id ? d.match_id : null; })
         .catch(function (e) { if (e.status === 404) return null; throw e; });
     },
+    // El motor guarda cada set como [izq, der] o {left, right}: se aceptan los dos
+    setL: function (x) { return Array.isArray(x) ? x[0] : x && x.left; },
+    setR: function (x) { return Array.isArray(x) ? x[1] : x && x.right; },
     match: function (id) { return json(API + '/api/v1/score/' + id); },
     create: function (club, c, f) {
       return post(API + '/api/v1/score/', {
         court_id: c.uuid, court_name: 'Cancha ' + c.n, club_name: club.name,
         left_p1: f.l1 || 'Jugador 1', left_p2: f.l2 || '', right_p1: f.r1 || 'Jugador 3', right_p2: f.r2 || '',
-        current_server: f.server || 'left', scoring_mode: f.mode || 'traditional'
+        current_server: f.server || 'left', // el API guarda scoring_mode tal cual; el motor lee el "+stb" como super tie break en el 3er set
+        scoring_mode: (f.mode || 'traditional') + (f.stb ? '+stb' : '')
       });
     },
     event: function (id, type, source) { return post(API + '/api/v1/score/' + id + '/event', { type: type, source: source || 'celular' }); },
