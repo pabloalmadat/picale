@@ -31,13 +31,6 @@ window.PICALE_CONFIG = {
   var C = 'https://api.picalereplay.com';
   window.PICALE_CLUBS = [
     {
-      id: 'duo', name: 'DUO Padel Park', city: 'Cd. Obregón', sport: 'padel',
-      courts: [
-        { key: 'c2', name: 'Cancha 2', sub: 'TOSSA', courtId: '6ee6d28e-75c3-4cf4-87d0-6d052fb81ab4', hls: C + '/hls/7bcdb57bcfe843f5/index.m3u8' },
-        { key: 'c3', name: 'Cancha 3', sub: 'RUBA',  courtId: 'c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3', hls: C + '/hls/c3f9a17e2d8b5047/index.m3u8' },
-      ],
-    },
-    {
       id: 'cuatro', name: 'Cuatro Pádel Sur', city: 'Monterrey', sport: 'padel',
       courts: [
         { key: 'cuatro_c1', name: 'Cancha 1', sub: 'MTY', courtId: 'c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', hls: C + '/hls/c4f9a17e2d8b5048/index.m3u8' },

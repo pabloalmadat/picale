@@ -28,11 +28,17 @@
     },
     {
       "src": "/app",
-      "dest": "/app/dashboard.html"
+      "status": 308,
+      "headers": {
+        "Location": "/clubs.html"
+      }
     },
     {
       "src": "/dashboard",
-      "dest": "/app/dashboard.html"
+      "status": 308,
+      "headers": {
+        "Location": "/clubs.html"
+      }
     },
     {
       "src": "/futbol/?",

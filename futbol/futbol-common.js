@@ -243,7 +243,7 @@ const money=n=>'$'+n.toLocaleString('es-MX')+' MXN';
    DEMO usa un video público de prueba para enseñar el reproductor funcionando. */
 const DEMO_VIDEO='https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
 const CAM_URL={
-  stream:code=>code==='DEMO'?DEMO_VIDEO:`https://api.picalereplay.com/hls/${code}.m3u8`,
+  stream:code=>code==='DEMO'?DEMO_VIDEO:`https://api.picalereplay.com/hls/${code}/index.m3u8`,
   vod:(code,mid)=>code==='DEMO'?DEMO_VIDEO:`https://api.picalereplay.com/grabaciones/${code}/${mid}.mp4`,
 };
 

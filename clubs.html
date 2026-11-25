@@ -165,22 +165,6 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
     </div>
     <div class="section-label">Disponibles</div>
     <div class="clubs-grid">
-      <!-- DUO PADEL PARK -->
-      <div class="club-card" onclick="openClub('duo')">
-        <img class="club-img" src="/assets/images.png" alt="DUO Padel Park" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-        <div class="club-img-placeholder" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="rgba(240,237,230,.15)" stroke-width="1.5"><circle cx="24" cy="24" r="20"/><path d="M16 24c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8"/></svg>
-        </div>
-        <div class="club-body">
-          <div class="club-name">DUO Padel Park</div>
-          <div class="club-meta">Obregón, Sonora · 2 canchas</div>
-          <div class="club-courts">
-            <div class="court-pill"><span class="live-dot"></span>Cancha 2</div>
-            <div class="court-pill"><span class="live-dot"></span>Cancha 3</div>
-          </div>
-        </div>
-      </div>
-
       <!-- CUATRO PADEL SUR -->
       <div class="club-card" onclick="openClub('cuatro')">
         <div class="club-img-placeholder" style="background:#000;position:relative;overflow:hidden;">
@@ -188,7 +172,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
         </div>
         <div class="club-body">
           <div class="club-name">Cuatro Pádel Sur</div>
-          <div class="club-meta">Monterrey, Nuevo León · 1 cancha</div>
+          <div class="club-meta">Monterrey, Nuevo León · 1 cancha · PÍCALE AI</div>
           <div class="club-courts">
             <div class="court-pill"><span class="live-dot"></span>Cancha 1</div>
           </div>
@@ -202,7 +186,10 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
         </div>
         <div class="club-body">
           <div class="club-name">Somos Pádel</div>
-          <div class="club-meta">Monterrey, N.L. · 8 canchas</div>
+          <div class="club-meta">Monterrey, Nuevo León · 8 canchas · PÍCALE AI</div>
+          <div class="club-courts">
+            <div class="court-pill"><span class="live-dot"></span>Canchas 1 a 8</div>
+          </div>
         </div>
       </div>
 
@@ -228,22 +215,14 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3L6 8l4 5"/></svg>
       Clubes
     </button>
-    <div class="topbar-title" id="topbar-title">DUO PADEL PARK</div>
+    <div class="topbar-title" id="topbar-title">CLUB</div>
     <div id="auth-btn-container"></div>
   </div>
 
   <div class="club-scroll">
     <!-- Court selector -->
     <div class="courts-tabs" id="courts-tabs-container">
-      <div class="court-tab active" id="tab-c2" onclick="selectCourt('c2')">
-        <div class="court-tab-name"><span class="live-dot"></span>Cancha 2</div>
-        <div class="court-tab-sub">TOSSA</div>
-      </div>
-      <div class="court-tab" id="tab-c3" onclick="selectCourt('c3')">
-        <div class="court-tab-name"><span class="live-dot"></span>Cancha 3</div>
-        <div class="court-tab-sub">RUBA</div>
-      </div>
-    </div>
+</div>
 
     <!-- Section tabs -->
     <div class="section-tabs">
@@ -251,7 +230,14 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
       <div class="section-tab" id="stab-clips" onclick="selectSection('clips')">CLIPS</div>
       <div class="section-tab" id="stab-matches" onclick="selectSection('matches')">PARTIDOS</div>
     </div>
-    <a href="feed.html?club=duo" style="display:flex;align-items:center;justify-content:space-between;margin:12px 16px 0;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;text-decoration:none;color:var(--text);">
+    <a id="ai-club-cta" href="/ai/#/partido" style="display:flex;align-items:center;justify-content:space-between;margin:12px 16px 0;padding:14px 16px;background:rgba(94,232,122,.08);border:1px solid rgba(94,232,122,.35);border-radius:14px;text-decoration:none;color:var(--text);">
+      <div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:2px;">🤖 Analiza tu partido con IA</div>
+        <div style="font-size:11px;color:var(--muted);">Golpes, distancia, mapa de calor y tus mejores puntos</div>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="rgba(94,232,122,.8)" stroke-width="1.8"><path d="M6 3l5 5-5 5"/></svg>
+    </a>
+    <a id="feed-link" href="feed.html?club=cuatro" style="display:flex;align-items:center;justify-content:space-between;margin:12px 16px 0;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;text-decoration:none;color:var(--text);">
       <div>
         <div style="font-size:14px;font-weight:600;margin-bottom:2px;">🎬 Momentos</div>
         <div style="font-size:11px;color:var(--muted);">Feed de clips recientes</div>
@@ -325,18 +311,6 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;
 const CLOUD = 'https://api.picalereplay.com';
 
 const COURTS = {
-  c2: {
-    name: 'Cancha 2',
-    sub: 'TOSSA',
-    courtId: '6ee6d28e-75c3-4cf4-87d0-6d052fb81ab4',
-    hls: CLOUD + '/hls/7bcdb57bcfe843f5/index.m3u8',
-  },
-  c3: {
-    name: 'Cancha 3',
-    sub: 'RUBA',
-    courtId: 'c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3',
-    hls: CLOUD + '/hls/c3f9a17e2d8b5047/index.m3u8',
-  },
   cuatro_c1: {
     name: 'Cancha 1',
     sub: 'MTY',
@@ -394,11 +368,6 @@ const COURTS = {
 };
 
 var CLUBS_CONFIG = {
-  duo: {
-    name: 'DUO PADEL PARK',
-    courts: ['c2', 'c3'],
-    defaultCourt: 'c2',
-  },
   cuatro: {
     name: 'CUATRO PÁDEL SUR',
     courts: ['cuatro_c1'],
@@ -411,7 +380,8 @@ var CLUBS_CONFIG = {
   }
 };
 
-var activeCourt = 'c2';
+var activeCourt = 'cuatro_c1';
+var activeClub = 'cuatro';
 var activeSection = 'live';
 var hlsInstance = null;
 
@@ -493,7 +463,10 @@ var ScoreOverlay = {
 
 // ── NAVIGATION ──
 function openClub(id) {
-  var cfg = CLUBS_CONFIG[id] || CLUBS_CONFIG.duo;
+  if (!CLUBS_CONFIG[id]) id = 'cuatro';
+  var cfg = CLUBS_CONFIG[id];
+  activeClub = id;
+  var fl = document.getElementById('feed-link'); if (fl) fl.href = 'feed.html?club=' + id;
   document.getElementById('topbar-title').textContent = cfg.name;
   document.getElementById('page-landing').classList.remove('active');
   document.getElementById('page-club').classList.add('active');
@@ -685,6 +658,10 @@ function downloadClip(url, timeLabel) {
     });
 }
 
+function clubShareName() {
+  return ({ somos: 'Somos Pádel', cuatro: 'Cuatro Pádel Sur' })[activeClub] || 'un club PÍCALE';
+}
+
 function shareClip(url, timeLabel) {
   var filename = 'clip_' + timeLabel.replace(':', '-') + '.mp4';
   if (navigator.share) {
@@ -692,7 +669,7 @@ function shareClip(url, timeLabel) {
       .then(function(r) { return r.blob(); })
       .then(function(blob) {
         var file = new File([blob], filename, {type: 'video/mp4'});
-        var shareText = '🎾 Este clip es de DUO Padel Park Obregón\nVe tus clips y partidos en vivo en picalereplay.com';
+        var shareText = '🎾 Este clip es de ' + clubShareName() + '\nVe tus clips y partidos en vivo en picalereplay.com';
         if (navigator.canShare && navigator.canShare({files: [file]})) {
           navigator.share({files: [file], title: 'Clip PICALE ' + timeLabel, text: shareText});
         } else {
@@ -700,7 +677,7 @@ function shareClip(url, timeLabel) {
         }
       })
       .catch(function() {
-        navigator.share({title: 'Clip PICALE', text: '🎾 Este clip es de DUO Padel Park Obregón\nVe tus clips y partidos en vivo en picalereplay.com', url: url});
+        navigator.share({title: 'Clip PICALE', text: '🎾 Este clip es de ' + clubShareName() + '\nVe tus clips y partidos en vivo en picalereplay.com', url: url});
       });
   } else {
     navigator.clipboard.writeText(url).then(function() {

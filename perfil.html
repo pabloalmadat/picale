@@ -292,7 +292,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
         <option value="Femenil Tercera">Femenil Tercera</option>
       </select>
     </div>
-    <div class="field"><label>CIUDAD</label><input type="text" id="edit-ciudad" placeholder="Ciudad Obregón, Sonora"></div>
+    <div class="field"><label>CIUDAD</label><input type="text" id="edit-ciudad" placeholder="Monterrey, Nuevo León"></div>
 
     <button class="btn-save" onclick="saveProfile()">GUARDAR</button>
     <button class="btn-cancel" onclick="closeEditModal()">Cancelar</button>
@@ -400,7 +400,8 @@ function renderProfile(user, isOwn) {
   var tags = [];
   if (user.categoria) tags.push({text: user.categoria, green: true});
   if (user.ciudad) tags.push({text: '📍 ' + user.ciudad, green: false});
-  if (user.club_id) tags.push({text: '🎾 DUO Padel Park', green: false});
+  var CLUB_NAMES = {cuatro: 'Cuatro Pádel Sur', somos: 'Somos Pádel'};
+  if (user.club_id && CLUB_NAMES[user.club_id]) tags.push({text: '🎾 ' + CLUB_NAMES[user.club_id], green: false});
   document.getElementById('profile-tags').innerHTML = tags.map(function(t) {
     return '<span class="profile-tag' + (t.green ? ' green' : '') + '">' + t.text + '</span>';
   }).join('');

@@ -314,11 +314,23 @@ html,body{
 var CLOUD = 'https://api.picalereplay.com';
 
 var CLUBS = {
-  duo: {
-    name: 'DUO Padel Park',
+  cuatro: {
+    name: 'Cuatro Pádel Sur',
     courts: [
-      {id:'6ee6d28e-75c3-4cf4-87d0-6d052fb81ab4', name:'Cancha 2'},
-      {id:'c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3', name:'Cancha 3'}
+      {id:'c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', name:'Cancha 1'}
+    ]
+  },
+  somos: {
+    name: 'Somos Pádel',
+    courts: [
+      {id:'6bc0621c-f99a-4e1f-8971-d70155ea3383', name:'Cancha 1'},
+      {id:'e1dc778e-831f-4fa4-bc86-d6a31a7de1d1', name:'Cancha 2'},
+      {id:'fc8bbc6d-e21b-466d-92e6-a2beefe6bd38', name:'Cancha 3'},
+      {id:'2d54ad6f-895f-4f6c-b985-95b431fe03b3', name:'Cancha 4'},
+      {id:'28b6283d-dacf-428d-a3fb-fc0015d5f6aa', name:'Cancha 5'},
+      {id:'519bbd5d-b2f5-4a84-a257-6d327bebf9a8', name:'Cancha 6'},
+      {id:'28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512', name:'Cancha 7'},
+      {id:'35c16c54-f31e-4397-922b-044722d06524', name:'Cancha 8'}
     ]
   }
 };
@@ -330,8 +342,8 @@ var observers = [];
 // ── INIT ──
 function init() {
   var params = new URLSearchParams(window.location.search);
-  var clubId = params.get('club') || 'duo';
-  var club = CLUBS[clubId] || CLUBS.duo;
+  var clubId = params.get('club') || 'cuatro';
+  var club = CLUBS[clubId] || CLUBS.cuatro;
   loadClips(club);
 }
 

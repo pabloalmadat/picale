@@ -149,6 +149,17 @@ nav{
 .ai-faq details[open] summary::after{content:'–';}
 .ai-faq p{color:var(--muted);font-size:14px;line-height:1.6;margin-top:10px;}
 @media(max-width:820px){.ai-faq{grid-template-columns:1fr;}}
+.partner-strip{padding:0 24px 48px;}
+.partner-inner{max-width:var(--max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  padding:22px 26px;border-radius:20px;border:1px solid var(--border);background:rgba(255,255,255,.02);}
+.partner-label{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600;}
+.partner-logos{display:flex;gap:14px;flex-wrap:wrap;}
+.partner{display:flex;align-items:center;gap:12px;padding:10px 16px 10px 10px;border-radius:14px;background:#000;border:1px solid var(--border);color:var(--text);text-decoration:none;transition:border-color .2s;}
+.partner:hover{border-color:var(--green);}
+.partner img{width:56px;height:56px;object-fit:contain;border-radius:10px;background:#000;}
+.partner span{font-weight:700;font-size:15px;display:flex;flex-direction:column;}
+.partner small{font-weight:500;font-size:12px;color:var(--muted);margin-top:2px;}
+@media(max-width:600px){.partner-inner{flex-direction:column;align-items:flex-start;}.partner{width:100%;}}
 .btn-section{padding:8px 24px 40px;}
 .btn-inner{max-width:var(--max);margin:0 auto;padding:40px 44px;border-radius:24px;background:var(--bg2);border:1px solid var(--border);}
 .btn-badge{display:inline-flex;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text);padding:7px 12px;border-radius:999px;border:1px solid var(--border2);margin-bottom:18px;}
@@ -404,6 +415,17 @@ footer{
     <a href="/ai/?demo=1#/analisis/demo" class="btn-hero btn-hero-secondary">Ver un ejemplo</a>
   </div>
   <p class="hero-free" id="hero-free">🎁 <b>5 tokens de regalo</b> al crear tu cuenta · 1 token = 1 partido</p>
+</section>
+
+<!-- CLUBES PÍCALE -->
+<section class="partner-strip" aria-label="Clubes con PÍCALE">
+  <div class="partner-inner">
+    <div class="partner-label">Juega en los clubes PÍCALE</div>
+    <div class="partner-logos">
+      <a class="partner" href="clubs.html?club=cuatro"><img src="assets/cuatro_padel.png" alt="Cuatro Pádel Sur" loading="lazy"><span>Cuatro Pádel Sur<small>Monterrey · PÍCALE AI</small></span></a>
+      <a class="partner" href="clubs.html?club=somos"><img src="assets/somos_padel.jpg" alt="Somos Pádel" loading="lazy"><span>Somos Pádel<small>Monterrey · 8 canchas · PÍCALE AI</small></span></a>
+    </div>
+  </div>
 </section>
 
 <!-- EN VIVO Y CLIPS -->
