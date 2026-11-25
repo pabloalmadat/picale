@@ -6,19 +6,19 @@
     somos: {
       id: 'somos', name: 'Somos Pádel', playtomic: true, logo: '/assets/somos_logo_blanco.png',
       courts: [
-        { n: 1, uuid: '6bc0621c-f99a-4e1f-8971-d70155ea3383', key: '2111bf2250a5751d' },
-        { n: 2, uuid: 'e1dc778e-831f-4fa4-bc86-d6a31a7de1d1', key: 'e6835934e7a68e22' },
-        { n: 3, uuid: 'fc8bbc6d-e21b-466d-92e6-a2beefe6bd38', key: 'c776bfbbe6618fe4' },
-        { n: 4, uuid: '2d54ad6f-895f-4f6c-b985-95b431fe03b3', key: 'f132a6e907de3361' },
-        { n: 5, uuid: '28b6283d-dacf-428d-a3fb-fc0015d5f6aa', key: 'e4df4f9f11a4b00d' },
-        { n: 6, uuid: '519bbd5d-b2f5-4a84-a257-6d327bebf9a8', key: 'e1f8c1f9fa4ea04f' },
-        { n: 7, uuid: '28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512', key: '872566c01554f2e7' },
-        { n: 8, uuid: '35c16c54-f31e-4397-922b-044722d06524', key: '410266125aa0e463' }
+        { n: 1, uuid: '6bc0621c-f99a-4e1f-8971-d70155ea3383', key: '2111bf2250a5751d', qr: 'dTRFPHuDmWLG' },
+        { n: 2, uuid: 'e1dc778e-831f-4fa4-bc86-d6a31a7de1d1', key: 'e6835934e7a68e22', qr: 'y5haqZf7tRTT' },
+        { n: 3, uuid: 'fc8bbc6d-e21b-466d-92e6-a2beefe6bd38', key: 'c776bfbbe6618fe4', qr: '8V5stFgzgXuy' },
+        { n: 4, uuid: '2d54ad6f-895f-4f6c-b985-95b431fe03b3', key: 'f132a6e907de3361', qr: 'Bwh6HxggVccv' },
+        { n: 5, uuid: '28b6283d-dacf-428d-a3fb-fc0015d5f6aa', key: 'e4df4f9f11a4b00d', qr: 'uyDY5UDMf95q' },
+        { n: 6, uuid: '519bbd5d-b2f5-4a84-a257-6d327bebf9a8', key: 'e1f8c1f9fa4ea04f', qr: 'PUcLyRzmzCgY' },
+        { n: 7, uuid: '28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512', key: '872566c01554f2e7', qr: 'yikn26FUMPBw' },
+        { n: 8, uuid: '35c16c54-f31e-4397-922b-044722d06524', key: '410266125aa0e463', qr: 'kV4wSHcYNABd' }
       ]
     },
     cuatro: {
-      id: 'cuatro', name: 'Cuatro Pádel Sur', playtomic: false,     // Playtomic de Cuatro: siguiente etapa
-      courts: [{ n: 1, uuid: 'c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', key: 'c4f9a17e2d8b5048' }]
+      id: 'cuatro', name: 'Cuatro Pádel Sur', playtomic: false, logo: '/assets/cuatro_logo.png',     // Playtomic de Cuatro: siguiente etapa
+      courts: [{ n: 1, uuid: 'c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', key: 'c4f9a17e2d8b5048', qr: 'fl3xtNyZhO83' }]
     }
   };
 

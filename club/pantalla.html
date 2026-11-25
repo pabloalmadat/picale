@@ -40,8 +40,19 @@ html,body{width:100%;height:100%;overflow:hidden;cursor:none}
 .cls .tm span{color:var(--muted);font-size:3.4vh;margin-left:1.4vw}
 .bar{height:1.4vh;border-radius:1vh;background:var(--line2);margin-top:2vh;overflow:hidden;max-width:46vw}
 .bar i{display:block;height:100%;background:var(--green);border-radius:1vh;transition:width 1s}
+/* PÍCALE AI: instrucciones */
+.ai{display:grid;grid-template-columns:auto 1fr;gap:3vw;align-items:center}
+.ai .qr{background:#fff;padding:1.6vh;border-radius:2vh;width:34vh;height:34vh;box-shadow:0 0 6vh rgba(94,232,122,.25)}
+.ai .qr img{width:100%;height:100%;display:block}
+.ai .kick{font-size:2vh;letter-spacing:.4vw;color:var(--green);font-weight:700}
+.ai h1{font-family:var(--display);font-size:9vh;line-height:.95;letter-spacing:.2vw;margin-top:1vh}
+.ai h1 span{color:var(--green)}
+.steps{display:flex;flex-direction:column;gap:1.6vh;margin-top:3vh}
+.steps div{display:flex;gap:1.4vw;align-items:center;font-size:2.4vh;line-height:1.3}
+.steps b{flex:none;width:4.4vh;height:4.4vh;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#0A0A0A;font-family:var(--display);font-size:2.6vh}
+.steps i{font-style:normal;color:var(--muted)}
 /* sin partido */
-.idle{display:grid;grid-template-columns:1.1fr .9fr;gap:4vw;align-items:center}
+.idle{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.6fr);gap:4vw;align-items:center}
 .idle h1{font-family:var(--display);font-size:13vh;line-height:.9;letter-spacing:.3vw}
 .idle h1 span{color:var(--green)}
 .idle p{font-size:2.6vh;color:var(--muted);margin-top:2vh;max-width:40vw;line-height:1.4}
@@ -73,7 +84,16 @@ html,body{width:100%;height:100%;overflow:hidden;cursor:none}
       <div class="agenda" id="cNext"></div>
     </div>
     <div id="idle" class="idle">
-      <div><h1>PÍCALE<br><span>AL BOTÓN</span></h1><p>Haz un puntazo, pica el botón y llévate la jugada. Tu partido completo con estadísticas en picalereplay.com/ai</p></div>
+      <div class="ai">
+        <div class="qr"><img id="qr" alt=""></div>
+        <div><div class="kick">PÍCALE AI</div><h1>ANALIZA<br>TU PARTIDO<br><span>CON IA</span></h1>
+          <div class="steps">
+            <div><b>1</b><span>Escanea el QR con la cámara de tu cel</span></div>
+            <div><b>2</b><span>Entra a tu cuenta PÍCALE y usa un token</span></div>
+            <div><b>3</b><span>Confirma esta cancha y dale <i>Iniciar</i> antes de jugar</span></div>
+            <div><b>4</b><span>Al terminar te llegan tus golpes, estadísticas y jugadas</span></div>
+          </div></div>
+      </div>
       <div class="agenda" id="agenda"></div>
     </div>
   </div>
@@ -86,8 +106,9 @@ function $(id){ return document.getElementById(id); }
 $('court').innerHTML = 'CANCHA ' + court.n + '<small>' + P.esc(club.name.toUpperCase()) + '</small>';
 $('clubName').textContent = club.name + ' · Cancha ' + court.n;
 document.title = 'Cancha ' + court.n + ' · ' + club.name;
+if (court.qr) $('qr').src = '/assets/qr/' + court.qr + '.svg'; else document.querySelector('.ai .qr').style.display = 'none';
 // Logo del club arriba a la izquierda; PÍCALE pasa abajo
-if (club.logo) { $('brand').innerHTML = '<img class="clublogo" src="' + club.logo + '" alt="' + P.esc(club.name) + '">'; $('pk').classList.remove('hidden'); $('court').textContent = 'CANCHA ' + court.n; }
+if (club.logo) { $('brand').innerHTML = '<img class="clublogo" src="' + club.logo + '" alt="" onerror="this.outerHTML=\'<div class=logo>PÍCALE<span>.</span></div>\'">'; $('pk').classList.remove('hidden'); $('court').textContent = 'CANCHA ' + court.n; }
 setInterval(function(){ $('clock').textContent = P.localIso().substring(11, 16); }, 1000);
 $('clock').textContent = P.localIso().substring(11, 16);
 
