@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0A0A0A">
+<title>Marcador · PÍCALE</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="club.css">
+<style>
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+h2{font-family:var(--display);font-size:22px;letter-spacing:1.5px;margin:18px 0 10px;color:var(--muted)}
+.courts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ct{height:64px;border-radius:12px;border:1px solid var(--line2);background:var(--bg2);color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.ct b{font-family:var(--display);font-size:26px;line-height:1}.ct small{font-size:10px;color:var(--muted)}
+.ct.on{border-color:var(--green);background:rgba(94,232,122,.1)}.ct.live small{color:var(--red)}
+.bk{padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;align-items:center;width:100%;text-align:left;color:var(--text)}
+.bk.now{border-color:rgba(94,232,122,.5)}
+.bk .t{font-family:var(--display);font-size:22px;letter-spacing:1px}
+.bk .n{font-size:13px;color:var(--muted);margin-top:2px}
+.tag{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--bg3);color:var(--muted)}
+.tag.now{background:rgba(94,232,122,.15);color:var(--green)}
+.form{padding:16px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.lbl{font-size:11px;letter-spacing:1px;color:var(--muted);margin:10px 0 6px;font-weight:700}
+input{width:100%;height:46px;border-radius:10px;border:1px solid var(--line2);background:var(--bg3);color:var(--text);padding:0 12px;font-size:16px;font-family:inherit}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seg button{height:42px;border-radius:10px;border:1px solid var(--line2);background:var(--bg3);color:var(--muted);font-weight:600}
+.seg button.on{border-color:var(--green);color:var(--green);background:rgba(94,232,122,.08)}
+/* marcador */
+.score{padding:14px;margin-top:6px}
+.team{display:grid;grid-template-columns:22px 1fr auto auto;align-items:center;gap:10px;padding:10px 4px}
+.team+.team{border-top:1px solid var(--line)}
+.srv{width:12px;height:12px;border-radius:50%;background:var(--yellow);visibility:hidden}
+.team.serving .srv{visibility:visible}
+.nm{font-weight:700;font-size:15px;line-height:1.25}
+.gm{font-family:var(--display);font-size:24px;color:var(--muted);min-width:56px;text-align:right;letter-spacing:2px}
+.pt{font-family:var(--display);font-size:44px;min-width:64px;text-align:center;background:var(--bg3);border-radius:10px;line-height:1.15}
+.meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:8px}
+.big{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.big button{height:120px;border-radius:18px;border:0;background:var(--green);color:#0A0A0A;font-family:var(--display);font-size:30px;letter-spacing:1px;line-height:1.05;padding:8px}
+.big button small{display:block;font-family:var(--body);font-size:12px;font-weight:600;letter-spacing:0;opacity:.75;margin-top:4px}
+.big button:active{transform:scale(.97)}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.tools .btn{height:52px;font-size:17px;padding:0 6px}
+.empty{padding:16px;color:var(--muted);font-size:14px;text-align:center}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="top">
+  <div><div class="logo">PÍCALE<span>.</span> <span style="color:var(--text);font-size:18px">MARCADOR</span></div><div class="sub" id="clubName">—</div></div>
+  <span class="pill" id="net"><i></i><span>—</span></span>
+</div>
+
+<div class="wrap">
+  <h2>1 · CANCHA</h2>
+  <div class="courts" id="courts"></div>
+
+  <!-- ELEGIR PARTIDO -->
+  <div id="pick">
+    <h2>2 · PARTIDO</h2>
+    <div id="bookings"><div class="empty">Cargando reservas de Playtomic…</div></div>
+    <button class="btn ghost" style="width:100%;margin-top:4px" onclick="manual()">Partido sin reserva</button>
+
+    <div class="card form hidden" id="form">
+      <div class="lbl" id="fTitle">JUGADORES</div>
+      <div class="lbl">PAREJA IZQUIERDA</div>
+      <div class="row"><input id="l1" placeholder="Jugador 1"><input id="l2" placeholder="Jugador 2"></div>
+      <div class="lbl">PAREJA DERECHA</div>
+      <div class="row"><input id="r1" placeholder="Jugador 3"><input id="r2" placeholder="Jugador 4"></div>
+      <div class="lbl">SACA</div>
+      <div class="seg" id="srv"><button data-v="left" class="on">Izquierda</button><button data-v="right">Derecha</button></div>
+      <div class="lbl">PUNTO DE ORO</div>
+      <div class="seg" id="mode"><button data-v="traditional" class="on">Ventajas</button><button data-v="golden_point">Punto de oro</button></div>
+      <button class="btn" style="width:100%;margin-top:16px" id="start" onclick="start()">INICIAR MARCADOR</button>
+    </div>
+  </div>
+
+  <!-- MARCADOR -->
+  <div id="live" class="hidden">
+    <h2>2 · EN JUEGO</h2>
+    <div class="card score">
+      <div class="team" id="tL"><span class="srv"></span><div class="nm" id="nL"></div><div class="gm" id="gL"></div><div class="pt" id="pL"></div></div>
+      <div class="team" id="tR"><span class="srv"></span><div class="nm" id="nR"></div><div class="gm" id="gR"></div><div class="pt" id="pR"></div></div>
+      <div class="meta"><span id="sets"></span><span id="conn">● conectando…</span></div>
+    </div>
+    <div class="big">
+      <button onclick="ev('POINT_LEFT')">PUNTO<small id="bL">Izquierda</small></button>
+      <button onclick="ev('POINT_RIGHT')">PUNTO<small id="bR">Derecha</small></button>
+    </div>
+    <div class="tools">
+      <button class="btn ghost" onclick="ev('UNDO')">↶ DESHACER</button>
+      <button class="btn ghost" onclick="ev('CHANGE_SERVER')">⇄ SAQUE</button>
+      <button class="btn ghost" id="ovl" onclick="toggleOvl()">👁 OCULTAR</button>
+    </div>
+    <div class="tools" style="grid-template-columns:1fr 1fr">
+      <a class="btn ghost" id="tvLink" target="_blank">📺 PANTALLA</a>
+      <button class="btn danger" onclick="finish()">TERMINAR</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="club.js"></script>
+<script>
+var P = PICALE_CLUB, club = P.club(), court = P.court(club, P.q('cancha', 1));
+var match = null, sock = null, state = null, ovlOn = true, srv = 'left', mode = 'traditional';
+document.getElementById('clubName').textContent = club.name;
+function $(id){ return document.getElementById(id); }
+function toast(t){ var e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(e._t); e._t=setTimeout(function(){e.classList.remove('show');},2600); }
+function haptic(){ try{ navigator.vibrate && navigator.vibrate(25); }catch(e){} }
+function net(ok, txt){ var n=$('net'); n.className='pill '+(ok?'ok':'bad'); n.lastChild.textContent=txt; }
+
+function drawCourts(liveSet){
+  $('courts').innerHTML = club.courts.map(function(c){
+    var lv = liveSet && liveSet[c.n];
+    return '<button class="ct'+(c.n===court.n?' on':'')+(lv?' live':'')+'" data-n="'+c.n+'"><b>'+c.n+'</b><small>'+(lv?'● EN JUEGO':'cancha')+'</small></button>';
+  }).join('');
+  [].forEach.call(document.querySelectorAll('.ct'), function(b){ b.onclick=function(){ pickCourt(+b.dataset.n); }; });
+}
+function scanLive(){
+  var live = {};
+  Promise.all(club.courts.map(function(c){ return P.active(c).then(function(id){ if(id) live[c.n]=1; }).catch(function(){}); }))
+    .then(function(){ drawCourts(live); });
+}
+function pickCourt(n){
+  court = P.court(club, n);
+  history.replaceState(null, '', '?club='+club.id+'&cancha='+n);
+  if (sock) { sock.close(); sock = null; }
+  match = null; drawCourts(); load();
+}
+
+function seg(id, cb){ [].forEach.call($(id).children, function(b){ b.onclick=function(){ [].forEach.call($(id).children,function(x){x.classList.toggle('on',x===b);}); cb(b.dataset.v); }; }); }
+seg('srv', function(v){ srv=v; }); seg('mode', function(v){ mode=v; });
+
+function load(){
+  $('live').classList.add('hidden'); $('pick').classList.remove('hidden'); $('form').classList.add('hidden');
+  P.active(court).then(function(id){
+    net(true, 'Conectado');
+    if (id) return resume(id);
+    bookings();
+  }).catch(function(){ net(false, 'Sin conexión'); bookings(); });
+}
+
+function bookings(){
+  var box = $('bookings');
+  if (!club.playtomic) { box.innerHTML = '<div class="empty">Este club todavía no está ligado a Playtomic: usa "Partido sin reserva".</div>'; return; }
+  box.innerHTML = '<div class="empty">Cargando reservas de Playtomic…</div>';
+  P.today().then(function(d){
+    var arr = P.bookingsFor(d, court.n), now = P.live(arr), next = P.upcoming(arr).slice(0, 4);
+    var list = (now ? [now] : []).concat(next);
+    if (!list.length) { box.innerHTML = '<div class="empty">No hay más reservas hoy en la Cancha '+court.n+'.</div>'; return; }
+    window._list = list;
+    box.innerHTML = list.map(function(b, i){
+      var t = P.teams(b), names = t.L.concat(t.R).join(' · ') || (b.activity_name || 'Sin nombres en Playtomic');
+      return '<button class="card bk'+(b===now?' now':'')+'" data-i="'+i+'"><div><div class="t">'+P.hhmm(b.start)+' – '+P.hhmm(b.end)+'</div><div class="n">'+P.esc(names)+'</div></div>'+
+        '<span class="tag'+(b===now?' now':'')+'">'+(b===now?'AHORA · ':'')+P.kind(b).toUpperCase()+'</span></button>';
+    }).join('');
+    [].forEach.call(box.querySelectorAll('.bk'), function(el){ el.onclick=function(){ fill(window._list[+el.dataset.i]); }; });
+  }).catch(function(){ box.innerHTML = '<div class="empty">No se pudo leer Playtomic. Puedes iniciar un partido sin reserva.</div>'; });
+}
+function fill(b){
+  var t = P.teams(b);
+  $('l1').value=t.L[0]||''; $('l2').value=t.L[1]||''; $('r1').value=t.R[0]||''; $('r2').value=t.R[1]||'';
+  $('fTitle').textContent = b ? (P.kind(b).toUpperCase()+' · '+P.hhmm(b.start)+' – '+P.hhmm(b.end)) : 'PARTIDO SIN RESERVA';
+  $('form').classList.remove('hidden'); $('form').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function manual(){ fill(null); }
+
+function start(){
+  var f = { l1:$('l1').value.trim(), l2:$('l2').value.trim(), r1:$('r1').value.trim(), r2:$('r2').value.trim(), server:srv, mode:mode };
+  if (!f.l1 || !f.r1) return toast('Pon al menos un jugador de cada pareja');
+  $('start').disabled = true;
+  P.create(club, court, f).then(function(d){
+    if (!d.match_id) throw new Error();
+    haptic(); toast('Marcador activo en la Cancha '+court.n); resume(d.match_id);
+  }).catch(function(){ toast('No se pudo iniciar el marcador'); }).then(function(){ $('start').disabled = false; });
+}
+
+function resume(id){
+  match = id; ovlOn = true;
+  $('pick').classList.add('hidden'); $('live').classList.remove('hidden');
+  $('tvLink').href = 'pantalla.html?club='+club.id+'&cancha='+court.n;
+  P.match(id).then(function(d){ if (d.state) { render(d.state); $('conn').textContent='● en vivo'; $('conn').className='ok'; } }).catch(function(){});
+  if (sock) sock.close();
+  sock = P.socket(id, function(s){ $('conn').textContent='● en vivo'; $('conn').className='ok'; render(s); });
+  scanLive();
+}
+
+function render(s){
+  state = s;
+  var nm = function(a,b){ return P.esc([a,b].filter(Boolean).join(' / ')); };
+  $('nL').innerHTML = nm(s.left_p1, s.left_p2); $('nR').innerHTML = nm(s.right_p1, s.right_p2);
+  $('bL').textContent = s.left_p1 || 'Izquierda'; $('bR').textContent = s.right_p1 || 'Derecha';
+  $('pL').textContent = s.pts_left; $('pR').textContent = s.pts_right;
+  $('gL').textContent = (s.sets_left||0)+' · '+(s.games_left||0); $('gR').textContent = (s.sets_right||0)+' · '+(s.games_right||0);
+  $('tL').classList.toggle('serving', s.current_server==='left'); $('tR').classList.toggle('serving', s.current_server==='right');
+  var h = (s.sets_history||[]).map(function(x){ return x.left+'-'+x.right; }).join('  ');
+  $('sets').textContent = 'Sets · games' + (h ? '   ('+h+')' : '') + (s.in_tiebreak ? '   TIE BREAK' : '');
+  if (s.overlay_visible !== undefined) { ovlOn = !!s.overlay_visible; $('ovl').textContent = ovlOn ? '👁 OCULTAR' : '👁 MOSTRAR'; }
+  if (s.status === 'finished') { toast('Partido terminado'); setTimeout(function(){ match=null; if(sock){sock.close();sock=null;} load(); }, 1500); }
+}
+
+var busy = false;
+function ev(type){
+  if (!match || busy) return;
+  busy = true; haptic();
+  P.event(match, type).then(function(d){ if (d && d.state) render(d.state); net(true, 'Conectado'); $('conn').textContent='● en vivo'; $('conn').className='ok'; })
+    .catch(function(){ toast('Sin conexión, toca otra vez'); net(false, 'Sin conexión'); })
+    .then(function(){ busy = false; });
+}
+function toggleOvl(){ ev(ovlOn ? 'OVERLAY_HIDDEN' : 'OVERLAY_SHOWN'); ovlOn = !ovlOn; $('ovl').textContent = ovlOn ? '👁 OCULTAR' : '👁 MOSTRAR'; }
+var fin = false;
+function finish(){
+  if (!fin) { fin = true; toast('Toca TERMINAR otra vez para cerrar el partido'); setTimeout(function(){ fin=false; }, 3000); return; }
+  fin = false; ev('MATCH_FINISHED');
+}
+
+drawCourts(); scanLive(); load();
+setInterval(function(){ if (!match) bookings(); }, 60000);
+</script>
+</body>
+</html>

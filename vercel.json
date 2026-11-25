@@ -23,6 +23,13 @@
       "dest": "https://api.picalereplay.com/ai/p/$1"
     },
     {
+      "src": "/club/?",
+      "status": 308,
+      "headers": {
+        "Location": "/club/panel.html?club=somos"
+      }
+    },
+    {
       "src": "/c/(.*)",
       "dest": "/c.html"
     },

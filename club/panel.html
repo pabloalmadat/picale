@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Panel del club · PÍCALE</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="club.css">
+<style>
+.wrap{max-width:1200px;margin:0 auto;padding:18px 16px 40px}
+.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.sum .card{padding:14px 16px}
+.sum .k{font-size:11px;letter-spacing:1px;color:var(--muted);font-weight:700}
+.sum .v{font-family:var(--display);font-size:34px;letter-spacing:1px;margin-top:4px}
+.sum .d{font-size:12px;color:var(--muted)}
+h2{font-family:var(--display);font-size:22px;letter-spacing:1.5px;color:var(--muted);margin:20px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.ct{padding:14px;display:flex;flex-direction:column;gap:10px}
+.ct .hd{display:flex;justify-content:space-between;align-items:center}
+.ct .nm{font-family:var(--display);font-size:28px;letter-spacing:1px}
+.chk{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:13px;align-items:center}
+.chk .lb{color:var(--muted)}
+.chk .val{display:flex;align-items:center;gap:6px;min-width:0}
+.chk .val span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--muted)}
+.dot.ok{background:var(--green)}.dot.warn{background:var(--orange)}.dot.bad{background:var(--red)}
+.score{background:var(--bg3);border-radius:10px;padding:8px 10px;font-size:13px;display:flex;justify-content:space-between;gap:8px}
+.score b{font-family:var(--display);font-size:20px;letter-spacing:1px}
+.acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.acts a{height:38px;font-family:var(--body);font-weight:600;font-size:13px;letter-spacing:0;padding:0 6px;white-space:nowrap}
+.links .card{padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.links .t{font-weight:700}.links .s{font-size:12px;color:var(--muted);margin-top:2px;word-break:break-all}
+.note{font-size:13px;color:var(--muted);line-height:1.5;padding:14px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:10px}
+.legend span{display:flex;align-items:center;gap:6px}
+.sysc .val span{white-space:normal}
+@media(max-width:700px){.sum{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div><div class="logo">PÍCALE<span>.</span> <span style="color:var(--text);font-size:18px">PANEL DEL CLUB</span></div><div class="sub" id="clubName">—</div></div>
+  <span class="pill" id="upd"><i></i><span>Revisando…</span></span>
+</div>
+<div class="wrap">
+  <div class="sum">
+    <div class="card"><div class="k">TRANSMISIÓN</div><div class="v" id="sStream">–</div><div class="d">canchas en vivo</div></div>
+    <div class="card"><div class="k">MARCADORES</div><div class="v" id="sScore">–</div><div class="d">partidos con marcador</div></div>
+    <div class="card"><div class="k">PLAYTOMIC</div><div class="v" id="sPt">–</div><div class="d" id="sPtD">canchas ocupadas ahora</div></div>
+    <div class="card"><div class="k">CLIPS DEL BOTÓN</div><div class="v" id="sClip">–</div><div class="d">canchas con clips hoy</div></div>
+  </div>
+
+  <div class="legend"><span><i class="dot ok"></i>funciona</span><span><i class="dot warn"></i>revisar</span><span><i class="dot bad"></i>no funciona</span><span><i class="dot"></i>sin dato</span></div>
+  <div class="grid" id="grid"></div>
+
+  <h2>SISTEMA</h2>
+  <div class="grid" id="sys"></div>
+
+  <h2>LINKS DEL CLUB</h2>
+  <div class="links" id="links"></div>
+
+  <div class="card note"><b style="color:var(--text)">Sensores de cancha:</b> cuando se instalen, mandarán los puntos al mismo marcador que el celular. Este panel mostrará su estado en cada cancha; mientras tanto, el marcador se lleva desde <b style="color:var(--text)">Marcador desde el celular</b>.</div>
+</div>
+<script src="club.js"></script>
+<script>
+var P = PICALE_CLUB, club = P.club();
+function $(id){ return document.getElementById(id); }
+$('clubName').textContent = club.name + ' · ' + club.courts.length + (club.courts.length === 1 ? ' cancha' : ' canchas');
+document.title = 'Panel · ' + club.name;
+var BASE = location.origin + location.pathname.replace(/panel\.html$/, '');
+
+function row(label, cls, text){ return '<span class="lb">' + label + '</span><span class="val"><i class="dot ' + cls + '"></i><span>' + text + '</span></span>'; }
+
+function card(c){
+  return '<div class="card ct" id="c' + c.n + '"><div class="hd"><div class="nm">CANCHA ' + c.n + '</div><span class="pill" id="st' + c.n + '"><i></i><span>…</span></span></div>' +
+    '<div class="chk" id="chk' + c.n + '">' + row('Transmisión', '', 'revisando…') + row('Reserva', '', '…') + row('Marcador', '', '…') + row('Botón', '', '…') + '</div>' +
+    '<div id="sc' + c.n + '"></div>' +
+    '<div class="acts"><a class="btn ghost" href="control.html?club=' + club.id + '&cancha=' + c.n + '">🎛 Marcador</a>' +
+    '<a class="btn ghost" target="_blank" href="pantalla.html?club=' + club.id + '&cancha=' + c.n + '">📺 Pantalla</a>' +
+    '<a class="btn ghost" target="_blank" href="/clubs.html?club=' + club.id + '">▶ En vivo</a></div></div>';
+}
+$('grid').innerHTML = club.courts.map(card).join('');
+
+$('links').innerHTML = [
+  ['Marcador desde el celular', 'Elige cancha y partido de Playtomic', 'control.html?club=' + club.id],
+  ['Pantallas de las canchas', 'Ábrelo en la TV de cada cancha (cambia el número al final)', 'pantalla.html?club=' + club.id + '&cancha=1'],
+  ['En vivo y clips para jugadores', 'Lo que ven los jugadores', '/clubs.html?club=' + club.id],
+  ['PÍCALE AI', 'Partidos completos analizados con IA', '/ai/']
+].map(function(l){
+  var url = /^\//.test(l[2]) ? location.origin + l[2] : BASE + l[2];
+  return '<div class="card"><div><div class="t">' + l[0] + '</div><div class="s">' + l[1] + '<br>' + P.esc(url) + '</div></div>' +
+    '<div style="display:flex;gap:6px"><button class="btn ghost" style="height:38px;font-size:15px" data-copy="' + P.esc(url) + '">Copiar</button><a class="btn" style="height:38px;font-size:15px" target="_blank" href="' + P.esc(url) + '">Abrir</a></div></div>';
+}).join('');
+[].forEach.call(document.querySelectorAll('[data-copy]'), function(b){ b.onclick = function(){ navigator.clipboard && navigator.clipboard.writeText(b.dataset.copy); b.textContent = '✓'; setTimeout(function(){ b.textContent = 'Copiar'; }, 1500); }; });
+
+var sys = { playtomic: null, score: null, stream: null };
+function drawSys(){
+  var it = [
+    ['Playtomic', club.playtomic ? sys.playtomic : 'na', club.playtomic ? (sys.playtomic === 'ok' ? 'Leyendo reservas de hoy' : sys.playtomic === 'bad' ? 'No responde: revisa la conexión de PÍCALE con Playtomic' : 'Revisando…') : 'Este club aún no está ligado'],
+    ['Marcador (servidor)', sys.score, sys.score === 'ok' ? 'Responde' : sys.score === 'bad' ? 'No responde' : 'Revisando…'],
+    ['Transmisión (servidor)', sys.stream, sys.stream === 'ok' ? 'Recibiendo video' : sys.stream === 'bad' ? 'No llega video de ninguna cancha: revisa la mini PC del club' : 'Revisando…'],
+    ['Sensores de cancha', 'na', 'Pendientes de instalar']
+  ];
+  $('sys').innerHTML = it.map(function(x){ var w=1;
+    var cls = x[1] === 'ok' ? 'ok' : x[1] === 'bad' ? 'bad' : x[1] === 'warn' ? 'warn' : '';
+    return '<div class="card ct sysc"><div class="chk">' + row(x[0], cls, x[2]) + '</div></div>';
+  }).join('');
+}
+drawSys();
+
+function refresh(){
+  var tot = { stream: 0, score: 0, busy: 0, clip: 0 }, todayP = club.playtomic ? P.today().then(function(d){ sys.playtomic = 'ok'; return d; }).catch(function(){ sys.playtomic = 'bad'; return null; }) : Promise.resolve(null);
+  var scoreOk = false, scoreBad = 0;
+  return todayP.then(function(today){
+    return Promise.all(club.courts.map(function(c){
+      return Promise.all([
+        P.stream(c),
+        P.active(c).then(function(id){ scoreOk = true; return id ? P.match(id).then(function(d){ return d.state || {}; }).catch(function(){ return {}; }) : null; }).catch(function(){ scoreBad++; return undefined; }),
+        P.lastClip(c).catch(function(){ return undefined; })
+      ]).then(function(r){
+        var st = r[0], sc = r[1], clip = r[2];
+        var arr = today ? P.bookingsFor(today, c.n) : [], now = P.live(arr), next = P.upcoming(arr)[0];
+        var h = '';
+        h += row('Transmisión', st === 'on' || st === 'on?' ? 'ok' : st === 'stuck' ? 'warn' : 'bad',
+          st === 'on' || st === 'on?' ? 'En vivo' : st === 'stuck' ? 'Congelada (no llegan imágenes nuevas)' : 'Sin señal');
+        if (club.playtomic) {
+          var t = now && P.teams(now);
+          h += row('Reserva', today ? (now ? 'ok' : '') : 'bad', !today ? 'Playtomic no responde' : now ? P.kind(now) + ' ' + P.hhmm(now.start) + '–' + P.hhmm(now.end) + (t.L.length ? ' · ' + P.esc(t.L.concat(t.R).join(', ')) : '') : 'Libre' + (next ? ' · siguiente ' + P.hhmm(next.start) : ''));
+        } else h += row('Reserva', '', 'Playtomic aún no ligado');
+        h += row('Marcador', sc === undefined ? 'bad' : sc ? 'ok' : (now ? 'warn' : ''), sc === undefined ? 'No responde' : sc ? 'Activo' : now ? 'Hay partido pero sin marcador' : 'Sin partido');
+        var fresh = clip && (Date.now() / 1000 - (typeof clip.created_at === 'number' ? clip.created_at : Date.parse(clip.created_at) / 1000)) < 86400;
+        h += row('Botón', clip === undefined ? 'bad' : fresh ? 'ok' : clip ? 'warn' : '', clip === undefined ? 'No se pudo revisar' : clip ? 'Último clip ' + P.ago(clip.created_at) : 'Sin clips todavía');
+        $('chk' + c.n).innerHTML = h;
+        $('sc' + c.n).innerHTML = sc ? '<div class="score"><span>' + P.esc([sc.left_p1, sc.left_p2].filter(Boolean).join(' / ')) + '<br>' + P.esc([sc.right_p1, sc.right_p2].filter(Boolean).join(' / ')) + '</span><span style="text-align:right"><b>' + (sc.games_left || 0) + '-' + (sc.games_right || 0) + '</b><br>' + P.esc(sc.pts_left) + '-' + P.esc(sc.pts_right) + '</span></div>' : '';
+        var badge = sc ? ['ok', 'EN JUEGO'] : now ? ['warn', 'OCUPADA'] : ['', 'LIBRE'];
+        if (st !== 'on' && st !== 'on?') badge = ['bad', 'SIN SEÑAL'];
+        var pill = $('st' + c.n); pill.className = 'pill ' + badge[0]; pill.lastChild.textContent = badge[1];
+        if (st === 'on' || st === 'on?') tot.stream++;
+        if (sc) tot.score++;
+        if (now) tot.busy++;
+        if (fresh) tot.clip++;
+      });
+    }));
+  }).then(function(){
+    sys.score = scoreOk ? 'ok' : scoreBad ? 'bad' : null;
+    sys.stream = tot.stream ? 'ok' : 'bad';
+    drawSys();
+    var n = club.courts.length;
+    $('sStream').textContent = tot.stream + '/' + n; $('sScore').textContent = tot.score;
+    $('sPt').textContent = club.playtomic ? (sys.playtomic === 'ok' ? tot.busy + '/' + n : '✕') : '—';
+    $('sPtD').textContent = club.playtomic ? 'canchas ocupadas ahora' : 'sin ligar todavía';
+    $('sClip').textContent = tot.clip + '/' + n;
+    var u = $('upd'); u.className = 'pill ok'; u.lastChild.textContent = 'Actualizado ' + P.localIso().substring(11, 16);
+  });
+}
+refresh(); setInterval(refresh, 30000);
+</script>
+</body>
+</html>

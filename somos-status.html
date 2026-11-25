@@ -205,14 +205,14 @@
 
   // Canchas de Somos Pádel. Para agregar otro club, extiende esta lista.
   var COURTS = [
-    { num:1, name:'PÁDEL 1' },
-    { num:2, name:'PÁDEL 2' },
-    { num:3, name:'PÁDEL 3' },
-    { num:4, name:'PÁDEL 4' },
-    { num:5, name:'PÁDEL 5' },
-    { num:6, name:'PÁDEL 6' },
-    { num:7, name:'PÁDEL 7' },
-    { num:8, name:'PÁDEL 8' }
+    { num:1, name:'PÁDEL 1', uuid:'6bc0621c-f99a-4e1f-8971-d70155ea3383' },
+    { num:2, name:'PÁDEL 2', uuid:'e1dc778e-831f-4fa4-bc86-d6a31a7de1d1' },
+    { num:3, name:'PÁDEL 3', uuid:'fc8bbc6d-e21b-466d-92e6-a2beefe6bd38' },
+    { num:4, name:'PÁDEL 4', uuid:'2d54ad6f-895f-4f6c-b985-95b431fe03b3' },
+    { num:5, name:'PÁDEL 5', uuid:'28b6283d-dacf-428d-a3fb-fc0015d5f6aa' },
+    { num:6, name:'PÁDEL 6', uuid:'519bbd5d-b2f5-4a84-a257-6d327bebf9a8' },
+    { num:7, name:'PÁDEL 7', uuid:'28d80e5a-9f47-4bf8-a8e9-7d1dd0cfb512' },
+    { num:8, name:'PÁDEL 8', uuid:'35c16c54-f31e-4397-922b-044722d06524' }
   ];
 
   var STATUS_LABEL = {
@@ -286,7 +286,7 @@
       return Promise.resolve({ court:court, status:'clase', booking:active, live:false });
 
     // partido / torneo / reserva -> ¿hay marcador en vivo?
-    return fetch(CLOUD + '/api/v1/score/court/' + court.num + '/now')
+    return fetch(CLOUD + '/api/v1/score/court/' + court.uuid + '/active')
       .then(function(r){ return r.ok ? r.json() : {}; })
       .then(function(sd){
         return { court:court, status: sd && sd.match_id ? 'live' : status,

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pantalla de cancha · PÍCALE</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="club.css">
+<style>
+html,body{width:100%;height:100%;overflow:hidden;cursor:none}
+.stage{position:fixed;inset:0;display:flex;flex-direction:column;background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(94,232,122,.08),transparent 70%),var(--bg)}
+.hd{display:flex;align-items:center;justify-content:space-between;padding:3vh 4vw;border-bottom:1px solid var(--line)}
+.hd .logo{font-size:4.4vh;letter-spacing:.4vw}
+.hd .court{font-family:var(--display);font-size:5vh;letter-spacing:.3vw}
+.hd .court small{font-family:var(--body);font-size:2vh;color:var(--muted);letter-spacing:.1vw;margin-left:1vw}
+.hd .clock{font-family:var(--display);font-size:5vh}
+.body{flex:1;display:flex;flex-direction:column;justify-content:center;padding:3vh 4vw;min-height:0}
+/* marcador */
+.sb{display:grid;grid-template-columns:1fr auto auto;gap:0;border-radius:2.4vh;overflow:hidden;border:1px solid var(--line2)}
+.sb .row{display:contents}
+.sb .nm,.sb .sets,.sb .pt{padding:3.2vh 2.4vw;display:flex;align-items:center;background:var(--bg2)}
+.sb .row+.row .nm,.sb .row+.row .sets,.sb .row+.row .pt{border-top:1px solid var(--line)}
+.sb .nm{gap:2vw;font-weight:700;font-size:6.6vh;line-height:1.05;min-width:0}
+.sb .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb .dot{flex:none;width:2.6vh;height:2.6vh;border-radius:50%;background:var(--yellow);box-shadow:0 0 3vh var(--yellow);visibility:hidden}
+.sb .serving .dot{visibility:visible}
+.sb .sets{gap:2.2vw;font-family:var(--display);font-size:9vh;color:var(--muted)}
+.sb .sets b{color:var(--text);font-weight:400}
+.sb .pt{justify-content:center;min-width:16vw;font-family:var(--display);font-size:15vh;background:var(--green);color:#0A0A0A;line-height:1}
+.badge{align-self:center;margin-top:3vh;font-family:var(--display);font-size:4vh;letter-spacing:.4vw;padding:1vh 2.4vw;border-radius:1.2vh;background:var(--yellow);color:#0A0A0A}
+/* sin partido */
+.idle{display:grid;grid-template-columns:1.1fr .9fr;gap:4vw;align-items:center}
+.idle h1{font-family:var(--display);font-size:13vh;line-height:.9;letter-spacing:.3vw}
+.idle h1 span{color:var(--green)}
+.idle p{font-size:2.6vh;color:var(--muted);margin-top:2vh;max-width:40vw;line-height:1.4}
+.agenda{display:flex;flex-direction:column;gap:1.4vh}
+.agenda .ttl{font-size:1.9vh;letter-spacing:.3vw;color:var(--muted);font-weight:700;margin-bottom:.6vh}
+.bk{display:flex;gap:2vw;align-items:center;padding:2vh 2vw;border-radius:1.6vh;background:var(--bg2);border:1px solid var(--line)}
+.bk.now{border-color:rgba(94,232,122,.5);background:rgba(94,232,122,.06)}
+.bk .h{font-family:var(--display);font-size:4.4vh;min-width:9vw}
+.bk .w{font-size:2.4vh;font-weight:600;line-height:1.3}
+.bk .k{font-size:1.7vh;color:var(--muted);letter-spacing:.15vw;margin-top:.3vh}
+.ft{display:flex;justify-content:space-between;padding:2vh 4vw;font-size:1.9vh;color:var(--muted);letter-spacing:.2vw;border-top:1px solid var(--line)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="hd"><div class="logo">PÍCALE<span>.</span></div><div class="court" id="court">CANCHA</div><div class="clock" id="clock">--:--</div></div>
+  <div class="body">
+    <div id="score" class="hidden">
+      <div class="sb">
+        <div class="row" id="rL"><div class="nm"><i class="dot"></i><span id="nL"></span></div><div class="sets" id="sL"></div><div class="pt" id="pL"></div></div>
+        <div class="row" id="rR"><div class="nm"><i class="dot"></i><span id="nR"></span></div><div class="sets" id="sR"></div><div class="pt" id="pR"></div></div>
+      </div>
+      <div class="badge hidden" id="badge"></div>
+    </div>
+    <div id="idle" class="idle">
+      <div><h1>PÍCALE<br><span>AL BOTÓN</span></h1><p>Haz un puntazo, pica el botón y llévate la jugada. Tu partido completo con estadísticas en picalereplay.com/ai</p></div>
+      <div class="agenda" id="agenda"></div>
+    </div>
+  </div>
+  <div class="ft"><span id="clubName"></span><span>picalereplay.com</span></div>
+</div>
+<script src="club.js"></script>
+<script>
+var P = PICALE_CLUB, club = P.club(), court = P.court(club, P.q('cancha', 1)), match = null, sock = null;
+function $(id){ return document.getElementById(id); }
+$('court').innerHTML = 'CANCHA ' + court.n + '<small>' + P.esc(club.name.toUpperCase()) + '</small>';
+$('clubName').textContent = club.name + ' · Cancha ' + court.n;
+document.title = 'Cancha ' + court.n + ' · ' + club.name;
+setInterval(function(){ $('clock').textContent = P.localIso().substring(11, 16); }, 1000);
+$('clock').textContent = P.localIso().substring(11, 16);
+
+function render(s){
+  var nm = function(a,b){ return [a,b].filter(Boolean).join(' / '); };
+  $('nL').textContent = nm(s.left_p1, s.left_p2); $('nR').textContent = nm(s.right_p1, s.right_p2);
+  $('pL').textContent = s.pts_left; $('pR').textContent = s.pts_right;
+  var hist = s.sets_history || [];
+  $('sL').innerHTML = hist.map(function(x){ return x.left; }).concat(['<b>' + (s.games_left||0) + '</b>']).join('<span></span>');
+  $('sR').innerHTML = hist.map(function(x){ return x.right; }).concat(['<b>' + (s.games_right||0) + '</b>']).join('<span></span>');
+  $('rL').classList.toggle('serving', s.current_server === 'left'); $('rR').classList.toggle('serving', s.current_server === 'right');
+  var b = s.status === 'finished' ? 'PARTIDO TERMINADO' : s.in_tiebreak ? 'TIE BREAK' : '';
+  $('badge').textContent = b; $('badge').classList.toggle('hidden', !b);
+}
+function showScore(on){ $('score').classList.toggle('hidden', !on); $('idle').classList.toggle('hidden', on); }
+
+function check(){
+  P.active(court).then(function(id){
+    if (id && id !== match) {
+      match = id; if (sock) sock.close();
+      P.match(id).then(function(d){ if (d.state) { render(d.state); showScore(true); } });
+      sock = P.socket(id, function(s){ render(s); showScore(true); });
+    } else if (!id && match) {
+      match = null; if (sock) { sock.close(); sock = null; } showScore(false); agenda();
+    }
+  }).catch(function(){});
+}
+function agenda(){
+  if (!club.playtomic) { $('agenda').innerHTML = ''; return; }
+  P.today().then(function(d){
+    var arr = P.bookingsFor(d, court.n), now = P.live(arr), list = (now ? [now] : []).concat(P.upcoming(arr)).slice(0, 4);
+    $('agenda').innerHTML = '<div class="ttl">HOY EN ESTA CANCHA</div>' + (list.length ? list.map(function(b){
+      var t = P.teams(b), w = t.L.concat(t.R).join(' · ') || b.activity_name || P.kind(b);
+      return '<div class="bk' + (b === now ? ' now' : '') + '"><div class="h">' + P.hhmm(b.start) + '</div><div><div class="w">' + P.esc(w) + '</div><div class="k">' + (b === now ? 'EN CURSO · ' : '') + P.kind(b).toUpperCase() + '</div></div></div>';
+    }).join('') : '<div class="bk"><div class="w">Sin más reservas hoy</div></div>');
+  }).catch(function(){});
+}
+check(); agenda();
+setInterval(check, 5000); setInterval(function(){ if (!match) agenda(); }, 60000);
+// si la TV pierde conexión mucho tiempo, recarga sola
+setInterval(function(){ if (navigator.onLine) location.reload(); }, 6 * 3600 * 1000);
+document.body.onclick = function(){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(function(){}); };
+</script>
+</body>
+</html>
